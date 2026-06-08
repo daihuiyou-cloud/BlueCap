@@ -191,22 +191,19 @@ void RecorderController::startRegionRecording(const QRect &region)
     m_currentOutputPath = createOutputPath();
     m_stopRequested = false;
 
-    const QString videoSize = QStringLiteral("%1x%2")
-        .arg(region.width()).arg(region.height());
-    const QString offset = QStringLiteral("%1,%2")
+    const QString cropFilter = QStringLiteral("crop=%1:%2:%3:%4")
+        .arg(region.width()).arg(region.height())
         .arg(region.x()).arg(region.y());
 
     QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
         QStringLiteral("-framerate"), QString::number(m_frameRate),
-        QStringLiteral("-offset_x"), QString::number(region.x()),
-        QStringLiteral("-offset_y"), QString::number(region.y()),
-        QStringLiteral("-video_size"), videoSize,
         QStringLiteral("-i"), QStringLiteral("desktop"),
         QStringLiteral("-c:v"), QStringLiteral("libx264"),
         QStringLiteral("-preset"), m_preset,
         QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
+        QStringLiteral("-vf"), cropFilter,
     };
     if (!m_showCursor) {
         args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
