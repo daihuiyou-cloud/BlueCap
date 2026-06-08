@@ -5,6 +5,7 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QToolButton>
+#include <QVariant>
 
 namespace {
 
