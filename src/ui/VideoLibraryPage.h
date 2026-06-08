@@ -19,6 +19,7 @@ private slots:
     void refreshList(const QStringList &videos);
     void openSelected();
     void deleteSelected();
+    void renameSelected();
     void showContextMenu(const QPoint &pos);
 
 private:

@@ -207,6 +207,18 @@ QLineEdit, QSpinBox, QComboBox {
     color: #1f2940;
 }
 
+QProgressBar {
+    border: 0;
+    background: rgba(207, 216, 232, 0.5);
+    border-radius: 2px;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #78bdff, stop:0.52 #136ff4, stop:1 #075ce0);
+    border-radius: 2px;
+}
+
 #saveFeedback {
     color: #28965c;
     font-size: 13px;
@@ -214,15 +226,3 @@ QLineEdit, QSpinBox, QComboBox {
     padding: 4px 8px;
 }
 
-#applyButton {
-    border: 0;
-    border-radius: 14px;
-    background: #0967f2;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 700;
-}
-
-#applyButton:hover {
-    background: #0755cc;
-}

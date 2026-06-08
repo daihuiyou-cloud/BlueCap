@@ -7,6 +7,7 @@
 class QElapsedTimer;
 class QFrame;
 class QLabel;
+class QProgressBar;
 class QTimer;
 class ModeSwitch;
 class RecordButton;
@@ -51,6 +52,7 @@ private:
     QLabel *m_countdownLabel = nullptr;
     QLabel *m_hotkeyLabel = nullptr;
     QLabel *m_statusLabel = nullptr;
+    QProgressBar *m_stopProgress = nullptr;
     QLabel *m_recentDetailLabel = nullptr;
     QLabel *m_openFolderIcon = nullptr;
     QFrame *m_bottomNavSection = nullptr;
@@ -61,4 +63,5 @@ private:
     QTimer *m_countdownTimer = nullptr;
     int m_countdownValue = 0;
     bool m_confirmStop = false;
+    QString m_lastSavedPath;
 };

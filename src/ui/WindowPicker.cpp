@@ -41,6 +41,8 @@ WindowPicker::WindowPicker(QWidget *parent)
     if (m_list->count() > 0)
         m_list->item(0)->setSelected(true);
 
+    m_filterEdit->setFocus();
+
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
         m_list->clear();
         for (const auto &w : m_windows) {

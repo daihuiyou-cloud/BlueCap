@@ -16,6 +16,8 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QProgressBar>
+#include <QShortcut>
 #include <QUrl>
 #include <QPainter>
 #include <QTimer>
@@ -79,12 +81,34 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_statusLabel = new QLabel(QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"), this);
     m_statusLabel->setObjectName(QStringLiteral("recordStatus"));
     m_statusLabel->setAlignment(Qt::AlignCenter);
+    m_statusLabel->setCursor(Qt::PointingHandCursor);
+    m_statusLabel->installEventFilter(this);
 
     root->addWidget(m_titleLabel);
     root->addWidget(m_countdownLabel);
     root->addWidget(m_hotkeyLabel);
     root->addSpacing(6);
     root->addWidget(m_statusLabel);
+    root->addSpacing(8);
+
+    m_stopProgress = new QProgressBar(this);
+    m_stopProgress->setRange(0, 0);
+    m_stopProgress->setFixedWidth(240);
+    m_stopProgress->setFixedHeight(4);
+    m_stopProgress->setTextVisible(false);
+    m_stopProgress->setVisible(false);
+    root->addWidget(m_stopProgress, 0, Qt::AlignCenter);
+
+    auto *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    connect(escapeShortcut, &QShortcut::activated, this, [this] {
+        if (m_countdownTimer->isActive()) {
+            m_countdownTimer->stop();
+            m_countdownLabel->setVisible(false);
+            m_titleLabel->setVisible(true);
+            updateStatusForMode(m_modeSwitch->currentMode());
+        }
+    });
+
     root->addStretch();
 
     auto *bottomBar = new QFrame(this);
@@ -210,19 +234,25 @@ void RecordPage::toggleRecording()
             if (ret != QMessageBox::Yes) return;
         }
         m_recordingTimer->stop();
+        m_lastSavedPath.clear();
         m_statusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
+        m_stopProgress->setVisible(true);
         m_recorder->stopRecording();
         return;
     }
 
-    if (m_countdownTimer->isActive())
+    if (m_countdownTimer->isActive()) {
+        m_countdownTimer->stop();
+        m_countdownLabel->setVisible(false);
+        m_titleLabel->setVisible(true);
+        updateStatusForMode(m_modeSwitch->currentMode());
         return;
+    }
 
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
     case RecordMode::Region:
     case RecordMode::Window:
-        m_recordButton->setEnabled(false);
         m_countdownValue = 3;
         m_titleLabel->setVisible(false);
         m_countdownLabel->setText(QStringLiteral("3"));
@@ -287,6 +317,7 @@ void RecordPage::handleRecordingChanged(bool recording)
         m_statusLabel->setText(QStringLiteral("正在录制，点击按钮停止"));
     } else {
         m_recordingTimer->stop();
+        m_stopProgress->setVisible(false);
         m_titleLabel->setText(QStringLiteral("开始录制"));
         updateStatusForMode(m_modeSwitch->currentMode());
     }
@@ -297,6 +328,7 @@ void RecordPage::handleRecordingChanged(bool recording)
 void RecordPage::handleVideoSaved(const QString &path)
 {
     m_library->addRecentVideo(path);
+    m_lastSavedPath = path;
     QFileInfo fi(path);
     qint64 size = fi.size();
     QString sizeStr;
@@ -312,6 +344,7 @@ void RecordPage::handleError(const QString &message)
     m_recordButton->setRecording(false);
     m_recordButton->setEnabled(true);
     m_recordingTimer->stop();
+    m_stopProgress->setVisible(false);
     m_countdownTimer->stop();
     m_countdownLabel->setVisible(false);
     m_titleLabel->setVisible(true);
@@ -366,6 +399,12 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::MouseButtonPress) {
         auto *me = static_cast<QMouseEvent *>(event);
         if (me->button() == Qt::LeftButton) {
+            if (obj == m_statusLabel) {
+                if (!m_lastSavedPath.isEmpty()) {
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(m_lastSavedPath));
+                }
+                return true;
+            }
             if (obj == m_openFolderIcon) {
                 const QString path = m_recorder->currentSavePath();
                 if (!path.isEmpty()) {

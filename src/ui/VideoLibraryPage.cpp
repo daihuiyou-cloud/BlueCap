@@ -3,7 +3,10 @@
 
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QDir>
+#include <QFileIconProvider>
 #include <QFileInfo>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -91,6 +94,7 @@ void VideoLibraryPage::applyFilter()
     }
     m_stack->setCurrentWidget(m_list);
 
+    QFileIconProvider iconProvider;
     for (const auto &path : matched) {
         QFileInfo fi(path);
         qint64 size = fi.size();
@@ -104,7 +108,7 @@ void VideoLibraryPage::applyFilter()
             + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
             + QStringLiteral("  |  ") + sizeStr;
 
-        auto *item = new QListWidgetItem(text, m_list);
+        auto *item = new QListWidgetItem(iconProvider.icon(fi), text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
         item->setSizeHint(QSize(0, 48));
@@ -149,6 +153,52 @@ void VideoLibraryPage::deleteSelected()
     }
 }
 
+void VideoLibraryPage::renameSelected()
+{
+    auto *item = m_list->currentItem();
+    if (!item) return;
+
+    const QString oldPath = item->data(Qt::UserRole).toString();
+    QFileInfo fi(oldPath);
+    const QString oldName = fi.fileName();
+
+    bool ok = false;
+    QString newName = QInputDialog::getText(this, QStringLiteral("重命名"),
+        QStringLiteral("新文件名："), QLineEdit::Normal, oldName, &ok);
+    if (!ok || newName.isEmpty() || newName == oldName)
+        return;
+
+    if (newName.contains(QLatin1Char('/')) || newName.contains(QLatin1Char('\\'))
+        || newName.contains(QLatin1Char(':')) || newName.contains(QLatin1Char('*'))
+        || newName.contains(QLatin1Char('?')) || newName.contains(QLatin1Char('"'))
+        || newName.contains(QLatin1Char('<')) || newName.contains(QLatin1Char('>'))
+        || newName.contains(QLatin1Char('|'))) {
+        QMessageBox::warning(this, QStringLiteral("重命名失败"),
+            QStringLiteral("文件名包含非法字符。"));
+        return;
+    }
+
+    const QString newPath = fi.dir().filePath(newName);
+    if (QFileInfo::exists(newPath)) {
+        QMessageBox::warning(this, QStringLiteral("重命名失败"),
+            QStringLiteral("目标文件名已存在。"));
+        return;
+    }
+
+    if (!QFile::rename(oldPath, newPath)) {
+        QMessageBox::warning(this, QStringLiteral("重命名失败"),
+            QStringLiteral("无法重命名文件，请检查文件是否被占用。"));
+        return;
+    }
+
+    QStringList videos = m_library->recentVideos();
+    int idx = videos.indexOf(oldPath);
+    if (idx >= 0) {
+        videos[idx] = newPath;
+        m_library->clearAndReplace(videos);
+    }
+}
+
 void VideoLibraryPage::showContextMenu(const QPoint &pos)
 {
     auto *item = m_list->itemAt(pos);
@@ -161,6 +211,7 @@ void VideoLibraryPage::showContextMenu(const QPoint &pos)
         QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).path()));
     });
     menu.addSeparator();
+    menu.addAction(QStringLiteral("重命名"), this, &VideoLibraryPage::renameSelected);
     menu.addAction(QStringLiteral("删除"), this, &VideoLibraryPage::deleteSelected);
     menu.exec(m_list->mapToGlobal(pos));
 }
