@@ -28,6 +28,7 @@ add_executable(BlueCap WIN32
     src/recorder/RecorderController.h
     src/storage/VideoLibrary.cpp
     src/storage/VideoLibrary.h
+    resources/resources.qrc
 )
 
 target_link_libraries(BlueCap PRIVATE Qt5::Widgets)

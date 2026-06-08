@@ -48,24 +48,6 @@ ModeSwitch::ModeSwitch(QWidget *parent)
         layout->addWidget(buttons[i]);
     }
 
-    setStyleSheet(QStringLiteral(R"(
-        QToolButton {
-            border: 0;
-            border-radius: 35px;
-            color: #1f2940;
-            font-size: 24px;
-            font-weight: 700;
-            background: transparent;
-        }
-        QToolButton:checked {
-            color: #0967f2;
-            background: rgba(255, 255, 255, 0.78);
-        }
-        QToolButton:hover {
-            background: rgba(255, 255, 255, 0.46);
-        }
-    )"));
-
     connect(m_group, qOverload<QAbstractButton *>(&QButtonGroup::buttonClicked),
             this, [this](QAbstractButton *button) {
                 emit modeChanged(button->property("mode").toString());

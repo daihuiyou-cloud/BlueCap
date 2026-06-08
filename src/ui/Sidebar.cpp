@@ -43,26 +43,6 @@ Sidebar::Sidebar(QWidget *parent)
     }
     layout->addStretch();
 
-    setStyleSheet(QStringLiteral(R"(
-        QPushButton {
-            border: 0;
-            border-radius: 28px;
-            text-align: left;
-            padding-left: 34px;
-            color: #172033;
-            background: transparent;
-            font-size: 25px;
-            font-weight: 700;
-        }
-        QPushButton:checked {
-            color: #0967f2;
-            background: rgba(222, 237, 255, 0.86);
-        }
-        QPushButton:hover {
-            background: rgba(232, 242, 255, 0.66);
-        }
-    )"));
-
     connect(m_group, qOverload<int>(&QButtonGroup::buttonClicked),
             this, &Sidebar::pageSelected);
 }

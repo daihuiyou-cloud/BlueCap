@@ -22,15 +22,4 @@ PlaceholderPage::PlaceholderPage(const QString &title, const QString &subtitle, 
     layout->addWidget(subtitleLabel, 0, Qt::AlignHCenter);
     layout->addStretch();
 
-    setStyleSheet(QStringLiteral(R"(
-        #placeholderTitle {
-            color: #162039;
-            font-size: 34px;
-            font-weight: 800;
-        }
-        #placeholderSubtitle {
-            color: #64708a;
-            font-size: 18px;
-        }
-    )"));
 }

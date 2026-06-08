@@ -6,10 +6,10 @@
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
-#include <QPainter>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QVBoxLayout>
@@ -33,6 +33,12 @@ MainWindow::MainWindow(QWidget *parent)
     auto *surface = new QWidget(this);
     surface->setObjectName(QStringLiteral("surface"));
     surface->setAttribute(Qt::WA_StyledBackground, true);
+
+    auto *shadow = new QGraphicsDropShadowEffect(surface);
+    shadow->setBlurRadius(28);
+    shadow->setOffset(0, 8);
+    shadow->setColor(QColor(42, 80, 150, 80));
+    surface->setGraphicsEffect(shadow);
 
     auto *surfaceLayout = new QVBoxLayout(surface);
     surfaceLayout->setContentsMargins(0, 0, 0, 0);
@@ -59,28 +65,7 @@ MainWindow::MainWindow(QWidget *parent)
     surfaceLayout->addWidget(body, 1);
     shell->addWidget(surface);
 
-    setStyleSheet(QStringLiteral(R"(
-        #surface {
-            border-radius: 30px;
-            background: rgba(245, 249, 255, 0.94);
-        }
-    )"));
-
     connect(m_sidebar, &Sidebar::pageSelected, m_stack, &QStackedWidget::setCurrentIndex);
-}
-
-void MainWindow::paintEvent(QPaintEvent *)
-{
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-
-    const QRectF shadowRect = rect().adjusted(16, 16, -16, -16);
-    for (int i = 0; i < 12; ++i) {
-        QColor color(42, 80, 150, 12 - i);
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(color);
-        painter.drawRoundedRect(shadowRect.adjusted(-i, -i, i, i), 30 + i, 30 + i);
-    }
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
@@ -115,6 +100,7 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 QWidget *MainWindow::createTitleBar()
 {
     auto *titleBar = new QWidget(this);
+    titleBar->setObjectName(QStringLiteral("titleBar"));
     titleBar->setFixedHeight(128);
 
     auto *layout = new QHBoxLayout(titleBar);
@@ -141,33 +127,6 @@ QWidget *MainWindow::createTitleBar()
     layout->addSpacing(18);
     layout->addWidget(minimizeButton);
     layout->addWidget(closeButton);
-
-    titleBar->setStyleSheet(QStringLiteral(R"(
-        #logo {
-            border-radius: 12px;
-            color: #ee3344;
-            font-size: 24px;
-            font-weight: 900;
-            background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-                stop:0 #75b9ff, stop:0.52 #136ff4, stop:1 #0959dc);
-        }
-        #windowTitle {
-            color: #111a2d;
-            font-size: 30px;
-            font-weight: 800;
-        }
-        QPushButton {
-            border: 0;
-            border-radius: 20px;
-            background: transparent;
-            color: #26334b;
-            font-size: 34px;
-            font-weight: 400;
-        }
-        QPushButton:hover {
-            background: rgba(215, 226, 244, 0.72);
-        }
-    )"));
 
     connect(settingsButton, &QPushButton::clicked, this, [this] {
         m_stack->setCurrentIndex(2);

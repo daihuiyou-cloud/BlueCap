@@ -77,41 +77,6 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     root->addWidget(bottomBar);
 
-    setStyleSheet(QStringLiteral(R"(
-        #recordTitle {
-            color: #162039;
-            font-size: 32px;
-            font-weight: 800;
-        }
-        #recordHotkey {
-            color: #616d85;
-            font-size: 24px;
-            font-weight: 600;
-        }
-        #recordStatus {
-            color: #7a8599;
-            font-size: 15px;
-        }
-        #bottomBar {
-            border-top: 1px solid rgba(207, 216, 232, 0.95);
-            background: rgba(255, 255, 255, 0.18);
-        }
-        #bottomIcon, #bottomTitle {
-            color: #53617a;
-            font-size: 24px;
-            font-weight: 700;
-        }
-        #bottomDetail {
-            color: #7a8599;
-            font-size: 15px;
-        }
-        #shortcutText {
-            color: #53617a;
-            font-size: 24px;
-            font-weight: 600;
-        }
-    )"));
-
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
     connect(m_recorder, &RecorderController::recordingChanged,
             this, &RecordPage::handleRecordingChanged);
