@@ -251,14 +251,16 @@ void RecordPage::toggleRecording()
 
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
-    case RecordMode::Region:
-    case RecordMode::Window:
         m_countdownValue = 3;
         m_titleLabel->setVisible(false);
         m_countdownLabel->setText(QStringLiteral("3"));
         m_countdownLabel->setVisible(true);
         m_statusLabel->setText(QStringLiteral("录制即将开始..."));
         m_countdownTimer->start(1000);
+        break;
+    case RecordMode::Region:
+    case RecordMode::Window:
+        doStartRecording();
         break;
     }
 }
