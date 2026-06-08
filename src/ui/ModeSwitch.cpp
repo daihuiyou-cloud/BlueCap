@@ -5,15 +5,13 @@
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QToolButton>
-#include <QVariant>
 
 namespace {
 
-QToolButton *createModeButton(const QString &text, const QString &mode, bool checked = false)
+QToolButton *createModeButton(const QString &text, bool checked = false)
 {
     auto *button = new QToolButton;
     button->setText(text);
-    button->setProperty("mode", mode);
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
@@ -38,9 +36,9 @@ ModeSwitch::ModeSwitch(QWidget *parent)
     layout->setSpacing(0);
 
     const QList<QToolButton *> buttons = {
-        createModeButton(QStringLiteral("▰  全屏"), QStringLiteral("fullscreen"), true),
-        createModeButton(QStringLiteral("▣  区域"), QStringLiteral("region")),
-        createModeButton(QStringLiteral("▭  窗口"), QStringLiteral("window"))
+        createModeButton(QStringLiteral("▰  全屏"), true),
+        createModeButton(QStringLiteral("▣  区域")),
+        createModeButton(QStringLiteral("▭  窗口"))
     };
 
     for (int i = 0; i < buttons.size(); ++i) {
@@ -50,16 +48,16 @@ ModeSwitch::ModeSwitch(QWidget *parent)
 
     connect(m_group, qOverload<QAbstractButton *>(&QButtonGroup::buttonClicked),
             this, [this](QAbstractButton *button) {
-                emit modeChanged(button->property("mode").toString());
+                emit modeChanged(static_cast<RecordMode>(m_group->id(button)));
             });
 }
 
-QString ModeSwitch::currentMode() const
+RecordMode ModeSwitch::currentMode() const
 {
     if (auto *button = m_group->checkedButton()) {
-        return button->property("mode").toString();
+        return static_cast<RecordMode>(m_group->id(button));
     }
-    return QStringLiteral("fullscreen");
+    return RecordMode::FullScreen;
 }
 
 void ModeSwitch::paintEvent(QPaintEvent *)

@@ -108,13 +108,19 @@ void RecorderController::handleProcessError(QProcess::ProcessError)
 
 QString RecorderController::resolveFfmpegPath() const
 {
-    const QString runtimePath = QCoreApplication::applicationDirPath()
+    const QString bundlePath = QCoreApplication::applicationDirPath()
         + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
-    if (QFileInfo::exists(runtimePath)) {
-        return runtimePath;
+    if (QFileInfo::exists(bundlePath)) {
+        return bundlePath;
     }
 
-    return QString::fromUtf8(BLUECAP_SOURCE_DIR) + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
+    const QString sourcePath = QString::fromUtf8(BLUECAP_SOURCE_DIR)
+        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
+    if (QFileInfo::exists(sourcePath)) {
+        return sourcePath;
+    }
+
+    return QStringLiteral("ffmpeg.exe");
 }
 
 QString RecorderController::createOutputPath() const

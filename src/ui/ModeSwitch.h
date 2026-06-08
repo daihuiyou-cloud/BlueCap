@@ -4,6 +4,8 @@
 
 class QButtonGroup;
 
+enum class RecordMode { FullScreen, Region, Window };
+
 class ModeSwitch : public QWidget
 {
     Q_OBJECT
@@ -11,10 +13,10 @@ class ModeSwitch : public QWidget
 public:
     explicit ModeSwitch(QWidget *parent = nullptr);
 
-    QString currentMode() const;
+    RecordMode currentMode() const;
 
 signals:
-    void modeChanged(const QString &mode);
+    void modeChanged(RecordMode mode);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

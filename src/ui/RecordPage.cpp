@@ -113,7 +113,7 @@ void RecordPage::toggleRecording()
         return;
     }
 
-    if (m_modeSwitch->currentMode() != QStringLiteral("fullscreen")) {
+    if (m_modeSwitch->currentMode() != RecordMode::FullScreen) {
         QMessageBox::information(this, QStringLiteral("BlueCap"),
             QStringLiteral("区域和窗口录制将在下一步接入。当前 MVP 先支持全屏录制。"));
         return;
