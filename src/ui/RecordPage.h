@@ -23,7 +23,8 @@ public:
 signals:
     void recentVideosClicked();
 
-public slots:
+public:
+    void startQuickRecording();
     void toggleRecording();
     void setConfirmStop(bool confirm);
 

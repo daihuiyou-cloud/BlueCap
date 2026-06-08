@@ -122,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_trayIcon = new QSystemTrayIcon(QIcon(normalPx), this);
     m_trayMenu = new QMenu(this);
     QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
+    QAction *quickAction = m_trayMenu->addAction(QStringLiteral("快速全屏录制"));
     QAction *recordAction = m_trayMenu->addAction(QStringLiteral("开始/停止录制"));
     m_trayMenu->addSeparator();
     QAction *quitAction = m_trayMenu->addAction(QStringLiteral("退出"));
@@ -135,6 +136,10 @@ MainWindow::MainWindow(QWidget *parent)
             showNormal();
             activateWindow();
         }
+    });
+    connect(quickAction, &QAction::triggered, this, [this] {
+        hide();
+        m_recordPage->startQuickRecording();
     });
     connect(recordAction, &QAction::triggered, m_recordPage, &RecordPage::toggleRecording);
     connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
@@ -167,7 +172,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_recorder, &RecorderController::recordingChanged, this, [this, makeTrayIcon](bool recording) {
         m_recordingIndicator->setVisible(recording);
         m_trayIcon->setIcon(makeTrayIcon(recording));
-        m_trayMenu->actions()[1]->setText(recording
+        m_trayMenu->actions()[1]->setEnabled(!recording);
+        m_trayMenu->actions()[2]->setText(recording
             ? QStringLiteral("停止录制")
             : QStringLiteral("开始/停止录制"));
     });

@@ -257,8 +257,10 @@ void RecorderController::handleFinished(int exitCode, QProcess::ExitStatus statu
 
     emit recordingChanged(false);
 
-    if (status == QProcess::NormalExit && (exitCode == 0 || m_stopRequested)
-        && QFileInfo::exists(m_currentOutputPath)) {
+    const bool fileExists = QFileInfo::exists(m_currentOutputPath);
+    const bool fileNonEmpty = fileExists && QFileInfo(m_currentOutputPath).size() > 0;
+
+    if (fileNonEmpty) {
         emit videoSaved(m_currentOutputPath);
         return;
     }

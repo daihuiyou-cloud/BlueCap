@@ -193,6 +193,13 @@ void RecordPage::setConfirmStop(bool confirm)
     m_confirmStop = confirm;
 }
 
+void RecordPage::startQuickRecording()
+{
+    if (m_recorder->isRecording()) return;
+    if (m_countdownTimer->isActive()) return;
+    m_recorder->startFullScreenRecording();
+}
+
 void RecordPage::toggleRecording()
 {
     if (m_recorder->isRecording()) {
@@ -290,7 +297,14 @@ void RecordPage::handleRecordingChanged(bool recording)
 void RecordPage::handleVideoSaved(const QString &path)
 {
     m_library->addRecentVideo(path);
-    m_statusLabel->setText(QStringLiteral("已保存：%1").arg(QFileInfo(path).fileName()));
+    QFileInfo fi(path);
+    qint64 size = fi.size();
+    QString sizeStr;
+    if (size < 1024 * 1024)
+        sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
+    else
+        sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
+    m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)").arg(fi.fileName(), sizeStr));
 }
 
 void RecordPage::handleError(const QString &message)
