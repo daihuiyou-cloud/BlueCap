@@ -62,9 +62,9 @@ SettingsPage::SettingsPage(QWidget *parent)
     layout->addRow(QStringLiteral("画质"), m_qualityCombo);
 
     m_themeCombo = new QComboBox(form);
-    m_themeCombo->addItem(QStringLiteral("跟随系统"), 0);
-    m_themeCombo->addItem(QStringLiteral("浅色模式"), 1);
-    m_themeCombo->addItem(QStringLiteral("深色模式"), 2);
+    m_themeCombo->addItem(QStringLiteral("跟随系统"), ThemeSystem);
+    m_themeCombo->addItem(QStringLiteral("浅色模式"), ThemeLight);
+    m_themeCombo->addItem(QStringLiteral("深色模式"), ThemeDark);
     m_themeCombo->setToolTip(QStringLiteral("选择应用的外观主题，可跟随 Windows 系统设置"));
     layout->addRow(QStringLiteral("主题"), m_themeCombo);
 
@@ -148,7 +148,7 @@ void SettingsPage::loadSettings()
     int idx = m_qualityCombo->findData(savedPreset);
     if (idx >= 0) m_qualityCombo->setCurrentIndex(idx);
 
-    int themeIdx = m_themeCombo->findData(s.value(QStringLiteral("settings/theme"), 0).toInt());
+    int themeIdx = m_themeCombo->findData(s.value(QStringLiteral("settings/theme"), ThemeSystem).toInt());
     if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
 
     m_confirmStopCheck->setChecked(s.value(QStringLiteral("settings/confirmStop"), false).toBool());
@@ -186,7 +186,7 @@ void SettingsPage::resetDefaults()
     m_showCursorCheck->setChecked(true);
     m_startTimeoutSpin->setValue(5);
     m_stopTimeoutSpin->setValue(5);
-    int themeIdx = m_themeCombo->findData(0);
+    int themeIdx = m_themeCombo->findData(ThemeSystem);
     if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
 
     applySettings(true);

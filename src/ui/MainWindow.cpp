@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "utils/Theme.h"
 
 #include "RecordPage.h"
 #include "RecordingOverlay.h"
@@ -12,7 +13,6 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QEvent>
-#include <QFile>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -118,19 +118,7 @@ void MainWindow::setupConnections()
                 m_recorder, &RecorderController::setShowCursor);
 
         connect(settingsPage, &SettingsPage::themeChanged, this, [](int preference) {
-            int theme = preference;
-            if (theme == 0) {
-                QSettings reg(QStringLiteral(
-                    "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"),
-                    QSettings::NativeFormat);
-                theme = reg.value(QStringLiteral("AppsUseLightTheme"), 1).toInt() == 0 ? 2 : 1;
-            }
-            const QString path = (theme == 2)
-                ? QStringLiteral(":/bluecap-dark.qss")
-                : QStringLiteral(":/bluecap.qss");
-            QFile file(path);
-            if (file.open(QFile::ReadOnly | QFile::Text))
-                qApp->setStyleSheet(QString::fromUtf8(file.readAll()));
+            theme::apply(preference);
         });
 
         settingsPage->loadSettings();

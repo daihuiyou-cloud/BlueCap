@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/Theme.h"
+
 #include <QWidget>
 
 class QCheckBox;
