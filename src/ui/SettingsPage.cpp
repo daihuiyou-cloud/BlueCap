@@ -18,8 +18,6 @@
 SettingsPage::SettingsPage(QWidget *parent)
     : QWidget(parent)
 {
-    qRegisterMetaTypeStreamOperators<QStringList>("QStringList");
-
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(16, 14, 16, 12);
     root->setSpacing(8);

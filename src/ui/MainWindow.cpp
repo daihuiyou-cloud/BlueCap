@@ -22,7 +22,6 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
-#include <QStyle>
 #include <QSystemTrayIcon>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -388,18 +387,6 @@ QWidget *MainWindow::createTitleBar()
     return m_titleBar;
 }
 
-QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName)
-{
-    auto *button = new QPushButton(this);
-    button->setObjectName(objectName.isEmpty() ? QStringLiteral("titleButton") : objectName);
-    button->setIcon(QIcon(iconPath));
-    button->setIconSize(QSize(20, 20));
-    button->setFixedSize(30, 30);
-    button->setCursor(Qt::PointingHandCursor);
-    button->setToolTip(tooltip);
-    return button;
-}
-
 QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString &tooltip)
 {
     auto *button = new QPushButton(text, this);
@@ -407,6 +394,17 @@ QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString
     button->setFixedSize(30, 30);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
+    return button;
+}
+
+QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName)
+{
+    auto *button = createTitleBarButton(QString(), tooltip);
+    if (!objectName.isEmpty()) {
+        button->setObjectName(objectName);
+    }
+    button->setIcon(QIcon(iconPath));
+    button->setIconSize(QSize(20, 20));
     return button;
 }
 

@@ -13,27 +13,16 @@ find_package(Qt5 REQUIRED COMPONENTS Widgets Svg)
 add_executable(BlueCap WIN32
     src/main.cpp
     src/ui/MainWindow.cpp
-    src/ui/MainWindow.h
     src/ui/Sidebar.cpp
-    src/ui/Sidebar.h
     src/ui/ModeSwitch.cpp
-    src/ui/ModeSwitch.h
     src/ui/RecordButton.cpp
-    src/ui/RecordButton.h
     src/ui/RecordPage.cpp
-    src/ui/RecordPage.h
     src/ui/RegionSelector.cpp
-    src/ui/RegionSelector.h
     src/ui/SettingsPage.cpp
-    src/ui/SettingsPage.h
     src/ui/WindowPicker.cpp
-    src/ui/WindowPicker.h
     src/ui/VideoLibraryPage.cpp
-    src/ui/VideoLibraryPage.h
     src/recorder/RecorderController.cpp
-    src/recorder/RecorderController.h
     src/storage/VideoLibrary.cpp
-    src/storage/VideoLibrary.h
     resources/resources.qrc
 )
 
