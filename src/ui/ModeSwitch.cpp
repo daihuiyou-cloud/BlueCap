@@ -28,6 +28,9 @@ QToolButton *createModeButton(const QString &text, const QString &iconPath, bool
 
 ModeSwitch::ModeSwitch(QWidget *parent)
     : QWidget(parent)
+    , m_pillBorder(214, 222, 238)
+    , m_pillFill(247, 250, 255, 232)
+    , m_dividerColor(218, 224, 237)
 {
     setFixedHeight(52);
     setMinimumWidth(580);
@@ -71,6 +74,20 @@ RecordMode ModeSwitch::currentMode() const
     return RecordMode::FullScreen;
 }
 
+void ModeSwitch::setDarkMode(bool dark)
+{
+    if (dark) {
+        m_pillBorder = QColor(60, 70, 85);
+        m_pillFill = QColor(35, 42, 55, 232);
+        m_dividerColor = QColor(60, 70, 85);
+    } else {
+        m_pillBorder = QColor(214, 222, 238);
+        m_pillFill = QColor(247, 250, 255, 232);
+        m_dividerColor = QColor(218, 224, 237);
+    }
+    update();
+}
+
 void ModeSwitch::setModeEnabled(bool enabled)
 {
     const auto buttons = m_group->buttons();
@@ -85,11 +102,11 @@ void ModeSwitch::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
 
     const QRectF pill = rect().adjusted(0.5, 0.5, -0.5, -0.5);
-    painter.setPen(QColor(214, 222, 238));
-    painter.setBrush(QColor(247, 250, 255, 232));
+    painter.setPen(m_pillBorder);
+    painter.setBrush(m_pillFill);
     painter.drawRoundedRect(pill, 38, 38);
 
-    painter.setPen(QColor(218, 224, 237));
+    painter.setPen(m_dividerColor);
     const int count = m_group->buttons().size();
     if (count > 1) {
         const int step = width() / count;

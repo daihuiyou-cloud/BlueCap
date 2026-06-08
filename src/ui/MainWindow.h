@@ -62,6 +62,7 @@ private:
     QPoint m_dragPosition;
     bool m_dragging = false;
     bool m_maximized = false;
+    bool m_darkMode = false;
     bool m_hotkeyRegistered = false;
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;

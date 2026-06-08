@@ -117,8 +117,11 @@ void MainWindow::setupConnections()
         connect(settingsPage, &SettingsPage::showCursorChanged,
                 m_recorder, &RecorderController::setShowCursor);
 
-        connect(settingsPage, &SettingsPage::themeChanged, this, [](int preference) {
+        connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
             theme::apply(preference);
+            const int resolved = theme::resolve(preference);
+            m_darkMode = (resolved == ThemeDark);
+            m_recordPage->setDarkMode(m_darkMode);
         });
 
         settingsPage->loadSettings();
@@ -212,8 +215,14 @@ void MainWindow::setupTray()
     m_pulseTimer = new QTimer(this);
     connect(m_pulseTimer, &QTimer::timeout, this, [this] {
         m_pulseState = !m_pulseState;
-        QColor bg = m_pulseState ? QColor(224, 82, 94, 56) : QColor(224, 82, 94, 30);
-        QColor border = m_pulseState ? QColor(224, 82, 94, 128) : QColor(224, 82, 94, 76);
+        QColor bg, border;
+        if (m_darkMode) {
+            bg = m_pulseState ? QColor(224, 82, 94, 180) : QColor(224, 82, 94, 90);
+            border = m_pulseState ? QColor(224, 82, 94, 220) : QColor(224, 82, 94, 150);
+        } else {
+            bg = m_pulseState ? QColor(224, 82, 94, 56) : QColor(224, 82, 94, 30);
+            border = m_pulseState ? QColor(224, 82, 94, 128) : QColor(224, 82, 94, 76);
+        }
         m_recordingIndicator->setStyleSheet(QStringLiteral(
             "color: #e0525e; font-size: 13px; font-weight: 800; "
             "padding: 4px 12px; border-radius: 12px; "

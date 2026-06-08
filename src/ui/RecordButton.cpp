@@ -33,6 +33,14 @@ void RecordButton::resizeEvent(QResizeEvent *event)
     QAbstractButton::resizeEvent(event);
 }
 
+void RecordButton::setDarkMode(bool dark)
+{
+    if (m_darkMode == dark) return;
+    m_darkMode = dark;
+    renderCache();
+    update();
+}
+
 void RecordButton::renderCache()
 {
     m_bgCache = QPixmap(size());
@@ -47,17 +55,18 @@ void RecordButton::renderCache()
     const qreal r = d / 2.0;
 
     QRadialGradient shadow(center + QPointF(0, d * 0.1), r * 1.25);
-    shadow.setColorAt(0.2, QColor(36, 100, 220, 60));
+    int shadowAlpha = m_darkMode ? 30 : 60;
+    shadow.setColorAt(0.2, QColor(36, 100, 220, shadowAlpha));
     shadow.setColorAt(1.0, QColor(36, 100, 220, 0));
     p.setPen(Qt::NoPen);
     p.setBrush(shadow);
     p.drawEllipse(center, r * 1.08, r * 1.08);
 
-    p.setBrush(QColor(246, 250, 255));
+    p.setBrush(m_darkMode ? QColor(45, 52, 66) : QColor(246, 250, 255));
     p.drawEllipse(bounds);
 
     const qreal w = d * 0.391;
-    p.setBrush(QColor(255, 255, 255));
+    p.setBrush(m_darkMode ? QColor(35, 42, 55) : QColor(255, 255, 255));
     p.drawEllipse(bounds.adjusted(w, w, -w, -w));
 }
 

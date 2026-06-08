@@ -29,6 +29,7 @@ public:
     void startQuickRecording();
     void toggleRecording();
     void setConfirmStop(bool confirm);
+    void setDarkMode(bool dark);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -68,6 +69,7 @@ private:
     QTimer *m_stopProgressTimer = nullptr;
     int m_countdownValue = 0;
     bool m_confirmStop = false;
+    bool m_darkMode = false;
     bool m_hiddenForRecording = false;
     QString m_lastSavedPath;
     QString m_stopOutputPath;

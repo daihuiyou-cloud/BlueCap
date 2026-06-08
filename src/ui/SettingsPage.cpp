@@ -106,11 +106,8 @@ SettingsPage::SettingsPage(QWidget *parent)
     btnLayout->setSpacing(12);
 
     m_resetBtn = new QPushButton(QStringLiteral("恢复默认"), this);
+    m_resetBtn->setObjectName(QStringLiteral("resetBtn"));
     m_resetBtn->setCursor(Qt::PointingHandCursor);
-    m_resetBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { background: transparent; border: 1px solid rgba(207, 216, 232, 0.95); "
-        "border-radius: 6px; padding: 8px 20px; font-size: 13px; color: #53617a; } "
-        "QPushButton:hover { background: rgba(232, 242, 255, 0.66); }"));
 
     btnLayout->addStretch();
     btnLayout->addWidget(m_resetBtn);

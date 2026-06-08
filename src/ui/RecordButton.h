@@ -12,6 +12,7 @@ public:
 
     QSize sizeHint() const override;
     void setRecording(bool recording);
+    void setDarkMode(bool dark);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -21,5 +22,6 @@ private:
     void renderCache();
 
     bool m_recording = false;
+    bool m_darkMode = false;
     QPixmap m_bgCache;
 };

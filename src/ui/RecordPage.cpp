@@ -96,8 +96,8 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     root->addSpacing(4);
 
     m_stopStatusLabel = new QLabel(QStringLiteral("正在结束录制并写入视频文件..."), this);
+    m_stopStatusLabel->setObjectName(QStringLiteral("stopStatusLabel"));
     m_stopStatusLabel->setAlignment(Qt::AlignCenter);
-    m_stopStatusLabel->setStyleSheet(QStringLiteral("color: #53617a; font-size: 14px; font-weight: 700;"));
     m_stopStatusLabel->setVisible(false);
     root->addWidget(m_stopStatusLabel);
     root->addSpacing(4);
@@ -221,11 +221,17 @@ void RecordPage::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
 
     QRectF panel = rect().adjusted(0.5, 0.5, -0.5, -0.5);
-    painter.setPen(QColor(230, 236, 247));
 
     QLinearGradient fill(panel.topLeft(), panel.bottomRight());
-    fill.setColorAt(0.0, QColor(255, 255, 255, 235));
-    fill.setColorAt(1.0, QColor(242, 247, 255, 224));
+    if (m_darkMode) {
+        painter.setPen(QColor(50, 58, 72));
+        fill.setColorAt(0.0, QColor(35, 42, 55, 240));
+        fill.setColorAt(1.0, QColor(30, 36, 48, 235));
+    } else {
+        painter.setPen(QColor(230, 236, 247));
+        fill.setColorAt(0.0, QColor(255, 255, 255, 235));
+        fill.setColorAt(1.0, QColor(242, 247, 255, 224));
+    }
     painter.setBrush(fill);
     painter.drawRoundedRect(panel, 34, 34);
 }
@@ -233,6 +239,14 @@ void RecordPage::paintEvent(QPaintEvent *)
 void RecordPage::setConfirmStop(bool confirm)
 {
     m_confirmStop = confirm;
+}
+
+void RecordPage::setDarkMode(bool dark)
+{
+    m_darkMode = dark;
+    m_modeSwitch->setDarkMode(dark);
+    m_recordButton->setDarkMode(dark);
+    update();
 }
 
 void RecordPage::startQuickRecording()

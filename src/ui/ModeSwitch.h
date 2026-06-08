@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QColor>
 #include <QWidget>
 
 class QButtonGroup;
@@ -15,6 +16,7 @@ public:
 
     RecordMode currentMode() const;
     void setModeEnabled(bool enabled);
+    void setDarkMode(bool dark);
 
 signals:
     void modeChanged(RecordMode mode);
@@ -24,4 +26,7 @@ protected:
 
 private:
     QButtonGroup *m_group = nullptr;
+    QColor m_pillBorder;
+    QColor m_pillFill;
+    QColor m_dividerColor;
 };
