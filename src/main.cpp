@@ -32,7 +32,6 @@ int main(int argc, char *argv[])
     app.setApplicationName(QStringLiteral("BlueCap"));
     app.setOrganizationName(QStringLiteral("BlueCap"));
     app.setQuitOnLastWindowClosed(false);
-    app.setFont(QFont(QStringLiteral("Microsoft YaHei UI"), 10));
 
     const QString styleSheet = loadStyleSheet();
     if (!styleSheet.isEmpty()) {

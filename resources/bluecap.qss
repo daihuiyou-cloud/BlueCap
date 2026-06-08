@@ -23,16 +23,16 @@ QWidget {
 
 #windowTitle {
     color: #111a2d;
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 800;
 }
 
 #titleButton, #closeButton {
     border: 0;
-    border-radius: 16px;
+    border-radius: 14px;
     background: transparent;
     color: #26334b;
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 400;
 }
 
@@ -47,12 +47,12 @@ QWidget {
 
 #recordingIndicator {
     color: #e0525e;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 800;
-    padding: 6px 16px;
+    padding: 4px 12px;
     background: rgba(224, 82, 94, 0.12);
     border: 1px solid rgba(224, 82, 94, 0.30);
-    border-radius: 14px;
+    border-radius: 12px;
 }
 
 #recordingIndicator[pulseDim="true"] {

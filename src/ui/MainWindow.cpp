@@ -320,17 +320,17 @@ QWidget *MainWindow::createTitleBar()
 {
     auto *titleBar = new QWidget(this);
     titleBar->setObjectName(QStringLiteral("titleBar"));
-    titleBar->setFixedHeight(80);
+    titleBar->setFixedHeight(56);
 
     auto *layout = new QHBoxLayout(titleBar);
-    layout->setContentsMargins(32, 0, 28, 0);
-    layout->setSpacing(14);
+    layout->setContentsMargins(24, 0, 20, 0);
+    layout->setSpacing(10);
 
     auto *logo = new QLabel(titleBar);
     logo->setObjectName(QStringLiteral("appLogo"));
-    logo->setFixedSize(32, 32);
+    logo->setFixedSize(28, 28);
     logo->setAlignment(Qt::AlignCenter);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(32, 32));
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(28, 28));
 
     auto *title = new QLabel(QStringLiteral("屏幕录制"), titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
@@ -354,7 +354,7 @@ QWidget *MainWindow::createTitleBar()
     layout->addStretch();
 
     layout->addWidget(settingsButton);
-    layout->addSpacing(18);
+    layout->addSpacing(10);
     layout->addWidget(minimizeButton);
     layout->addWidget(m_maximizeButton);
     layout->addWidget(closeButton);
@@ -380,8 +380,8 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
     auto *button = new QPushButton(this);
     button->setObjectName(objectName.isEmpty() ? QStringLiteral("titleButton") : objectName);
     button->setIcon(QIcon(iconPath));
-    button->setIconSize(QSize(22, 22));
-    button->setFixedSize(36, 36);
+    button->setIconSize(QSize(20, 20));
+    button->setFixedSize(30, 30);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
     return button;
@@ -391,7 +391,7 @@ QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString
 {
     auto *button = new QPushButton(text, this);
     button->setObjectName(QStringLiteral("titleButton"));
-    button->setFixedSize(36, 36);
+    button->setFixedSize(30, 30);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
     return button;
@@ -423,6 +423,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 
 bool MainWindow::inTitleDragArea(const QPoint &position) const
 {
-    return position.y() >= 12 && position.y() <= 90
+    return position.y() >= 12 && position.y() <= 68
         && position.x() > 12 && position.x() < width() - 200;
 }
