@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QShortcut>
 #include <QVBoxLayout>
 
 WindowPicker::WindowPicker(QWidget *parent)
@@ -35,23 +36,28 @@ WindowPicker::WindowPicker(QWidget *parent)
 
     m_windows = RecorderController::enumerateWindows();
     for (const auto &w : m_windows) {
-        m_list->addItem(w);
+        auto *item = new QListWidgetItem(w, m_list);
+        item->setToolTip(w);
     }
 
-    if (m_list->count() > 0)
-        m_list->item(0)->setSelected(true);
-
     m_filterEdit->setFocus();
+    if (m_list->count() > 0) {
+        m_list->setCurrentRow(0);
+    }
+
+    auto *filterShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F), this);
+    connect(filterShortcut, &QShortcut::activated, m_filterEdit, qOverload<>(&QWidget::setFocus));
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
         m_list->clear();
         for (const auto &w : m_windows) {
             if (text.isEmpty() || w.contains(text, Qt::CaseInsensitive)) {
-                m_list->addItem(w);
+                auto *item = new QListWidgetItem(w, m_list);
+                item->setToolTip(w);
             }
         }
         if (m_list->count() > 0)
-            m_list->item(0)->setSelected(true);
+            m_list->setCurrentRow(0);
     });
 
     connect(m_list, &QListWidget::itemDoubleClicked, this, &QDialog::accept);

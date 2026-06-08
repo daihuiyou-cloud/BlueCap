@@ -44,9 +44,16 @@ ModeSwitch::ModeSwitch(QWidget *parent)
         createModeButton(QStringLiteral("区域"), QStringLiteral(":/icons/mode-region.svg")),
         createModeButton(QStringLiteral("窗口"), QStringLiteral(":/icons/mode-window.svg"))
     };
+    const QStringList tooltips = {
+        QStringLiteral("全屏：录制整个屏幕"),
+        QStringLiteral("区域：拖动选择特定区域进行录制"),
+        QStringLiteral("窗口：选择特定窗口进行录制")
+    };
 
     for (int i = 0; i < buttons.size(); ++i) {
         m_group->addButton(buttons[i], i);
+        buttons[i]->setToolTip(tooltips[i]);
+        buttons[i]->setAccessibleName(tooltips[i]);
         layout->addWidget(buttons[i]);
     }
 

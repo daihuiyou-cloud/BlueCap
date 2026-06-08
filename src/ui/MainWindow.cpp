@@ -10,7 +10,9 @@
 #include <QAction>
 #include <QApplication>
 #include <QCloseEvent>
+#include <QEvent>
 #include <QHBoxLayout>
+#include <QResizeEvent>
 #include <QIcon>
 #include <QLabel>
 #include <QMenu>
@@ -45,12 +47,15 @@ MainWindow::MainWindow(QWidget *parent)
         move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
     }
 
+    m_normalWidth = width();
+    m_normalHeight = height();
+
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
 
     QSettings saved;
     m_recorder->setFrameRate(saved.value(QStringLiteral("settings/frameRate"), 30).toInt());
-    m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("ultrafast")).toString());
+    m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("fast")).toString());
     m_recorder->setSavePath(saved.value(QStringLiteral("settings/savePath"), QString()).toString());
     m_recorder->setShowCursor(saved.value(QStringLiteral("settings/showCursor"), true).toBool());
 
@@ -238,6 +243,20 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
     QWidget::mousePressEvent(event);
 }
 
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
+        if (m_maximized) {
+            showNormal();
+        } else {
+            showMaximized();
+        }
+        event->accept();
+        return;
+    }
+    QWidget::mouseDoubleClickEvent(event);
+}
+
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_dragging && (event->buttons() & Qt::LeftButton)) {
@@ -305,8 +324,13 @@ QWidget *MainWindow::createTitleBar()
     title->setObjectName(QStringLiteral("windowTitle"));
 
     auto *settingsButton = createWindowButton(QStringLiteral(":/icons/title-settings.svg"), QStringLiteral("设置"));
+    settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
     auto *minimizeButton = createWindowButton(QStringLiteral(":/icons/title-minimize.svg"), QStringLiteral("最小化"));
+    minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
+    m_maximizeButton = createTitleBarButton(QStringLiteral("□"), QStringLiteral("最大化"));
+    m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
     auto *closeButton = createWindowButton(QStringLiteral(":/icons/title-close.svg"), QStringLiteral("关闭"), QStringLiteral("closeButton"));
+    closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
 
     layout->addWidget(logo);
     layout->addWidget(title);
@@ -320,12 +344,20 @@ QWidget *MainWindow::createTitleBar()
     layout->addWidget(settingsButton);
     layout->addSpacing(18);
     layout->addWidget(minimizeButton);
+    layout->addWidget(m_maximizeButton);
     layout->addWidget(closeButton);
 
     connect(settingsButton, &QPushButton::clicked, this, [this] {
         m_stack->setCurrentIndex(2);
     });
     connect(minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(m_maximizeButton, &QPushButton::clicked, this, [this] {
+        if (m_maximized) {
+            showNormal();
+        } else {
+            showMaximized();
+        }
+    });
     connect(closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
     return titleBar;
@@ -343,8 +375,42 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
     return button;
 }
 
+QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString &tooltip)
+{
+    auto *button = new QPushButton(text, this);
+    button->setObjectName(QStringLiteral("titleButton"));
+    button->setFixedSize(36, 36);
+    button->setCursor(Qt::PointingHandCursor);
+    button->setToolTip(tooltip);
+    return button;
+}
+
+void MainWindow::updateMaximizeButton()
+{
+    m_maximized = isMaximized();
+    m_maximizeButton->setText(m_maximized ? QStringLiteral("❐") : QStringLiteral("□"));
+    m_maximizeButton->setToolTip(m_maximized ? QStringLiteral("还原") : QStringLiteral("最大化"));
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        updateMaximizeButton();
+    }
+    QWidget::changeEvent(event);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    if (!isMaximized() && !isMinimized()) {
+        m_normalWidth = event->size().width();
+        m_normalHeight = event->size().height();
+    }
+    QWidget::resizeEvent(event);
+}
+
 bool MainWindow::inTitleDragArea(const QPoint &position) const
 {
     return position.y() >= 12 && position.y() <= 90
-        && position.x() > 12 && position.x() < width() - 160;
+        && position.x() > 12 && position.x() < width() - 200;
 }

@@ -6,6 +6,7 @@ class QCheckBox;
 class QComboBox;
 class QLabel;
 class QLineEdit;
+class QPushButton;
 class QSpinBox;
 class QTimer;
 
@@ -28,8 +29,11 @@ signals:
 private slots:
     void browsePath();
     void applySettings();
+    void resetDefaults();
 
 private:
+    void loadSettings();
+
     QLineEdit *m_pathEdit = nullptr;
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;
@@ -39,4 +43,6 @@ private:
     QSpinBox *m_stopTimeoutSpin = nullptr;
     QLabel *m_saveFeedback = nullptr;
     QTimer *m_feedbackTimer = nullptr;
+    QPushButton *m_applyBtn = nullptr;
+    QPushButton *m_resetBtn = nullptr;
 };

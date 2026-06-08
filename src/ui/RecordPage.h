@@ -51,6 +51,7 @@ private:
     QLabel *m_titleLabel = nullptr;
     QLabel *m_countdownLabel = nullptr;
     QLabel *m_hotkeyLabel = nullptr;
+    QLabel *m_stopStatusLabel = nullptr;
     QLabel *m_statusLabel = nullptr;
     QProgressBar *m_stopProgress = nullptr;
     QLabel *m_recentDetailLabel = nullptr;

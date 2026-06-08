@@ -89,19 +89,28 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     root->addWidget(m_hotkeyLabel);
     root->addSpacing(6);
     root->addWidget(m_statusLabel);
-    root->addSpacing(8);
+    root->addSpacing(4);
+
+    m_stopStatusLabel = new QLabel(QStringLiteral("正在结束录制并写入视频文件..."), this);
+    m_stopStatusLabel->setAlignment(Qt::AlignCenter);
+    m_stopStatusLabel->setStyleSheet(QStringLiteral("color: #53617a; font-size: 14px; font-weight: 700;"));
+    m_stopStatusLabel->setVisible(false);
+    root->addWidget(m_stopStatusLabel);
+    root->addSpacing(4);
 
     m_stopProgress = new QProgressBar(this);
     m_stopProgress->setRange(0, 0);
-    m_stopProgress->setFixedWidth(240);
-    m_stopProgress->setFixedHeight(4);
+    m_stopProgress->setFixedWidth(320);
+    m_stopProgress->setFixedHeight(6);
     m_stopProgress->setTextVisible(false);
     m_stopProgress->setVisible(false);
     root->addWidget(m_stopProgress, 0, Qt::AlignCenter);
 
     auto *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     connect(escapeShortcut, &QShortcut::activated, this, [this] {
-        if (m_countdownTimer->isActive()) {
+        if (m_recorder->isRecording()) {
+            toggleRecording();
+        } else if (m_countdownTimer->isActive()) {
             m_countdownTimer->stop();
             m_countdownLabel->setVisible(false);
             m_titleLabel->setVisible(true);
@@ -122,6 +131,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_bottomNavSection = new QFrame(bottomBar);
     m_bottomNavSection->setObjectName(QStringLiteral("bottomNavSection"));
     m_bottomNavSection->setCursor(Qt::PointingHandCursor);
+    m_bottomNavSection->setToolTip(QStringLiteral("点击查看全部录制视频"));
     auto *navLayout = new QHBoxLayout(m_bottomNavSection);
     navLayout->setContentsMargins(28, 0, 18, 0);
     navLayout->setSpacing(14);
@@ -235,7 +245,8 @@ void RecordPage::toggleRecording()
         }
         m_recordingTimer->stop();
         m_lastSavedPath.clear();
-        m_statusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
+        m_statusLabel->setVisible(false);
+        m_stopStatusLabel->setVisible(true);
         m_stopProgress->setVisible(true);
         m_recorder->stopRecording();
         return;
@@ -268,6 +279,7 @@ void RecordPage::toggleRecording()
 void RecordPage::doStartRecording()
 {
     m_recordButton->setEnabled(true);
+    m_statusLabel->setText(QStringLiteral("正在启动录制程序..."));
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
         m_recorder->startFullScreenRecording();
@@ -319,7 +331,9 @@ void RecordPage::handleRecordingChanged(bool recording)
         m_statusLabel->setText(QStringLiteral("正在录制，点击按钮停止"));
     } else {
         m_recordingTimer->stop();
+        m_stopStatusLabel->setVisible(false);
         m_stopProgress->setVisible(false);
+        m_statusLabel->setVisible(true);
         m_titleLabel->setText(QStringLiteral("开始录制"));
         updateStatusForMode(m_modeSwitch->currentMode());
     }
@@ -346,6 +360,7 @@ void RecordPage::handleError(const QString &message)
     m_recordButton->setRecording(false);
     m_recordButton->setEnabled(true);
     m_recordingTimer->stop();
+    m_stopStatusLabel->setVisible(false);
     m_stopProgress->setVisible(false);
     m_countdownTimer->stop();
     m_countdownLabel->setVisible(false);
@@ -390,10 +405,16 @@ void RecordPage::updateElapsedTime()
     int h = secs / 3600;
     int m = (secs % 3600) / 60;
     int s = secs % 60;
-    m_statusLabel->setText(QStringLiteral("正在录制  %1:%2:%3")
-        .arg(h, 2, 10, QChar('0'))
-        .arg(m, 2, 10, QChar('0'))
-        .arg(s, 2, 10, QChar('0')));
+    if (h > 0) {
+        m_statusLabel->setText(QStringLiteral("正在录制 %1:%2:%3")
+            .arg(h, 2, 10, QChar('0'))
+            .arg(m, 2, 10, QChar('0'))
+            .arg(s, 2, 10, QChar('0')));
+    } else {
+        m_statusLabel->setText(QStringLiteral("正在录制 %1:%2")
+            .arg(m, 2, 10, QChar('0'))
+            .arg(s, 2, 10, QChar('0')));
+    }
 }
 
 bool RecordPage::eventFilter(QObject *obj, QEvent *event)

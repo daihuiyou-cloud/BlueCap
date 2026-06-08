@@ -7,6 +7,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScreen>
+#include <QTimer>
 
 RegionSelector::RegionSelector(QWidget *parent)
     : QWidget(parent)
@@ -47,8 +48,12 @@ void RegionSelector::mouseReleaseEvent(QMouseEvent *event)
         QRect region = QRect(m_origin, event->pos()).normalized();
         if (region.width() > 10 && region.height() > 10) {
             emit regionSelected(region);
+            close();
+        } else {
+            m_currentPos = event->pos();
+            update();
+            QTimer::singleShot(1200, this, &QWidget::close);
         }
-        close();
     }
 }
 
@@ -90,23 +95,39 @@ void RegionSelector::paintEvent(QPaintEvent *)
     painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
     painter.drawText(x, y, hint);
 
-    if (m_selecting) {
+    if (m_selecting || (!m_selecting && !m_currentPos.isNull())) {
         QRect normalized = QRect(m_origin, m_currentPos).normalized();
-        QString sizeText = QStringLiteral("%1 × %2")
-            .arg(normalized.width()).arg(normalized.height());
+        int w = normalized.width();
+        int h = normalized.height();
+        if (w < 10 || h < 10) {
+            QString hint = QStringLiteral("选择的区域太小（至少 10×10 像素）");
+            QFont hintFont = painter.font();
+            hintFont.setPointSize(14);
+            hintFont.setBold(true);
+            painter.setFont(hintFont);
+            QFontMetrics fm(hintFont);
+            int tw = fm.horizontalAdvance(hint);
+            int sx = (width() - tw) / 2;
+            int sy = 60;
+            painter.fillRect(sx - 24, sy - 40, tw + 48, 52, QColor(180, 40, 40, 200));
+            painter.setPen(Qt::white);
+            painter.drawText(sx, sy, hint);
+        } else {
+            QString sizeText = QStringLiteral("%1 × %2").arg(w).arg(h);
 
-        QFont sizeFont = painter.font();
-        sizeFont.setPointSize(18);
-        sizeFont.setBold(true);
-        painter.setFont(sizeFont);
+            QFont sizeFont = painter.font();
+            sizeFont.setPointSize(18);
+            sizeFont.setBold(true);
+            painter.setFont(sizeFont);
 
-        QFontMetrics sizeFm(sizeFont);
-        int sw = sizeFm.horizontalAdvance(sizeText);
-        int sx = (width() - sw) / 2;
-        int sy = 60;
+            QFontMetrics sizeFm(sizeFont);
+            int sw = sizeFm.horizontalAdvance(sizeText);
+            int sx = (width() - sw) / 2;
+            int sy = 60;
 
-        painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
-        painter.setPen(Qt::white);
-        painter.drawText(sx, sy, sizeText);
+            painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
+            painter.setPen(Qt::white);
+            painter.drawText(sx, sy, sizeText);
+        }
     }
 }

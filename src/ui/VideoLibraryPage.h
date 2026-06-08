@@ -5,7 +5,9 @@
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QPushButton;
 class QStackedWidget;
+class QTimer;
 class VideoLibrary;
 
 class VideoLibraryPage : public QWidget
@@ -24,6 +26,7 @@ private slots:
 
 private:
     void applyFilter();
+    void showToast(const QString &message);
 
     VideoLibrary *m_library = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -31,4 +34,7 @@ private:
     QWidget *m_emptyWidget = nullptr;
     QLineEdit *m_filterEdit = nullptr;
     QStringList m_allVideos;
+    QWidget *m_toastWidget = nullptr;
+    QLabel *m_toastLabel = nullptr;
+    QTimer *m_toastTimer = nullptr;
 };

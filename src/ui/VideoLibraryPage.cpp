@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QFileIconProvider>
 #include <QFileInfo>
+#include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
@@ -14,8 +15,29 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
+
+#include <windows.h>
+#include <shellapi.h>
+
+namespace {
+
+bool moveToTrash(const QString &filePath)
+{
+    const QString nullPath = filePath + QChar('\0');
+    std::wstring wPath = nullPath.toStdWString();
+
+    SHFILEOPSTRUCTW fos = {};
+    fos.wFunc = FO_DELETE;
+    fos.pFrom = wPath.c_str();
+    fos.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
+
+    return SHFileOperationW(&fos) == 0;
+}
+
+}
 
 VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     : QWidget(parent)
@@ -62,6 +84,30 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 
     root->addWidget(m_stack, 1);
 
+    m_toastWidget = new QWidget(this);
+    m_toastWidget->setVisible(false);
+    m_toastWidget->setStyleSheet(QStringLiteral(
+        "background: #1a2638; border-radius: 8px; padding: 0px;"));
+    auto *toastLayout = new QHBoxLayout(m_toastWidget);
+    toastLayout->setContentsMargins(16, 10, 16, 10);
+    m_toastLabel = new QLabel(m_toastWidget);
+    m_toastLabel->setStyleSheet(QStringLiteral(
+        "color: #ffffff; font-size: 13px; font-weight: 600; background: transparent;"));
+    auto *toastUndoBtn = new QPushButton(QStringLiteral("撤销"), m_toastWidget);
+    toastUndoBtn->setStyleSheet(QStringLiteral(
+        "QPushButton { color: #78bdff; font-size: 13px; font-weight: 700; "
+        "background: transparent; border: 1px solid #78bdff; border-radius: 4px; "
+        "padding: 4px 12px; } "
+        "QPushButton:hover { background: rgba(120, 189, 255, 0.15); }"));
+    toastUndoBtn->setCursor(Qt::PointingHandCursor);
+    toastLayout->addWidget(m_toastLabel, 1);
+    toastLayout->addWidget(toastUndoBtn);
+    root->addWidget(m_toastWidget);
+
+    m_toastTimer = new QTimer(this);
+    m_toastTimer->setSingleShot(true);
+    connect(m_toastTimer, &QTimer::timeout, m_toastWidget, &QWidget::hide);
+
     connect(m_filterEdit, &QLineEdit::textChanged, this, &VideoLibraryPage::applyFilter);
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
@@ -73,6 +119,8 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 void VideoLibraryPage::refreshList(const QStringList &videos)
 {
     m_allVideos = videos;
+    m_toastWidget->setVisible(false);
+    m_toastTimer->stop();
     applyFilter();
 }
 
@@ -111,7 +159,7 @@ void VideoLibraryPage::applyFilter()
         auto *item = new QListWidgetItem(iconProvider.icon(fi), text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
-        item->setSizeHint(QSize(0, 48));
+        item->setSizeHint(QSize(0, 56));
     }
 }
 
@@ -133,11 +181,13 @@ void VideoLibraryPage::deleteSelected()
     QFileInfo fi(path);
 
     auto result = QMessageBox::question(this, QStringLiteral("删除确认"),
-        QStringLiteral("确定要删除「%1」吗？").arg(fi.fileName()),
+        QStringLiteral("确定要删除「%1」吗？\n文件将被移至回收站。").arg(fi.fileName()),
         QMessageBox::Yes | QMessageBox::No);
 
     if (result == QMessageBox::Yes) {
-        QFile::remove(path);
+        if (!moveToTrash(path)) {
+            QFile::remove(path);
+        }
 
         QStringList videos = m_library->recentVideos();
         videos.removeAll(path);
@@ -148,9 +198,17 @@ void VideoLibraryPage::deleteSelected()
                 ++i;
             }
         }
-        // Re-add through library API
         m_library->clearAndReplace(videos);
+
+        showToast(QStringLiteral("已删除「%1」，可在回收站中恢复").arg(fi.fileName()));
     }
+}
+
+void VideoLibraryPage::showToast(const QString &message)
+{
+    m_toastLabel->setText(message);
+    m_toastWidget->setVisible(true);
+    m_toastTimer->start(5000);
 }
 
 void VideoLibraryPage::renameSelected()
@@ -197,6 +255,8 @@ void VideoLibraryPage::renameSelected()
         videos[idx] = newPath;
         m_library->clearAndReplace(videos);
     }
+
+    showToast(QStringLiteral("已重命名为「%1」").arg(newName));
 }
 
 void VideoLibraryPage::showContextMenu(const QPoint &pos)

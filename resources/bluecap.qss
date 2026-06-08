@@ -114,14 +114,14 @@ QWidget {
 }
 
 #recordHotkey {
-    color: #616d85;
+    color: #475673;
     font-size: 17px;
     font-weight: 600;
 }
 
 #recordStatus {
-    color: #7a8599;
-    font-size: 12px;
+    color: #5a6a80;
+    font-size: 13px;
 }
 
 #bottomBar {
@@ -180,7 +180,7 @@ QListWidget {
     border: 1px solid rgba(207, 216, 232, 0.95);
     border-radius: 8px;
     background: rgba(255, 255, 255, 0.5);
-    font-size: 12px;
+    font-size: 13px;
     color: #1f2940;
     padding: 3px;
 }
@@ -200,29 +200,33 @@ QListWidget::item:hover {
 }
 
 QFormLayout QLabel {
-    color: #53617a;
-    font-size: 12px;
+    color: #3d5068;
+    font-size: 13px;
 }
 
 QLineEdit, QSpinBox, QComboBox {
     border: 1px solid rgba(207, 216, 232, 0.95);
     border-radius: 6px;
-    padding: 4px 6px;
-    font-size: 12px;
+    padding: 5px 8px;
+    font-size: 13px;
     background: rgba(255, 255, 255, 0.6);
     color: #1f2940;
 }
 
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border-color: #0967f2;
+}
+
 QProgressBar {
-    border: 0;
-    background: rgba(207, 216, 232, 0.5);
-    border-radius: 2px;
+    border: 1px solid rgba(207, 216, 232, 0.6);
+    background: rgba(207, 216, 232, 0.3);
+    border-radius: 3px;
 }
 
 QProgressBar::chunk {
     background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
         stop:0 #78bdff, stop:0.52 #136ff4, stop:1 #075ce0);
-    border-radius: 2px;
+    border-radius: 3px;
 }
 
 #saveFeedback {

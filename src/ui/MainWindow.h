@@ -8,6 +8,7 @@ class QMenu;
 class QPoint;
 class QPushButton;
 class QStackedWidget;
+class QTimer;
 class QSystemTrayIcon;
 class RecordPage;
 class RecorderController;
@@ -27,13 +28,18 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
+    void changeEvent(QEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
     QWidget *createTitleBar();
     QPushButton *createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName = {});
+    QPushButton *createTitleBarButton(const QString &text, const QString &tooltip);
+    void updateMaximizeButton();
     bool inTitleDragArea(const QPoint &position) const;
 
     Sidebar *m_sidebar = nullptr;
@@ -48,5 +54,9 @@ private:
     QMenu *m_trayMenu = nullptr;
     QPoint m_dragPosition;
     bool m_dragging = false;
+    bool m_maximized = false;
     bool m_hotkeyRegistered = false;
+    QPushButton *m_maximizeButton = nullptr;
+    int m_normalWidth = 960;
+    int m_normalHeight = 600;
 };

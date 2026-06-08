@@ -37,13 +37,20 @@ Sidebar::Sidebar(QWidget *parent)
     layout->setSpacing(20);
 
     const QList<QPushButton *> buttons = {
-        createNavButton(QStringLiteral("录制(&R)"), QStringLiteral(":/icons/nav-record.svg"), true),
-        createNavButton(QStringLiteral("视频库(&L)"), QStringLiteral(":/icons/nav-library.svg")),
-        createNavButton(QStringLiteral("设置(&S)"), QStringLiteral(":/icons/nav-settings.svg"))
+        createNavButton(QStringLiteral("录制"), QStringLiteral(":/icons/nav-record.svg"), true),
+        createNavButton(QStringLiteral("视频库"), QStringLiteral(":/icons/nav-library.svg")),
+        createNavButton(QStringLiteral("设置"), QStringLiteral(":/icons/nav-settings.svg"))
+    };
+    const QStringList tooltips = {
+        QStringLiteral("录制（Ctrl+Shift+R）"),
+        QStringLiteral("视频库"),
+        QStringLiteral("设置")
     };
 
     for (int i = 0; i < buttons.size(); ++i) {
         m_group->addButton(buttons[i], i);
+        buttons[i]->setToolTip(tooltips[i]);
+        buttons[i]->setAccessibleName(tooltips[i]);
         layout->addWidget(buttons[i]);
     }
     layout->addStretch();
