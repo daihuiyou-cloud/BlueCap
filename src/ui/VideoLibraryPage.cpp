@@ -91,13 +91,11 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 
     m_toastWidget = new QWidget(this);
     m_toastWidget->setVisible(false);
-    m_toastWidget->setStyleSheet(QStringLiteral(
-        "background: #1a2638; border-radius: 8px; padding: 0px;"));
+    m_toastWidget->setObjectName(QStringLiteral("toastWidget"));
     auto *toastLayout = new QHBoxLayout(m_toastWidget);
     toastLayout->setContentsMargins(16, 10, 16, 10);
     m_toastLabel = new QLabel(m_toastWidget);
-    m_toastLabel->setStyleSheet(QStringLiteral(
-        "color: #ffffff; font-size: 13px; font-weight: 600; background: transparent;"));
+    m_toastLabel->setObjectName(QStringLiteral("toastLabel"));
     toastLayout->addWidget(m_toastLabel, 1);
     root->addWidget(m_toastWidget);
 
@@ -159,9 +157,11 @@ void VideoLibraryPage::applyFilter()
 
         // Use placeholder icon first, load thumbnails asynchronously
         QColor placeholderNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x7a, 0x85, 0x99);
+        QColor placeholderActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
+        QColor placeholderDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
         auto *item = new QListWidgetItem(
             icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
-                placeholderNormal, QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)),
+                placeholderNormal, placeholderActive, placeholderDisabled),
             text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);

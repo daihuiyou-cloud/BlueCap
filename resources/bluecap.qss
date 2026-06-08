@@ -206,6 +206,10 @@ QListWidget::item:hover {
     background: rgba(232, 242, 255, 0.66);
 }
 
+QListWidget::item:alternate {
+    background: rgba(235, 241, 250, 0.5);
+}
+
 QFormLayout QLabel {
     color: #3d5068;
     font-size: 13px;
@@ -496,5 +500,18 @@ QSpinBox::up-button:hover, QSpinBox::down-button:hover {
 
 QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {
     background: rgba(222, 237, 255, 0.86);
+}
+
+#toastWidget {
+    background: #1a2638;
+    border-radius: 8px;
+    padding: 0px;
+}
+
+#toastLabel {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
 }
 
