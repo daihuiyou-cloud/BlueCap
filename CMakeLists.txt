@@ -37,7 +37,7 @@ target_compile_definitions(BlueCap PRIVATE
 )
 
 if(MSVC)
-    target_compile_options(BlueCap PRIVATE /utf-8)
+    target_compile_options(BlueCap PRIVATE /utf-8 /W4)
     target_compile_options(BlueCap PRIVATE
         $<$<CONFIG:Release>:/O2 /arch:AVX2 /GL>
     )

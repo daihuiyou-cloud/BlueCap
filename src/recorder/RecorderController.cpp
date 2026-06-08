@@ -87,7 +87,7 @@ QString RecorderController::currentSavePath() const
 
 void RecorderController::setFrameRate(int fps)
 {
-    m_frameRate = fps;
+    m_frameRate = qBound(1, fps, 60);
 }
 
 void RecorderController::setPreset(const QString &preset)
@@ -219,7 +219,7 @@ void RecorderController::handleStarted()
     emit recordingChanged(true);
 }
 
-void RecorderController::handleFinished(int exitCode, QProcess::ExitStatus status)
+void RecorderController::handleFinished(int, QProcess::ExitStatus)
 {
     m_startTimer->stop();
     m_stopTimer->stop();

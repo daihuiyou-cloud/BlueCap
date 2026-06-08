@@ -160,9 +160,9 @@ void VideoLibraryPage::applyFilter()
             + QStringLiteral("  |  ") + sizeStr;
 
         QPixmap thumb = getVideoThumbnail(path);
-        QIcon icon;
-        if (!thumb.isNull())
-            icon = QIcon(thumb);
+        QIcon icon = thumb.isNull()
+            ? QIcon(QStringLiteral(":/icons/nav-record.svg"))
+            : QIcon(thumb);
         auto *item = new QListWidgetItem(icon, text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);

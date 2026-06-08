@@ -105,18 +105,18 @@ void RegionSelector::paintEvent(QPaintEvent *)
         int w = normalized.width();
         int h = normalized.height();
         if (w < 10 || h < 10) {
-            QString hint = QStringLiteral("选择的区域太小（至少 10×10 像素）");
+            QString tooSmallHint = QStringLiteral("选择的区域太小（至少 10×10 像素）");
             QFont hintFont = painter.font();
             hintFont.setPointSize(14);
             hintFont.setBold(true);
             painter.setFont(hintFont);
-            QFontMetrics fm(hintFont);
-            int tw = fm.horizontalAdvance(hint);
+            QFontMetrics hintFm(hintFont);
+            int tw = hintFm.horizontalAdvance(tooSmallHint);
             int sx = (width() - tw) / 2;
             int sy = 60;
             painter.fillRect(sx - 24, sy - 40, tw + 48, 52, QColor(180, 40, 40, 200));
             painter.setPen(Qt::white);
-            painter.drawText(sx, sy, hint);
+            painter.drawText(sx, sy, tooSmallHint);
         } else {
             QString sizeText = QStringLiteral("%1 × %2").arg(w).arg(h);
 
