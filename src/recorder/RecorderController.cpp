@@ -8,6 +8,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QMap>
+#include <QPointer>
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
@@ -29,6 +30,25 @@ QString friendlyError(const QString &raw)
     if (raw.contains(QStringLiteral("Disk full")) || raw.contains(QStringLiteral("No space left")))
         return QStringLiteral("磁盘空间不足，请释放空间后重试。");
     return QStringLiteral("录制出现异常：%1\n\n请尝试重启应用。如果问题持续，请检查日志。").arg(raw);
+}
+
+QString sanitizeWindowTitle(const QString &title)
+{
+    QString sanitized = title;
+    sanitized.remove(QChar('\n'));
+    sanitized.remove(QChar('\r'));
+    sanitized.remove(QChar('"'));
+    sanitized.remove(QChar('\''));
+    sanitized.remove(QChar('\\'));
+    sanitized.remove(QChar(';'));
+    sanitized.remove(QChar('|'));
+    sanitized.remove(QChar('&'));
+    sanitized.remove(QChar('$'));
+    sanitized.remove(QChar('`'));
+    sanitized.remove(QChar('%'));
+    if (sanitized.length() > 1024)
+        sanitized = sanitized.left(1024);
+    return sanitized;
 }
 
 QString processErrorToString(QProcess::ProcessError error)
@@ -59,7 +79,7 @@ RecorderController::RecorderController(QObject *parent)
     connect(m_process, &QProcess::errorOccurred,
             this, &RecorderController::handleProcessError);
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
-        m_process->readAllStandardError();
+        m_stderrBuffer.append(m_process->readAllStandardError());
     });
 
     m_startTimer = new QTimer(this);
@@ -166,6 +186,10 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
     }
 
     m_currentOutputPath = createOutputPath();
+    if (m_currentOutputPath.isEmpty()) {
+        emit errorOccurred(QStringLiteral("无法创建保存目录，请检查权限或磁盘状态。"));
+        return;
+    }
     m_stopRequested = false;
     m_forceKilled = false;
 
@@ -212,7 +236,7 @@ void RecorderController::startRegionRecording(const QRect &region)
 
 void RecorderController::startWindowRecording(const QString &windowTitle)
 {
-    startCapture(QStringLiteral("title=%1").arg(windowTitle));
+    startCapture(QStringLiteral("title=%1").arg(sanitizeWindowTitle(windowTitle)));
 }
 
 void RecorderController::start(const QStringList &args)
@@ -227,7 +251,10 @@ void RecorderController::stopRecording()
     if (!isRecording()) return;
 
     m_stopRequested = true;
-    m_process->write("q\n");
+    if (m_process->write("q\n") == -1) {
+        m_process->kill();
+        return;
+    }
     m_stopTimer->start(m_stopTimeoutMs);
 }
 
@@ -244,6 +271,12 @@ void RecorderController::handleFinished(int, QProcess::ExitStatus)
 
     emit recordingChanged(false);
 
+    // Defer file check by 200ms to allow OS to release file handles
+    QTimer::singleShot(200, this, &RecorderController::handleFinishedCheck);
+}
+
+void RecorderController::handleFinishedCheck()
+{
     const bool fileExists = QFileInfo::exists(m_currentOutputPath);
     const bool fileNonEmpty = fileExists && QFileInfo(m_currentOutputPath).size() > 0;
 
@@ -260,7 +293,8 @@ void RecorderController::handleFinished(int, QProcess::ExitStatus)
         return;
     }
 
-    const QString ffmpegOutput = QString::fromLocal8Bit(m_process->readAll()).trimmed();
+    const QString ffmpegOutput = QString::fromLocal8Bit(m_stderrBuffer).trimmed();
+    m_stderrBuffer.clear();
     emit errorOccurred(ffmpegOutput.isEmpty()
         ? QStringLiteral("录制意外中断，请重试。")
         : friendlyError(ffmpegOutput));
@@ -286,12 +320,15 @@ void RecorderController::handleStopTimeout()
     m_forceKilled = true;
     m_process->terminate();
     // Safety net: force-report failure after kill attempt
-    QTimer::singleShot(2000, this, [this] {
+    QPointer<RecorderController> guard(this);
+    QTimer::singleShot(2000, this, [this, guard] {
+        if (!guard) return;
         if (m_process->state() != QProcess::NotRunning) {
             m_process->kill();
         }
         // If the process is still alive after kill, force-report (handleFinished won't fire)
-        QTimer::singleShot(500, this, [this] {
+        QTimer::singleShot(500, this, [this, guard] {
+            if (!guard) return;
             if (m_process->state() != QProcess::NotRunning) {
                 emit recordingChanged(false);
                 emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
@@ -337,7 +374,9 @@ QString RecorderController::createOutputPath() const
 
     QDir dir(baseDir);
     if (!dir.exists()) {
-        dir.mkpath(QStringLiteral("."));
+        if (!dir.mkpath(QStringLiteral("."))) {
+            return {};
+        }
     }
 
     const QString fileName = QStringLiteral("BlueCap_%1.mp4")

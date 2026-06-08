@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QObject>
 #include <QPair>
+#include <QByteArray>
 #include <QProcess>
 #include <QRect>
 #include <QString>
@@ -57,6 +58,7 @@ private slots:
     void handleProcessError(QProcess::ProcessError error);
     void handleStartTimeout();
     void handleStopTimeout();
+    void handleFinishedCheck();
 
 private:
     QString resolveFfmpegPath();
@@ -77,4 +79,5 @@ private:
     QString m_savePath;
     QString m_ffmpegPath;
     bool m_forceKilled = false;
+    QByteArray m_stderrBuffer;
 };

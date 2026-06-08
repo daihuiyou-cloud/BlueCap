@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
-    m_overlay = new RecordingOverlay;
+    m_overlay = new RecordingOverlay(this);
 
     setupUI();
     renderShadowCache();

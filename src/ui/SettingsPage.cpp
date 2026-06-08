@@ -189,9 +189,12 @@ void SettingsPage::applySettings(bool showFeedback)
 
     QDir dir(path);
     if (!dir.exists()) {
-        dir.mkpath(QStringLiteral("."));
+        if (!dir.mkpath(QStringLiteral("."))) {
+            showPathError(QStringLiteral("无法创建目录，请检查权限"));
+            return;
+        }
     }
-    if (!dir.exists() || !QFileInfo(path).isWritable()) {
+    if (!QFileInfo(path).isWritable()) {
         showPathError(QStringLiteral("路径不可写，请选择其他路径"));
         return;
     }
