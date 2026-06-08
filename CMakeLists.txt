@@ -14,8 +14,6 @@ add_executable(BlueCap WIN32
     src/main.cpp
     src/ui/MainWindow.cpp
     src/ui/MainWindow.h
-    src/ui/Sidebar.cpp
-    src/ui/Sidebar.h
     src/ui/ModeSwitch.cpp
     src/ui/ModeSwitch.h
     src/ui/RecordButton.cpp

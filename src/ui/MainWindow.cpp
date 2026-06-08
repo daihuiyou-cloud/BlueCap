@@ -2,10 +2,10 @@
 
 #include "PlaceholderPage.h"
 #include "RecordPage.h"
-#include "Sidebar.h"
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QButtonGroup>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -20,14 +20,14 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(QStringLiteral("BlueCap"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
-    resize(1384, 856);
-    setMinimumSize(1040, 680);
+    resize(640, 500);
+    setMinimumSize(540, 420);
 
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
 
     auto *shell = new QVBoxLayout(this);
-    shell->setContentsMargins(16, 16, 16, 16);
+    shell->setContentsMargins(12, 12, 12, 12);
     shell->setSpacing(0);
 
     auto *surface = new QWidget(this);
@@ -35,9 +35,9 @@ MainWindow::MainWindow(QWidget *parent)
     surface->setAttribute(Qt::WA_StyledBackground, true);
 
     auto *shadow = new QGraphicsDropShadowEffect(surface);
-    shadow->setBlurRadius(28);
-    shadow->setOffset(0, 8);
-    shadow->setColor(QColor(42, 80, 150, 80));
+    shadow->setBlurRadius(20);
+    shadow->setOffset(0, 6);
+    shadow->setColor(QColor(42, 80, 150, 70));
     surface->setGraphicsEffect(shadow);
 
     auto *surfaceLayout = new QVBoxLayout(surface);
@@ -45,14 +45,12 @@ MainWindow::MainWindow(QWidget *parent)
     surfaceLayout->setSpacing(0);
 
     surfaceLayout->addWidget(createTitleBar());
+    surfaceLayout->addWidget(createNavBar());
 
     auto *body = new QWidget(surface);
-    auto *bodyLayout = new QHBoxLayout(body);
-    bodyLayout->setContentsMargins(0, 0, 32, 32);
-    bodyLayout->setSpacing(32);
-
-    m_sidebar = new Sidebar(body);
-    bodyLayout->addWidget(m_sidebar);
+    auto *bodyLayout = new QVBoxLayout(body);
+    bodyLayout->setContentsMargins(0, 0, 0, 0);
+    bodyLayout->setSpacing(0);
 
     m_stack = new QStackedWidget(body);
     m_stack->addWidget(new RecordPage(m_recorder, m_library, m_stack));
@@ -64,8 +62,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     surfaceLayout->addWidget(body, 1);
     shell->addWidget(surface);
-
-    connect(m_sidebar, &Sidebar::pageSelected, m_stack, &QStackedWidget::setCurrentIndex);
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
@@ -101,30 +97,23 @@ QWidget *MainWindow::createTitleBar()
 {
     auto *titleBar = new QWidget(this);
     titleBar->setObjectName(QStringLiteral("titleBar"));
-    titleBar->setFixedHeight(128);
+    titleBar->setFixedHeight(36);
 
     auto *layout = new QHBoxLayout(titleBar);
-    layout->setContentsMargins(54, 0, 48, 0);
-    layout->setSpacing(20);
+    layout->setContentsMargins(16, 0, 12, 0);
+    layout->setSpacing(8);
 
-    auto *logo = new QLabel(titleBar);
-    logo->setFixedSize(50, 50);
-    logo->setObjectName(QStringLiteral("logo"));
-    logo->setText(QStringLiteral("●"));
-    logo->setAlignment(Qt::AlignCenter);
-
-    auto *title = new QLabel(QStringLiteral("屏幕录制"), titleBar);
+    auto *title = new QLabel(QStringLiteral("BlueCap"), titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
 
     auto *settingsButton = createWindowButton(QStringLiteral("⚙"), QStringLiteral("设置"));
     auto *minimizeButton = createWindowButton(QStringLiteral("—"), QStringLiteral("最小化"));
     auto *closeButton = createWindowButton(QStringLiteral("×"), QStringLiteral("关闭"));
 
-    layout->addWidget(logo);
     layout->addWidget(title);
     layout->addStretch();
     layout->addWidget(settingsButton);
-    layout->addSpacing(18);
+    layout->addSpacing(6);
     layout->addWidget(minimizeButton);
     layout->addWidget(closeButton);
 
@@ -137,10 +126,47 @@ QWidget *MainWindow::createTitleBar()
     return titleBar;
 }
 
+QWidget *MainWindow::createNavBar()
+{
+    auto *navBar = new QWidget(this);
+    navBar->setObjectName(QStringLiteral("navBar"));
+    navBar->setFixedHeight(36);
+
+    m_navGroup = new QButtonGroup(navBar);
+    m_navGroup->setExclusive(true);
+
+    auto *layout = new QHBoxLayout(navBar);
+    layout->setContentsMargins(0, 0, 0, 0);
+    layout->setSpacing(0);
+
+    const QStringList labels = {
+        QStringLiteral("录制"),
+        QStringLiteral("视频库"),
+        QStringLiteral("设置")
+    };
+
+    for (int i = 0; i < labels.size(); ++i) {
+        auto *btn = new QPushButton(labels[i], navBar);
+        btn->setCheckable(true);
+        btn->setChecked(i == 0);
+        btn->setCursor(Qt::PointingHandCursor);
+        btn->setFixedSize(100, 30);
+        m_navGroup->addButton(btn, i);
+        layout->addWidget(btn);
+    }
+
+    layout->addStretch();
+
+    connect(m_navGroup, qOverload<int>(&QButtonGroup::buttonClicked),
+            m_stack, &QStackedWidget::setCurrentIndex);
+
+    return navBar;
+}
+
 QPushButton *MainWindow::createWindowButton(const QString &text, const QString &tooltip)
 {
     auto *button = new QPushButton(text, this);
-    button->setFixedSize(52, 52);
+    button->setFixedSize(32, 32);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
     return button;
@@ -148,6 +174,6 @@ QPushButton *MainWindow::createWindowButton(const QString &text, const QString &
 
 bool MainWindow::inTitleDragArea(const QPoint &position) const
 {
-    return position.y() >= 16 && position.y() <= 128
-        && position.x() > 16 && position.x() < width() - 210;
+    return position.y() >= 12 && position.y() <= 84
+        && position.x() > 12 && position.x() < width() - 140;
 }

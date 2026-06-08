@@ -1,58 +1,47 @@
 #surface {
-    border-radius: 30px;
+    border-radius: 20px;
     background: rgba(245, 249, 255, 0.94);
 }
 
 MainWindow > QPushButton {
     border: 0;
-    border-radius: 20px;
+    border-radius: 16px;
     background: transparent;
     color: #26334b;
-    font-size: 34px;
+    font-size: 20px;
     font-weight: 400;
 }
 MainWindow > QPushButton:hover {
     background: rgba(215, 226, 244, 0.72);
 }
 
-#logo {
-    border-radius: 12px;
-    color: #ee3344;
-    font-size: 24px;
-    font-weight: 900;
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #75b9ff, stop:0.52 #136ff4, stop:1 #0959dc);
-}
-
 #windowTitle {
     color: #111a2d;
-    font-size: 30px;
+    font-size: 16px;
     font-weight: 800;
 }
 
-Sidebar QPushButton {
+#navBar QPushButton {
     border: 0;
-    border-radius: 28px;
-    text-align: left;
-    padding-left: 34px;
-    color: #172033;
+    border-radius: 15px;
+    color: #53617a;
     background: transparent;
-    font-size: 25px;
+    font-size: 14px;
     font-weight: 700;
 }
-Sidebar QPushButton:checked {
+#navBar QPushButton:checked {
     color: #0967f2;
     background: rgba(222, 237, 255, 0.86);
 }
-Sidebar QPushButton:hover {
+#navBar QPushButton:hover {
     background: rgba(232, 242, 255, 0.66);
 }
 
 ModeSwitch QToolButton {
     border: 0;
-    border-radius: 35px;
+    border-radius: 17px;
     color: #1f2940;
-    font-size: 24px;
+    font-size: 14px;
     font-weight: 700;
     background: transparent;
 }
@@ -66,17 +55,17 @@ ModeSwitch QToolButton:hover {
 
 #recordTitle {
     color: #162039;
-    font-size: 32px;
+    font-size: 18px;
     font-weight: 800;
 }
 #recordHotkey {
     color: #616d85;
-    font-size: 24px;
+    font-size: 13px;
     font-weight: 600;
 }
 #recordStatus {
     color: #7a8599;
-    font-size: 15px;
+    font-size: 12px;
 }
 
 #bottomBar {
@@ -85,25 +74,25 @@ ModeSwitch QToolButton:hover {
 }
 #bottomIcon, #bottomTitle {
     color: #53617a;
-    font-size: 24px;
+    font-size: 14px;
     font-weight: 700;
 }
 #bottomDetail {
     color: #7a8599;
-    font-size: 15px;
+    font-size: 12px;
 }
 #shortcutText {
     color: #53617a;
-    font-size: 24px;
+    font-size: 14px;
     font-weight: 600;
 }
 
 #placeholderTitle {
     color: #162039;
-    font-size: 34px;
+    font-size: 20px;
     font-weight: 800;
 }
 #placeholderSubtitle {
     color: #64708a;
-    font-size: 18px;
+    font-size: 14px;
 }

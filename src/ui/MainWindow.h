@@ -2,12 +2,12 @@
 
 #include <QWidget>
 
+class QButtonGroup;
 class QLabel;
 class QStackedWidget;
 class QPoint;
 class QPushButton;
 class RecorderController;
-class Sidebar;
 class VideoLibrary;
 
 class MainWindow : public QWidget
@@ -24,10 +24,11 @@ protected:
 
 private:
     QWidget *createTitleBar();
+    QWidget *createNavBar();
     QPushButton *createWindowButton(const QString &text, const QString &tooltip);
     bool inTitleDragArea(const QPoint &position) const;
 
-    Sidebar *m_sidebar = nullptr;
+    QButtonGroup *m_navGroup = nullptr;
     QStackedWidget *m_stack = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;

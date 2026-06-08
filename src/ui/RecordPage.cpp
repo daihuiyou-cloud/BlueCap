@@ -21,16 +21,16 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     setAttribute(Qt::WA_StyledBackground, false);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(72, 76, 72, 30);
+    root->setContentsMargins(20, 16, 20, 12);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
-    root->addSpacing(72);
+    root->addSpacing(20);
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
-    root->addSpacing(22);
+    root->addSpacing(12);
 
     m_titleLabel = new QLabel(QStringLiteral("开始录制"), this);
     m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
@@ -46,17 +46,17 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     root->addWidget(m_titleLabel);
     root->addWidget(m_hotkeyLabel);
-    root->addSpacing(12);
+    root->addSpacing(8);
     root->addWidget(m_statusLabel);
     root->addStretch();
 
     auto *bottomBar = new QFrame(this);
     bottomBar->setObjectName(QStringLiteral("bottomBar"));
-    bottomBar->setMinimumHeight(100);
+    bottomBar->setMinimumHeight(40);
 
     auto *bottomLayout = new QHBoxLayout(bottomBar);
-    bottomLayout->setContentsMargins(48, 0, 40, 0);
-    bottomLayout->setSpacing(18);
+    bottomLayout->setContentsMargins(20, 0, 16, 0);
+    bottomLayout->setSpacing(10);
 
     auto *recentIcon = new QLabel(QStringLiteral("◷"), bottomBar);
     recentIcon->setObjectName(QStringLiteral("bottomIcon"));

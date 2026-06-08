@@ -15,7 +15,7 @@ QToolButton *createModeButton(const QString &text, bool checked = false)
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
-    button->setMinimumSize(250, 74);
+    button->setMinimumSize(140, 34);
     button->setToolButtonStyle(Qt::ToolButtonTextOnly);
     return button;
 }
@@ -25,14 +25,13 @@ QToolButton *createModeButton(const QString &text, bool checked = false)
 ModeSwitch::ModeSwitch(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedHeight(86);
-    setMinimumWidth(850);
+    setFixedHeight(42);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QHBoxLayout(this);
-    layout->setContentsMargins(10, 8, 10, 8);
+    layout->setContentsMargins(6, 4, 6, 4);
     layout->setSpacing(0);
 
     const QList<QToolButton *> buttons = {
