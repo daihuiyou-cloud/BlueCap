@@ -71,13 +71,19 @@ private:
     QTimer *m_stopTimer = nullptr;
     QString m_currentOutputPath;
     bool m_stopRequested = false;
+    bool m_recording = false;
+    bool m_errorReported = false;
     int m_frameRate = 30;
+    int m_exitCode = 0;
     bool m_showCursor = true;
     int m_startTimeoutMs = 5000;
     int m_stopTimeoutMs = 5000;
-    QString m_preset = QStringLiteral("ultrafast");
+    QString m_preset = QStringLiteral("fast");
     QString m_savePath;
     QString m_ffmpegPath;
+    QString m_encoder;
     bool m_forceKilled = false;
     QByteArray m_stderrBuffer;
+
+    QString detectHardwareEncoder();
 };
