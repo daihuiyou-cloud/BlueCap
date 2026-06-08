@@ -89,4 +89,24 @@ void RegionSelector::paintEvent(QPaintEvent *)
 
     painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
     painter.drawText(x, y, hint);
+
+    if (m_selecting) {
+        QRect normalized = QRect(m_origin, m_currentPos).normalized();
+        QString sizeText = QStringLiteral("%1 × %2")
+            .arg(normalized.width()).arg(normalized.height());
+
+        QFont sizeFont = painter.font();
+        sizeFont.setPointSize(18);
+        sizeFont.setBold(true);
+        painter.setFont(sizeFont);
+
+        QFontMetrics sizeFm(sizeFont);
+        int sw = sizeFm.horizontalAdvance(sizeText);
+        int sx = (width() - sw) / 2;
+        int sy = 60;
+
+        painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
+        painter.setPen(Qt::white);
+        painter.drawText(sx, sy, sizeText);
+    }
 }

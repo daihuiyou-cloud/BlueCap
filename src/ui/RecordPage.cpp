@@ -249,6 +249,7 @@ void RecordPage::handleRecordingChanged(bool recording)
 {
     m_recordButton->setRecording(recording);
     m_recordButton->setEnabled(true);
+    m_modeSwitch->setModeEnabled(!recording);
 
     if (recording) {
         m_recordingTimer->start(1000);
@@ -280,6 +281,7 @@ void RecordPage::handleError(const QString &message)
     m_titleLabel->setVisible(true);
     m_titleLabel->setText(QStringLiteral("开始录制"));
     m_statusLabel->setText(QStringLiteral("录制失败"));
+    m_modeSwitch->setModeEnabled(true);
     updateStatusForMode(m_modeSwitch->currentMode());
     QMessageBox::warning(this, QStringLiteral("录制失败"), message);
 }

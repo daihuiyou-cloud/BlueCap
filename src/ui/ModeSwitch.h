@@ -14,6 +14,7 @@ public:
     explicit ModeSwitch(QWidget *parent = nullptr);
 
     RecordMode currentMode() const;
+    void setModeEnabled(bool enabled);
 
 signals:
     void modeChanged(RecordMode mode);

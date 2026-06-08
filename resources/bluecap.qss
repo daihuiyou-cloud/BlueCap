@@ -96,6 +96,11 @@ QWidget {
     background: rgba(255, 255, 255, 0.46);
 }
 
+#modeButton:disabled {
+    color: #a0aab8;
+    background: transparent;
+}
+
 #recordTitle {
     color: #162039;
     font-size: 22px;

@@ -64,6 +64,14 @@ RecordMode ModeSwitch::currentMode() const
     return RecordMode::FullScreen;
 }
 
+void ModeSwitch::setModeEnabled(bool enabled)
+{
+    const auto buttons = m_group->buttons();
+    for (auto *btn : buttons) {
+        btn->setEnabled(enabled);
+    }
+}
+
 void ModeSwitch::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);

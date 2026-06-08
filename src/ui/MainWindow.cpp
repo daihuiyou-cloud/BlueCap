@@ -23,6 +23,7 @@
 #include <QSystemTrayIcon>
 #include <QVBoxLayout>
 
+#include <QScreen>
 #include <windows.h>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -33,6 +34,14 @@ MainWindow::MainWindow(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
     resize(960, 600);
     setMinimumSize(740, 460);
+
+    QSettings geo;
+    if (geo.contains(QStringLiteral("window/geometry"))) {
+        restoreGeometry(geo.value(QStringLiteral("window/geometry")).toByteArray());
+    } else {
+        QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+        move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
+    }
 
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
@@ -224,6 +233,8 @@ void MainWindow::closeEvent(QCloseEvent *event)
             QSystemTrayIcon::Information, 3000);
         event->ignore();
     } else {
+        QSettings geo;
+        geo.setValue(QStringLiteral("window/geometry"), saveGeometry());
         qApp->quit();
     }
 }
