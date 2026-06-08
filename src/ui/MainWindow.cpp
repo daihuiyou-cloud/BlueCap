@@ -20,7 +20,9 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
+#include <QStyle>
 #include <QSystemTrayIcon>
+#include <QTimer>
 #include <QVBoxLayout>
 
 #include <QScreen>
@@ -151,6 +153,14 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
+    m_pulseTimer = new QTimer(this);
+    connect(m_pulseTimer, &QTimer::timeout, this, [this] {
+        m_pulseState = !m_pulseState;
+        m_recordingIndicator->setProperty("pulseDim", m_pulseState);
+        m_recordingIndicator->style()->unpolish(m_recordingIndicator);
+        m_recordingIndicator->style()->polish(m_recordingIndicator);
+    });
+
     auto makeTrayIcon = [this](bool recording) -> QIcon {
         QPixmap px(32, 32);
         px.fill(Qt::transparent);
@@ -171,6 +181,18 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(m_recorder, &RecorderController::recordingChanged, this, [this, makeTrayIcon](bool recording) {
         m_recordingIndicator->setVisible(recording);
+        if (recording) {
+            m_pulseState = false;
+            m_recordingIndicator->setProperty("pulseDim", false);
+            m_recordingIndicator->style()->unpolish(m_recordingIndicator);
+            m_recordingIndicator->style()->polish(m_recordingIndicator);
+            m_pulseTimer->start(800);
+        } else {
+            m_pulseTimer->stop();
+            m_recordingIndicator->setProperty("pulseDim", false);
+            m_recordingIndicator->style()->unpolish(m_recordingIndicator);
+            m_recordingIndicator->style()->polish(m_recordingIndicator);
+        }
         m_trayIcon->setIcon(makeTrayIcon(recording));
         m_trayMenu->actions()[1]->setEnabled(!recording);
         m_trayMenu->actions()[2]->setText(recording

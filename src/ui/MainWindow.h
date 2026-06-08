@@ -42,6 +42,8 @@ private:
     VideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;
     QLabel *m_recordingIndicator = nullptr;
+    QTimer *m_pulseTimer = nullptr;
+    bool m_pulseState = false;
     QSystemTrayIcon *m_trayIcon = nullptr;
     QMenu *m_trayMenu = nullptr;
     QPoint m_dragPosition;
