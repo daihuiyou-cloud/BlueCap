@@ -18,6 +18,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QProgressBar>
+#include <QPushButton>
 #include <QShortcut>
 #include <QUrl>
 #include <QPainter>
@@ -188,12 +189,20 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
 
-    m_openFolderIcon = new QLabel(rightSection);
+    m_openFolderIcon = new QPushButton(rightSection);
     m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_openFolderIcon->setPixmap(QIcon(QStringLiteral(":/icons/folder.svg")).pixmap(20, 20));
+    m_openFolderIcon->setIcon(QIcon(QStringLiteral(":/icons/folder.svg")));
+    m_openFolderIcon->setIconSize(QSize(20, 20));
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
     m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
     m_openFolderIcon->setVisible(false);
+    m_openFolderIcon->setFlat(true);
+    connect(m_openFolderIcon, &QPushButton::clicked, this, [this] {
+        const QString path = m_recorder->currentSavePath();
+        if (!path.isEmpty()) {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        }
+    });
 
     auto *chevronIcon = new QLabel(bottomBar);
     chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
@@ -212,7 +221,6 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     root->addWidget(bottomBar);
 
     m_bottomNavSection->installEventFilter(this);
-    m_openFolderIcon->installEventFilter(this);
 }
 
 void RecordPage::paintEvent(QPaintEvent *)
@@ -472,13 +480,6 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
             if (obj == m_statusLabel) {
                 if (!m_lastSavedPath.isEmpty()) {
                     QDesktopServices::openUrl(QUrl::fromLocalFile(m_lastSavedPath));
-                }
-                return true;
-            }
-            if (obj == m_openFolderIcon) {
-                const QString path = m_recorder->currentSavePath();
-                if (!path.isEmpty()) {
-                    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
                 }
                 return true;
             }

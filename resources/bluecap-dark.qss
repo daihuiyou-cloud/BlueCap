@@ -37,7 +37,13 @@ QWidget {
 }
 
 #titleButton:hover, #closeButton:hover {
+    color: #4da3ff;
     background: rgba(50, 60, 80, 0.72);
+}
+
+#titleButton:disabled, #closeButton:disabled {
+    color: #505868;
+    background: transparent;
 }
 
 #closeButton:hover {
@@ -76,7 +82,13 @@ QWidget {
 }
 
 #sidebarButton:hover {
+    color: #4da3ff;
     background: rgba(50, 60, 80, 0.66);
+}
+
+#sidebarButton:disabled {
+    color: #505868;
+    background: transparent;
 }
 
 #modeButton {

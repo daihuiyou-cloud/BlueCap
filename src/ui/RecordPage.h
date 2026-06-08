@@ -8,6 +8,7 @@ class QElapsedTimer;
 class QFrame;
 class QLabel;
 class QProgressBar;
+class QPushButton;
 class QTimer;
 class QVBoxLayout;
 class ModeSwitch;
@@ -59,7 +60,7 @@ private:
     QLabel *m_statusLabel = nullptr;
     QProgressBar *m_stopProgress = nullptr;
     QLabel *m_recentDetailLabel = nullptr;
-    QLabel *m_openFolderIcon = nullptr;
+    QPushButton *m_openFolderIcon = nullptr;
     QFrame *m_bottomNavSection = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
