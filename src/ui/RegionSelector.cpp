@@ -16,8 +16,12 @@ RegionSelector::RegionSelector(QWidget *parent)
     setAttribute(Qt::WA_TranslucentBackground);
     setCursor(Qt::CrossCursor);
 
-    auto *screen = QGuiApplication::primaryScreen();
-    setGeometry(screen->geometry());
+    QRect virtualGeometry;
+    const auto screens = QGuiApplication::screens();
+    for (const auto *screen : screens) {
+        virtualGeometry = virtualGeometry.united(screen->geometry());
+    }
+    setGeometry(virtualGeometry);
 
     m_rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
 }

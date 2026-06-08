@@ -1,5 +1,5 @@
 #include "VideoLibraryPage.h"
-#include "../storage/VideoLibrary.h"
+#include "storage/VideoLibrary.h"
 
 #include <QDateTime>
 #include <QDesktopServices>
@@ -305,6 +305,10 @@ void VideoLibraryPage::renameSelected()
         QMessageBox::warning(this, QStringLiteral("重命名失败"),
             QStringLiteral("文件名包含非法字符。"));
         return;
+    }
+
+    if (!newName.contains(QLatin1Char('.'))) {
+        newName += fi.suffix().isEmpty() ? QStringLiteral(".mp4") : QStringLiteral(".") + fi.suffix();
     }
 
     const QString newPath = fi.dir().filePath(newName);

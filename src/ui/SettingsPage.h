@@ -31,9 +31,10 @@ private slots:
     void applySettings();
     void resetDefaults();
 
-private:
+public:
     void loadSettings();
 
+private:
     QLineEdit *m_pathEdit = nullptr;
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;

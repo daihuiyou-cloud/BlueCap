@@ -144,6 +144,14 @@ void SettingsPage::loadSettings()
     m_showCursorCheck->setChecked(s.value(QStringLiteral("settings/showCursor"), true).toBool());
     m_startTimeoutSpin->setValue(s.value(QStringLiteral("settings/startTimeout"), 5).toInt());
     m_stopTimeoutSpin->setValue(s.value(QStringLiteral("settings/stopTimeout"), 5).toInt());
+
+    emit frameRateChanged(m_fpsSpin->value());
+    emit presetChanged(m_qualityCombo->currentData().toString());
+    emit savePathChanged(m_pathEdit->text().trimmed());
+    emit confirmStopChanged(m_confirmStopCheck->isChecked());
+    emit showCursorChanged(m_showCursorCheck->isChecked());
+    emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
+    emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 }
 
 void SettingsPage::browsePath()

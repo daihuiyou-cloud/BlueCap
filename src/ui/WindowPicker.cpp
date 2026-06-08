@@ -35,10 +35,7 @@ WindowPicker::WindowPicker(QWidget *parent)
     root->addWidget(buttonBox);
 
     m_windows = RecorderController::enumerateWindows();
-    for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
-        auto *item = new QListWidgetItem(it.key(), m_list);
-        item->setToolTip(it.key());
-    }
+    populateList();
 
     m_filterEdit->setFocus();
     if (m_list->count() > 0) {
@@ -49,15 +46,7 @@ WindowPicker::WindowPicker(QWidget *parent)
     connect(filterShortcut, &QShortcut::activated, m_filterEdit, qOverload<>(&QWidget::setFocus));
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
-        m_list->clear();
-        for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
-            if (text.isEmpty() || it.key().contains(text, Qt::CaseInsensitive)) {
-                auto *item = new QListWidgetItem(it.key(), m_list);
-                item->setToolTip(it.key());
-            }
-        }
-        if (m_list->count() > 0)
-            m_list->setCurrentRow(0);
+        populateList(text);
     });
 
     connect(m_list, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
@@ -65,9 +54,23 @@ WindowPicker::WindowPicker(QWidget *parent)
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 }
 
+void WindowPicker::populateList(const QString &filter)
+{
+    m_list->clear();
+    for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+        if (filter.isEmpty() || it.key().contains(filter, Qt::CaseInsensitive)) {
+            auto *item = new QListWidgetItem(it.key(), m_list);
+            item->setData(Qt::UserRole, it.value());
+            item->setToolTip(it.key());
+        }
+    }
+    if (m_list->count() > 0)
+        m_list->setCurrentRow(0);
+}
+
 QString WindowPicker::selectedWindow() const
 {
     auto *item = m_list->currentItem();
     if (!item) return {};
-    return m_windows.value(item->text());
+    return item->data(Qt::UserRole).toString();
 }

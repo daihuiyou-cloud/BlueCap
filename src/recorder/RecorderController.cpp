@@ -305,6 +305,6 @@ QString RecorderController::createOutputPath() const
     }
 
     const QString fileName = QStringLiteral("BlueCap_%1.mp4")
-        .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss")));
+        .arg(QDateTime::currentDateTime().toString(QStringLiteral("yyyyMMdd_HHmmss_zzz")));
     return dir.filePath(fileName);
 }

@@ -120,6 +120,8 @@ void MainWindow::setupConnections()
                 m_recordPage, &RecordPage::setConfirmStop);
         connect(settingsPage, &SettingsPage::showCursorChanged,
                 m_recorder, &RecorderController::setShowCursor);
+
+        settingsPage->loadSettings();
     }
 
     connect(m_recordPage, &RecordPage::recentVideosClicked, this, [this] {
@@ -149,6 +151,13 @@ void MainWindow::setupHotkey()
 {
     qApp->installNativeEventFilter(this);
     m_hotkeyRegistered = RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
+    if (!m_hotkeyRegistered) {
+        qWarning("Failed to register global hotkey (Ctrl+Shift+R). Another application may have claimed it.");
+        if (m_trayIcon)
+            m_trayIcon->showMessage(QStringLiteral("BlueCap"),
+                QStringLiteral("全局快捷键 Ctrl+Shift+R 注册失败，可能被其他程序占用。"),
+                QSystemTrayIcon::Warning, 5000);
+    }
 }
 
 void MainWindow::setupTray()
