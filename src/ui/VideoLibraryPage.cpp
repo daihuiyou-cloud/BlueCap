@@ -31,12 +31,14 @@ namespace {
 
 bool moveToTrash(const QString &filePath)
 {
-    const QString nullPath = filePath + QChar('\0');
-    std::wstring wPath = nullPath.toStdWString();
+    // Double-null-terminated wide string for SHFileOperationW
+    auto *wPath = reinterpret_cast<const wchar_t *>(filePath.utf16());
+    // The QString is already null-terminated; we need double null
+    std::wstring doubleNull(wPath, filePath.size() + 1);
 
     SHFILEOPSTRUCTW fos = {};
     fos.wFunc = FO_DELETE;
-    fos.pFrom = wPath.c_str();
+    fos.pFrom = doubleNull.c_str();
     fos.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
 
     return SHFileOperationW(&fos) == 0;
@@ -113,6 +115,9 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     m_toastTimer->setSingleShot(true);
     connect(m_toastTimer, &QTimer::timeout, m_toastWidget, &QWidget::hide);
 
+    m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
+        QColor(0x7a, 0x85, 0x99), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8));
+
     connect(m_filterEdit, &QLineEdit::textChanged, this, &VideoLibraryPage::applyFilter);
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
@@ -126,6 +131,7 @@ void VideoLibraryPage::refreshList(const QStringList &videos)
     m_allVideos = videos;
     m_toastWidget->setVisible(false);
     m_toastTimer->stop();
+    m_itemMap.clear();
 
     for (auto it = m_thumbnailCache.begin(); it != m_thumbnailCache.end(); ) {
         if (!QFileInfo::exists(it.key()))
@@ -165,17 +171,11 @@ void VideoLibraryPage::applyFilter()
             + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
             + QStringLiteral("  |  ") + format::fileSize(fi.size());
 
-        // Use placeholder icon first, load thumbnails asynchronously
-        QColor placeholderNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x7a, 0x85, 0x99);
-        QColor placeholderActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
-        QColor placeholderDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
-        auto *item = new QListWidgetItem(
-            icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
-                placeholderNormal, placeholderActive, placeholderDisabled),
-            text, m_list);
+        auto *item = new QListWidgetItem(m_placeholderIcon, text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
         item->setSizeHint(QSize(0, 82));
+        m_itemMap.insert(path, item);
 
         // Cache hit — set icon immediately
         if (m_thumbnailCache.contains(path)) {
@@ -197,14 +197,9 @@ void VideoLibraryPage::processNextThumbnail()
     QString path = m_pendingThumbnails.takeFirst();
     QPixmap thumb = getVideoThumbnail(path);
     if (!thumb.isNull()) {
-        // Update the matching list item
-        for (int i = 0; i < m_list->count(); ++i) {
-            auto *item = m_list->item(i);
-            if (item && item->data(Qt::UserRole).toString() == path) {
-                item->setIcon(QIcon(thumb));
-                break;
-            }
-        }
+        auto *item = m_itemMap.value(path);
+        if (item)
+            item->setIcon(QIcon(thumb));
     }
 
     if (!m_pendingThumbnails.isEmpty())
@@ -235,6 +230,7 @@ void VideoLibraryPage::deleteSelected()
     if (result == QMessageBox::Yes) {
         m_toastWidget->setVisible(false);
         m_toastTimer->stop();
+        m_itemMap.remove(path);
 
         bool movedToTrash = moveToTrash(path);
         if (!movedToTrash) {
@@ -264,6 +260,10 @@ void VideoLibraryPage::setDarkMode(bool dark)
     QColor emptyColor = dark ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x64, 0x70, 0x8a);
     m_emptyIcon->setPixmap(icon::renderSvg(
         QStringLiteral(":/icons/nav-record.svg"), emptyColor, 48));
+    m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
+        dark ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x7a, 0x85, 0x99),
+        dark ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2),
+        dark ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8));
     applyFilter();
 }
 
@@ -300,10 +300,13 @@ static QPixmap hBitmapToPixmap(HBITMAP hBitmap)
 
 QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
 {
-    if (m_thumbnailCache.contains(filePath)) {
-        m_thumbnailLRU.removeAll(filePath);
-        m_thumbnailLRU.prepend(filePath);
-        return m_thumbnailCache[filePath];
+    auto cacheIt = m_thumbnailCache.find(filePath);
+    if (cacheIt != m_thumbnailCache.end()) {
+        // Promote to front — single scan with move instead of remove+insert
+        int idx = m_thumbnailLRU.indexOf(filePath);
+        if (idx > 0)
+            m_thumbnailLRU.move(idx, 0);
+        return cacheIt.value();
     }
 
     QPixmap fallback;
@@ -329,7 +332,6 @@ QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
             m_thumbnailCache.remove(oldest);
         }
         m_thumbnailCache[filePath] = fallback;
-        m_thumbnailLRU.removeAll(filePath);
         m_thumbnailLRU.prepend(filePath);
     }
     return fallback;
@@ -378,6 +380,7 @@ void VideoLibraryPage::renameSelected()
     }
 
     m_thumbnailCache.remove(oldPath);
+    m_itemMap.remove(oldPath);
 
     QStringList videos = m_library->recentVideos();
     int idx = videos.indexOf(oldPath);

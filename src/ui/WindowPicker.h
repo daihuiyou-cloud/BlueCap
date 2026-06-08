@@ -3,8 +3,10 @@
 #include "recorder/RecorderController.h"
 
 #include <QDialog>
+#include <QHash>
 #include <QList>
 #include <QPoint>
+#include <QPixmap>
 #include <QStringList>
 
 class QLineEdit;
@@ -38,6 +40,7 @@ private:
     QListWidget *m_list = nullptr;
     QLineEdit *m_filterEdit = nullptr;
     QPushButton *m_refreshBtn = nullptr;
+    QHash<qulonglong, QPixmap> m_iconCache;
     QList<RecorderController::WindowEntry> m_windows;
     QPoint m_dragPosition;
     bool m_dragging = false;

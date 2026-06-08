@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QCache>
 #include <QColor>
 #include <QFile>
 #include <QIcon>
@@ -10,8 +11,34 @@
 
 namespace icon {
 
+struct SvgCacheKey {
+    QString path;
+    QColor color;
+    int size;
+};
+
+inline bool operator==(const SvgCacheKey &a, const SvgCacheKey &b)
+{
+    return a.path == b.path && a.color == b.color && a.size == b.size;
+}
+
+inline uint qHash(const SvgCacheKey &key, uint seed = 0)
+{
+    return qHash(key.path, seed) ^ qHash(key.color.name(), seed) ^ (key.size * 1664525u + seed);
+}
+
+inline QCache<SvgCacheKey, QPixmap> &svgCache()
+{
+    static QCache<SvgCacheKey, QPixmap> cache(256);
+    return cache;
+}
+
 inline QPixmap renderSvg(const QString &svgPath, const QColor &color, int size)
 {
+    const SvgCacheKey key{ svgPath, color, size };
+    if (auto *cached = svgCache().object(key))
+        return *cached;
+
     QFile file(svgPath);
     if (!file.open(QIODevice::ReadOnly))
         return QPixmap(size, size);
@@ -25,6 +52,8 @@ inline QPixmap renderSvg(const QString &svgPath, const QColor &color, int size)
     QPainter painter(&pixmap);
     painter.setRenderHint(QPainter::Antialiasing);
     renderer.render(&painter);
+
+    svgCache().insert(key, new QPixmap(pixmap));
     return pixmap;
 }
 

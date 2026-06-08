@@ -2,20 +2,36 @@
 
 #include <QApplication>
 #include <QFontMetrics>
-#include <QGuiApplication>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QScreen>
 #include <QTimer>
 
-struct ScreenLayout {
-    QPoint topLeft;
-    int width;
-    int height;
-};
+RegionSelector::RegionSelector(QWidget *parent)
+    : QWidget(parent)
+{
+    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setCursor(Qt::CrossCursor);
 
-static ScreenLayout screenForPoint(const QPoint &pt)
+    cacheScreenLayout();
+
+    m_rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
+}
+
+void RegionSelector::cacheScreenLayout()
+{
+    QRect virtualGeometry;
+    const auto screens = QGuiApplication::screens();
+    for (const auto *screen : screens) {
+        virtualGeometry = virtualGeometry.united(screen->geometry());
+    }
+    setGeometry(virtualGeometry);
+    m_screenLayoutValid = false;
+}
+
+ScreenLayout RegionSelector::screenForPoint(const QPoint &pt) const
 {
     const auto screens = QGuiApplication::screens();
     for (const auto *screen : screens) {
@@ -23,26 +39,8 @@ static ScreenLayout screenForPoint(const QPoint &pt)
         if (geo.contains(pt))
             return { geo.topLeft(), geo.width(), geo.height() };
     }
-    // fallback: primary screen
     QRect primary = QGuiApplication::primaryScreen()->geometry();
     return { primary.topLeft(), primary.width(), primary.height() };
-}
-
-RegionSelector::RegionSelector(QWidget *parent)
-    : QWidget(parent)
-{
-    setWindowFlags(Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::Tool);
-    setAttribute(Qt::WA_TranslucentBackground);
-    setCursor(Qt::CrossCursor);
-
-    QRect virtualGeometry;
-    const auto screens = QGuiApplication::screens();
-    for (const auto *screen : screens) {
-        virtualGeometry = virtualGeometry.united(screen->geometry());
-    }
-    setGeometry(virtualGeometry);
-
-    m_rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
 }
 
 void RegionSelector::mousePressEvent(QMouseEvent *event)
@@ -103,15 +101,9 @@ void RegionSelector::keyPressEvent(QKeyEvent *event)
 void RegionSelector::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
-    painter.fillRect(rect(), QColor(0, 0, 0, 80));
+    painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
-    painter.setPen(Qt::white);
-    QFont font = painter.font();
-    font.setPointSize(14);
-    font.setBold(true);
-    painter.setFont(font);
-
-    // Determine which screen to draw hints on — use selection center if selecting, else mouse position
+    // Cache the screen containing the reference point so we don't iterate every frame
     QPoint refPoint = m_selecting ? QRect(m_origin, m_currentPos).center() : m_currentPos;
     if (refPoint.isNull())
         refPoint = m_origin;
@@ -121,7 +113,22 @@ void RegionSelector::paintEvent(QPaintEvent *)
     ScreenLayout screen = screenForPoint(mapToGlobal(refPoint));
     QPoint screenTopLeft = mapFromGlobal(screen.topLeft);
 
-    QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
+    // Draw dark overlay — only fill visible screen area (not the full virtual desktop)
+    const auto screens = QGuiApplication::screens();
+    for (const auto *s : screens) {
+        QRect sg = s->geometry();
+        QRect local = QRect(mapFromGlobal(sg.topLeft()), sg.size());
+        painter.fillRect(local, QColor(0, 0, 0, 80));
+    }
+
+    // Pre-compute font metrics once
+    static const QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
+    painter.setPen(Qt::white);
+    QFont font = painter.font();
+    font.setPointSize(14);
+    font.setBold(true);
+    painter.setFont(font);
+
     QFontMetrics fm(font);
     int textWidth = fm.horizontalAdvance(hint);
     int x = screenTopLeft.x() + (screen.width - textWidth) / 2;
@@ -149,17 +156,14 @@ void RegionSelector::paintEvent(QPaintEvent *)
             painter.drawText(sx, sy, tooSmallHint);
         } else {
             QString sizeText = QStringLiteral("%1 × %2").arg(w).arg(h);
-
             QFont sizeFont = painter.font();
             sizeFont.setPointSize(18);
             sizeFont.setBold(true);
             painter.setFont(sizeFont);
-
             QFontMetrics sizeFm(sizeFont);
             int sw = sizeFm.horizontalAdvance(sizeText);
             int sx = screenTopLeft.x() + (screen.width - sw) / 2;
             int sy = screenTopLeft.y() + 60;
-
             painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
             painter.setPen(Qt::white);
             painter.drawText(sx, sy, sizeText);

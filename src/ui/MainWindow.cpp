@@ -61,6 +61,11 @@ MainWindow::MainWindow(QWidget *parent)
     setupTray();
     setupConnections();
     setupHotkey();
+
+    m_shadowDebounce = new QTimer(this);
+    m_shadowDebounce->setSingleShot(true);
+    m_shadowDebounce->setInterval(100);
+    connect(m_shadowDebounce, &QTimer::timeout, this, &MainWindow::renderShadowCache);
 }
 
 void MainWindow::setupUI()
@@ -172,7 +177,7 @@ void MainWindow::setupConnections()
             m_recordingIndicator->setStyleSheet(QString());
             m_overlay->hideOverlay();
         }
-        m_trayIcon->setIcon(makeTrayIcon(recording));
+        m_trayIcon->setIcon(recording ? m_trayIconRecording : m_trayIconIdle);
         m_trayMenu->actions()[1]->setEnabled(!recording);
         m_trayMenu->actions()[2]->setText(recording
             ? QStringLiteral("停止录制")
@@ -199,7 +204,9 @@ void MainWindow::setupHotkey()
 
 void MainWindow::setupTray()
 {
-    m_trayIcon = new QSystemTrayIcon(makeTrayIcon(false), this);
+    m_trayIconIdle = makeTrayIcon(false);
+    m_trayIconRecording = makeTrayIcon(true);
+    m_trayIcon = new QSystemTrayIcon(m_trayIconIdle, this);
     m_trayMenu = new QMenu(this);
 
     QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
@@ -404,7 +411,7 @@ void MainWindow::paintEvent(QPaintEvent *event)
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    renderShadowCache();
+    m_shadowDebounce->start();
     QWidget::resizeEvent(event);
 }
 

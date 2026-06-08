@@ -3,6 +3,15 @@
 #include <QWidget>
 #include <QRubberBand>
 
+#include <QGuiApplication>
+#include <QScreen>
+
+struct ScreenLayout {
+    QPoint topLeft;
+    int width;
+    int height;
+};
+
 class RegionSelector : public QWidget
 {
     Q_OBJECT
@@ -21,8 +30,13 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
+    ScreenLayout screenForPoint(const QPoint &pt) const;
+    void cacheScreenLayout();
+
     QPoint m_origin;
     QPoint m_currentPos;
     QRubberBand *m_rubberBand = nullptr;
     bool m_selecting = false;
+    ScreenLayout m_cachedScreenLayout = {};
+    bool m_screenLayoutValid = false;
 };

@@ -110,6 +110,7 @@ WindowPicker::WindowPicker(QWidget *parent)
 void WindowPicker::refreshWindows()
 {
     m_windows = RecorderController::enumerateWindows();
+    m_iconCache.clear();
     populateList(m_filterEdit->text());
     if (m_list->count() > 0)
         m_list->setCurrentRow(0);
@@ -219,15 +220,22 @@ void WindowPicker::populateList(const QString &filter)
         item->setData(Qt::UserRole, entry.title);
         item->setToolTip(display);
 
-        HWND hwnd = reinterpret_cast<HWND>(entry.hwnd);
-        HICON hIcon = reinterpret_cast<HICON>(
-            SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0));
-        if (!hIcon)
-            hIcon = reinterpret_cast<HICON>(
-                GetClassLongPtrW(hwnd, GCLP_HICONSM));
-        QPixmap px = iconFromHICON(hIcon);
-        if (!px.isNull())
-            item->setIcon(QIcon(px));
+        auto iconIt = m_iconCache.constFind(entry.hwnd);
+        if (iconIt != m_iconCache.constEnd()) {
+            item->setIcon(QIcon(iconIt.value()));
+        } else {
+            HWND hwnd = reinterpret_cast<HWND>(entry.hwnd);
+            HICON hIcon = reinterpret_cast<HICON>(
+                SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0));
+            if (!hIcon)
+                hIcon = reinterpret_cast<HICON>(
+                    GetClassLongPtrW(hwnd, GCLP_HICONSM));
+            QPixmap px = iconFromHICON(hIcon);
+            if (!px.isNull()) {
+                m_iconCache.insert(entry.hwnd, px);
+                item->setIcon(QIcon(px));
+            }
+        }
     }
     if (m_list->count() > 0)
         m_list->setCurrentRow(0);

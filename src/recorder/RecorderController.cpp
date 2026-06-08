@@ -16,6 +16,7 @@
 #include <windows.h>
 
 namespace {
+constexpr int kMaxStderrBuffer = 65536;
 
 QString friendlyError(const QString &raw)
 {
@@ -80,6 +81,8 @@ RecorderController::RecorderController(QObject *parent)
             this, &RecorderController::handleProcessError);
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
         m_stderrBuffer.append(m_process->readAllStandardError());
+        if (m_stderrBuffer.size() > kMaxStderrBuffer)
+            m_stderrBuffer = m_stderrBuffer.right(kMaxStderrBuffer);
     });
 
     m_startTimer = new QTimer(this);
@@ -89,6 +92,8 @@ RecorderController::RecorderController(QObject *parent)
     m_stopTimer = new QTimer(this);
     m_stopTimer->setSingleShot(true);
     connect(m_stopTimer, &QTimer::timeout, this, &RecorderController::handleStopTimeout);
+
+    QTimer::singleShot(0, this, &RecorderController::detectHardwareEncoderAsync);
 }
 
 bool RecorderController::isRecording() const
@@ -202,8 +207,8 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
         return;
     }
 
-    if (m_encoder.isEmpty())
-        m_encoder = detectHardwareEncoder();
+    if (!m_encoderDetected)
+        m_encoder = QStringLiteral("libx264");
 
     QStringList args = {
         QStringLiteral("-y"),
@@ -283,8 +288,9 @@ void RecorderController::handleFinished(int exitCode, QProcess::ExitStatus)
 
 void RecorderController::handleFinishedCheck()
 {
-    const bool fileExists = QFileInfo::exists(m_currentOutputPath);
-    const bool fileNonEmpty = fileExists && QFileInfo(m_currentOutputPath).size() > 0;
+    const QFileInfo fi(m_currentOutputPath);
+    const bool fileExists = fi.exists();
+    const bool fileNonEmpty = fileExists && fi.size() > 0;
 
     if (m_errorReported) {
         if (fileExists) QFile::remove(m_currentOutputPath);
@@ -356,6 +362,46 @@ void RecorderController::handleStopTimeout()
             }
             // If process is NotRunning, handleFinished already handled it — skip
         });
+    });
+}
+
+void RecorderController::detectHardwareEncoderAsync()
+{
+    const QString ffmpeg = resolveFfmpegPath();
+    if (!QFileInfo::exists(ffmpeg)) {
+        m_encoder = QStringLiteral("libx264");
+        m_encoderDetected = true;
+        return;
+    }
+
+    auto *probe = new QProcess(this);
+    probe->setProcessChannelMode(QProcess::MergedChannels);
+    connect(probe, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
+        this, [this, probe](int, QProcess::ExitStatus) {
+        const QString output = QString::fromLocal8Bit(probe->readAllStandardOutput());
+        if (output.contains(QStringLiteral("h264_mf")))
+            m_encoder = QStringLiteral("h264_mf");
+        else if (output.contains(QStringLiteral("h264_nvenc")))
+            m_encoder = QStringLiteral("h264_nvenc");
+        else if (output.contains(QStringLiteral("h264_amf")))
+            m_encoder = QStringLiteral("h264_amf");
+        else if (output.contains(QStringLiteral("h264_qsv")))
+            m_encoder = QStringLiteral("h264_qsv");
+        else
+            m_encoder = QStringLiteral("libx264");
+        m_encoderDetected = true;
+        probe->deleteLater();
+    });
+    connect(probe, &QProcess::errorOccurred, this, [this, probe] {
+        m_encoder = QStringLiteral("libx264");
+        m_encoderDetected = true;
+        probe->deleteLater();
+    });
+    probe->start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+    QTimer::singleShot(5000, probe, [probe] {
+        if (probe->state() != QProcess::NotRunning) {
+            probe->kill();
+        }
     });
 }
 

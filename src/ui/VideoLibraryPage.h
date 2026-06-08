@@ -1,12 +1,15 @@
 #pragma once
 
+#include <QHash>
+#include <QIcon>
+#include <QMap>
 #include <QPixmap>
 #include <QWidget>
-#include <QMap>
 
 class QLabel;
 class QLineEdit;
 class QListWidget;
+class QListWidgetItem;
 class QPushButton;
 class QStackedWidget;
 class QTimer;
@@ -47,5 +50,7 @@ private:
     QMap<QString, QPixmap> m_thumbnailCache;
     QStringList m_thumbnailLRU;
     QStringList m_pendingThumbnails;
+    QHash<QString, QListWidgetItem *> m_itemMap;
+    QIcon m_placeholderIcon;
     static constexpr int kMaxThumbnails = 50;
 };

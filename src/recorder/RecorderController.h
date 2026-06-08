@@ -83,7 +83,9 @@ private:
     QString m_ffmpegPath;
     QString m_encoder;
     bool m_forceKilled = false;
+    bool m_encoderDetected = false;
     QByteArray m_stderrBuffer;
 
+    void detectHardwareEncoderAsync();
     QString detectHardwareEncoder();
 };

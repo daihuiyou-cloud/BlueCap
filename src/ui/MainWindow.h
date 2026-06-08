@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractNativeEventFilter>
+#include <QIcon>
 #include <QWidget>
 
 class QLabel;
@@ -73,6 +74,9 @@ private:
     QWidget *m_titleBar = nullptr;
     RecordingOverlay *m_overlay = nullptr;
     QPixmap m_shadowCache;
+    QTimer *m_shadowDebounce = nullptr;
+    QIcon m_trayIconRecording;
+    QIcon m_trayIconIdle;
     void renderShadowCache();
 
     static constexpr int kResizeBorder = 5;
