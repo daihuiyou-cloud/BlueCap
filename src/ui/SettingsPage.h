@@ -2,6 +2,7 @@
 
 #include <QWidget>
 
+class QCheckBox;
 class QComboBox;
 class QLineEdit;
 class QSpinBox;
@@ -17,6 +18,9 @@ signals:
     void frameRateChanged(int fps);
     void presetChanged(const QString &preset);
     void savePathChanged(const QString &path);
+    void confirmStopChanged(bool confirm);
+    void startTimeoutChanged(int ms);
+    void stopTimeoutChanged(int ms);
 
 private slots:
     void browsePath();
@@ -26,4 +30,7 @@ private:
     QLineEdit *m_pathEdit = nullptr;
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;
+    QCheckBox *m_confirmStopCheck = nullptr;
+    QSpinBox *m_startTimeoutSpin = nullptr;
+    QSpinBox *m_stopTimeoutSpin = nullptr;
 };

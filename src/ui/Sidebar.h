@@ -11,6 +11,8 @@ class Sidebar : public QWidget
 public:
     explicit Sidebar(QWidget *parent = nullptr);
 
+    void selectPage(int index);
+
 signals:
     void pageSelected(int index);
 

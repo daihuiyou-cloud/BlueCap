@@ -1,6 +1,7 @@
 #include "VideoLibraryPage.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QDateTime>
 #include <QDesktopServices>
 #include <QFileInfo>
 #include <QLabel>
@@ -39,9 +40,21 @@ void VideoLibraryPage::refreshList(const QStringList &videos)
     m_list->clear();
     for (const auto &path : videos) {
         QFileInfo fi(path);
-        auto *item = new QListWidgetItem(fi.fileName(), m_list);
+        qint64 size = fi.size();
+        QString sizeStr;
+        if (size < 1024 * 1024)
+            sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
+        else
+            sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
+
+        QString text = fi.fileName() + QStringLiteral("\n")
+            + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
+            + QStringLiteral("  |  ") + sizeStr;
+
+        auto *item = new QListWidgetItem(text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
+        item->setSizeHint(QSize(0, 48));
     }
 }
 

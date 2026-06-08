@@ -3,17 +3,20 @@
 #include "ModeSwitch.h"
 #include "RecordButton.h"
 #include "RegionSelector.h"
+#include "WindowPicker.h"
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
-#include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QPainter>
+#include <QTimer>
 #include <QVBoxLayout>
 
 RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWidget *parent)
@@ -23,6 +26,21 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 {
     setAttribute(Qt::WA_StyledBackground, false);
 
+    m_recordingTimer = new QTimer(this);
+    connect(m_recordingTimer, &QTimer::timeout, this, &RecordPage::updateElapsedTime);
+    m_elapsed = new QElapsedTimer;
+
+    m_countdownTimer = new QTimer(this);
+    connect(m_countdownTimer, &QTimer::timeout, this, [this] {
+        m_countdownValue--;
+        if (m_countdownValue <= 0) {
+            m_countdownTimer->stop();
+            doStartRecording();
+            return;
+        }
+        m_titleLabel->setText(QString::number(m_countdownValue));
+    });
+
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(40, 40, 40, 0);
     root->setSpacing(0);
@@ -30,6 +48,12 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
     root->addSpacing(36);
+
+    connect(m_modeSwitch, &ModeSwitch::modeChanged, this, [this](RecordMode mode) {
+        if (!m_recorder->isRecording()) {
+            updateStatusForMode(mode);
+        }
+    });
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
@@ -91,6 +115,9 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     root->addWidget(bottomBar);
 
+    bottomBar->setCursor(Qt::PointingHandCursor);
+    bottomBar->installEventFilter(this);
+
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
     connect(m_recorder, &RecorderController::recordingChanged,
             this, &RecordPage::handleRecordingChanged);
@@ -119,14 +146,45 @@ void RecordPage::paintEvent(QPaintEvent *)
     painter.drawRoundedRect(panel, 34, 34);
 }
 
+void RecordPage::setConfirmStop(bool confirm)
+{
+    m_confirmStop = confirm;
+}
+
 void RecordPage::toggleRecording()
 {
     if (m_recorder->isRecording()) {
+        if (m_confirmStop) {
+            auto ret = QMessageBox::question(this, QStringLiteral("停止录制"),
+                QStringLiteral("确定要停止当前录制吗？"),
+                QMessageBox::Yes | QMessageBox::No);
+            if (ret != QMessageBox::Yes) return;
+        }
+        m_recordingTimer->stop();
         m_statusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
         m_recorder->stopRecording();
         return;
     }
 
+    if (m_countdownTimer->isActive())
+        return;
+
+    switch (m_modeSwitch->currentMode()) {
+    case RecordMode::FullScreen:
+    case RecordMode::Region:
+    case RecordMode::Window:
+        m_recordButton->setEnabled(false);
+        m_countdownValue = 3;
+        m_titleLabel->setText(QStringLiteral("3"));
+        m_statusLabel->setText(QStringLiteral("录制即将开始..."));
+        m_countdownTimer->start(1000);
+        break;
+    }
+}
+
+void RecordPage::doStartRecording()
+{
+    m_recordButton->setEnabled(true);
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
         m_recorder->startFullScreenRecording();
@@ -153,32 +211,33 @@ void RecordPage::startRegionSelection()
 
 void RecordPage::pickWindow()
 {
-    QStringList windows = RecorderController::enumerateWindows();
-    if (windows.isEmpty()) {
-        QMessageBox::information(this, QStringLiteral("BlueCap"),
-            QStringLiteral("未找到可见窗口。"));
-        return;
-    }
-
-    bool ok = false;
-    QString selected = QInputDialog::getItem(this,
-        QStringLiteral("选择窗口"),
-        QStringLiteral("请选择要录制的窗口："),
-        windows, 0, false, &ok);
-
-    if (ok && !selected.isEmpty()) {
-        m_recorder->startWindowRecording(selected);
+    auto *picker = new WindowPicker(this);
+    picker->setAttribute(Qt::WA_DeleteOnClose);
+    if (picker->exec() == QDialog::Accepted) {
+        QString selected = picker->selectedWindow();
+        if (!selected.isEmpty()) {
+            m_recorder->startWindowRecording(selected);
+        }
     }
 }
 
 void RecordPage::handleRecordingChanged(bool recording)
 {
     m_recordButton->setRecording(recording);
-    m_titleLabel->setText(recording ? QStringLiteral("停止录制") : QStringLiteral("开始录制"));
+    m_recordButton->setEnabled(true);
+
+    if (recording) {
+        m_recordingTimer->start(1000);
+        m_elapsed->start();
+        m_titleLabel->setText(QStringLiteral("停止录制"));
+        m_statusLabel->setText(QStringLiteral("正在录制，点击按钮停止"));
+    } else {
+        m_recordingTimer->stop();
+        m_titleLabel->setText(QStringLiteral("开始录制"));
+        updateStatusForMode(m_modeSwitch->currentMode());
+    }
+
     m_hotkeyLabel->setText(QStringLiteral("Ctrl + Shift + R"));
-    m_statusLabel->setText(recording
-        ? QStringLiteral("正在录制，点击按钮停止")
-        : QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"));
 }
 
 void RecordPage::handleVideoSaved(const QString &path)
@@ -190,8 +249,12 @@ void RecordPage::handleVideoSaved(const QString &path)
 void RecordPage::handleError(const QString &message)
 {
     m_recordButton->setRecording(false);
+    m_recordButton->setEnabled(true);
+    m_recordingTimer->stop();
+    m_countdownTimer->stop();
     m_titleLabel->setText(QStringLiteral("开始录制"));
     m_statusLabel->setText(QStringLiteral("录制失败"));
+    updateStatusForMode(m_modeSwitch->currentMode());
     QMessageBox::warning(this, QStringLiteral("录制失败"), message);
 }
 
@@ -203,4 +266,43 @@ void RecordPage::updateRecentVideos(const QStringList &videos)
     }
 
     m_recentDetailLabel->setText(QFileInfo(videos.first()).fileName());
+}
+
+void RecordPage::updateStatusForMode(RecordMode mode)
+{
+    switch (mode) {
+    case RecordMode::FullScreen:
+        m_statusLabel->setText(QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"));
+        break;
+    case RecordMode::Region:
+        m_statusLabel->setText(QStringLiteral("拖动选择录制区域"));
+        break;
+    case RecordMode::Window:
+        m_statusLabel->setText(QStringLiteral("选择要录制的窗口"));
+        break;
+    }
+}
+
+void RecordPage::updateElapsedTime()
+{
+    qint64 secs = m_elapsed->elapsed() / 1000;
+    int h = secs / 3600;
+    int m = (secs % 3600) / 60;
+    int s = secs % 60;
+    m_statusLabel->setText(QStringLiteral("正在录制  %1:%2:%3")
+        .arg(h, 2, 10, QChar('0'))
+        .arg(m, 2, 10, QChar('0'))
+        .arg(s, 2, 10, QChar('0')));
+}
+
+bool RecordPage::eventFilter(QObject *obj, QEvent *event)
+{
+    if (event->type() == QEvent::MouseButtonPress) {
+        auto *me = static_cast<QMouseEvent *>(event);
+        if (me->button() == Qt::LeftButton) {
+            emit recentVideosClicked();
+            return true;
+        }
+    }
+    return QWidget::eventFilter(obj, event);
 }

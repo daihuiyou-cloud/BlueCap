@@ -4,11 +4,27 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFileInfo>
+#include <QMap>
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
 
 #include <windows.h>
+
+namespace {
+
+QString friendlyError(const QString &raw)
+{
+    if (raw.contains(QStringLiteral("gdigrab")) || raw.contains(QStringLiteral("desktop")))
+        return QStringLiteral("屏幕捕获初始化失败，请检查是否有其他录屏程序在运行。");
+    if (raw.contains(QStringLiteral("permission denied")) || raw.contains(QStringLiteral("access denied")))
+        return QStringLiteral("没有文件写入权限，请检查保存路径。");
+    if (raw.contains(QStringLiteral("No such file")))
+        return QStringLiteral("未找到 FFmpeg 编码器，请检查 FFmpeg 配置。");
+    return QStringLiteral("录制出现异常：%1\n\n请尝试重启应用或检查 FFmpeg 配置。").arg(raw);
+}
+
+}
 
 RecorderController::RecorderController(QObject *parent)
     : QObject(parent)
@@ -51,9 +67,23 @@ void RecorderController::setPreset(const QString &preset)
     m_preset = preset;
 }
 
+void RecorderController::setStartTimeout(int ms)
+{
+    m_startTimeoutMs = ms;
+}
+
+void RecorderController::setStopTimeout(int ms)
+{
+    m_stopTimeoutMs = ms;
+}
+
 QStringList RecorderController::enumerateWindows()
 {
-    QSet<QString> titles;
+    struct WindowInfo {
+        QString title;
+        HWND hwnd;
+    };
+    QList<WindowInfo> windows;
 
     EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
         if (!IsWindowVisible(hwnd) || !GetWindowTextLengthW(hwnd)) {
@@ -61,11 +91,23 @@ QStringList RecorderController::enumerateWindows()
         }
         wchar_t buf[256];
         GetWindowTextW(hwnd, buf, 256);
-        reinterpret_cast<QSet<QString>*>(lParam)->insert(QString::fromWCharArray(buf));
+        auto *list = reinterpret_cast<QList<WindowInfo>*>(lParam);
+        list->append({ QString::fromWCharArray(buf), hwnd });
         return TRUE;
-    }, reinterpret_cast<LPARAM>(&titles));
+    }, reinterpret_cast<LPARAM>(&windows));
 
-    return titles.values();
+    QMap<QString, int> counts;
+    QStringList result;
+    for (const auto &info : windows) {
+        QString title = info.title;
+        int &count = counts[title];
+        if (count > 0) {
+            title += QStringLiteral(" (%1)").arg(count + 1);
+        }
+        result.append(title);
+        count++;
+    }
+    return result;
 }
 
 void RecorderController::startFullScreenRecording()
@@ -161,7 +203,7 @@ void RecorderController::start(const QStringList &args)
 {
     emit outputPathChanged(m_currentOutputPath);
     m_process->start(m_ffmpegPath, args);
-    m_startTimer->start(3000);
+    m_startTimer->start(m_startTimeoutMs);
 }
 
 void RecorderController::stopRecording()
@@ -170,7 +212,7 @@ void RecorderController::stopRecording()
 
     m_stopRequested = true;
     m_process->write("q\n");
-    m_stopTimer->start(3000);
+    m_stopTimer->start(m_stopTimeoutMs);
 }
 
 void RecorderController::handleStarted()
@@ -195,14 +237,14 @@ void RecorderController::handleFinished(int exitCode, QProcess::ExitStatus statu
     const QString ffmpegOutput = QString::fromLocal8Bit(m_process->readAll()).trimmed();
     emit errorOccurred(ffmpegOutput.isEmpty()
         ? QStringLiteral("录制进程异常退出。")
-        : ffmpegOutput);
+        : friendlyError(ffmpegOutput));
 }
 
 void RecorderController::handleProcessError(QProcess::ProcessError)
 {
     m_startTimer->stop();
     if (!m_stopRequested) {
-        emit errorOccurred(m_process->errorString());
+        emit errorOccurred(friendlyError(m_process->errorString()));
     }
 }
 

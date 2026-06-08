@@ -45,6 +45,15 @@ QWidget {
     background: #e0525e;
 }
 
+#recordingIndicator {
+    color: #e0525e;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    background: rgba(224, 82, 94, 0.10);
+    border-radius: 12px;
+}
+
 #sidebar {
     background: transparent;
 }
@@ -107,6 +116,10 @@ QWidget {
 #bottomBar {
     border-top: 1px solid rgba(207, 216, 232, 0.95);
     background: rgba(255, 255, 255, 0.18);
+}
+
+#bottomBar:hover {
+    background: rgba(222, 237, 255, 0.86);
 }
 
 #bottomIcon, #bottomTitle {

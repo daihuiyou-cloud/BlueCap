@@ -7,15 +7,19 @@
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QAction>
 #include <QApplication>
+#include <QCloseEvent>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
+#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
+#include <QSystemTrayIcon>
 #include <QVBoxLayout>
 
 #include <windows.h>
@@ -74,14 +78,65 @@ MainWindow::MainWindow(QWidget *parent)
             m_recorder, &RecorderController::setFrameRate);
     connect(settingsPage, &SettingsPage::presetChanged,
             m_recorder, &RecorderController::setPreset);
+    connect(settingsPage, &SettingsPage::startTimeoutChanged,
+            m_recorder, &RecorderController::setStartTimeout);
+    connect(settingsPage, &SettingsPage::stopTimeoutChanged,
+            m_recorder, &RecorderController::setStopTimeout);
+    connect(settingsPage, &SettingsPage::confirmStopChanged,
+            m_recordPage, &RecordPage::setConfirmStop);
+
+    connect(m_recordPage, &RecordPage::recentVideosClicked, this, [this] {
+        m_sidebar->selectPage(1);
+        m_stack->setCurrentIndex(1);
+    });
 
     qApp->installNativeEventFilter(this);
+
+    if (!m_hotkeyRegistered) {
+        m_hotkeyRegistered = RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
+    }
+
+    m_trayIcon = new QSystemTrayIcon(QIcon(QStringLiteral(":/icons/app-logo.svg")), this);
+    m_trayMenu = new QMenu(this);
+    QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
+    QAction *recordAction = m_trayMenu->addAction(QStringLiteral("开始/停止录制"));
+    m_trayMenu->addSeparator();
+    QAction *quitAction = m_trayMenu->addAction(QStringLiteral("退出"));
+    m_trayIcon->setContextMenu(m_trayMenu);
+    m_trayIcon->show();
+
+    connect(showAction, &QAction::triggered, this, [this] {
+        if (isVisible() && !isMinimized()) {
+            hide();
+        } else {
+            showNormal();
+            activateWindow();
+        }
+    });
+    connect(recordAction, &QAction::triggered, m_recordPage, &RecordPage::toggleRecording);
+    connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
+
+    connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
+        if (reason == QSystemTrayIcon::DoubleClick) {
+            showNormal();
+            activateWindow();
+        }
+    });
+
+    connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {
+        m_recordingIndicator->setVisible(recording);
+        m_trayMenu->actions()[1]->setText(recording
+            ? QStringLiteral("停止录制")
+            : QStringLiteral("开始/停止录制"));
+    });
 }
 
 MainWindow::~MainWindow()
 {
     qApp->removeNativeEventFilter(this);
-    UnregisterHotKey(nullptr, 1);
+    if (m_hotkeyRegistered) {
+        UnregisterHotKey(nullptr, 1);
+    }
 }
 
 bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
@@ -130,16 +185,18 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
     QWidget::mouseReleaseEvent(event);
 }
 
-void MainWindow::showEvent(QShowEvent *event)
+void MainWindow::closeEvent(QCloseEvent *event)
 {
-    QWidget::showEvent(event);
-    RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
-}
-
-void MainWindow::hideEvent(QHideEvent *event)
-{
-    QWidget::hideEvent(event);
-    UnregisterHotKey(nullptr, 1);
+    if (m_recorder->isRecording()) {
+        hide();
+        m_trayIcon->showMessage(QStringLiteral("BlueCap"),
+            QStringLiteral("录制正在进行中，程序已最小化到系统托盘。"),
+            QSystemTrayIcon::Information, 3000);
+        event->ignore();
+    } else {
+        hide();
+        event->ignore();
+    }
 }
 
 void MainWindow::paintEvent(QPaintEvent *event)
@@ -182,7 +239,13 @@ QWidget *MainWindow::createTitleBar()
 
     layout->addWidget(logo);
     layout->addWidget(title);
+
+    m_recordingIndicator = new QLabel(QStringLiteral("● 录制中"), this);
+    m_recordingIndicator->setObjectName(QStringLiteral("recordingIndicator"));
+    m_recordingIndicator->setVisible(false);
+    layout->addWidget(m_recordingIndicator);
     layout->addStretch();
+
     layout->addWidget(settingsButton);
     layout->addSpacing(18);
     layout->addWidget(minimizeButton);

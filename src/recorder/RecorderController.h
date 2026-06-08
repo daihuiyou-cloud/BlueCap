@@ -20,6 +20,8 @@ public:
 
     void setFrameRate(int fps);
     void setPreset(const QString &preset);
+    void setStartTimeout(int ms);
+    void setStopTimeout(int ms);
 
     static QStringList enumerateWindows();
 
@@ -53,6 +55,8 @@ private:
     QString m_currentOutputPath;
     bool m_stopRequested = false;
     int m_frameRate = 30;
+    int m_startTimeoutMs = 5000;
+    int m_stopTimeoutMs = 5000;
     QString m_preset = QStringLiteral("ultrafast");
     QString m_ffmpegPath;
 };

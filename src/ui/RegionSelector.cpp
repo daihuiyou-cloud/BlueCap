@@ -1,6 +1,7 @@
 #include "RegionSelector.h"
 
 #include <QApplication>
+#include <QFontMetrics>
 #include <QGuiApplication>
 #include <QKeyEvent>
 #include <QMouseEvent>
@@ -61,4 +62,19 @@ void RegionSelector::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.fillRect(rect(), QColor(0, 0, 0, 80));
+
+    painter.setPen(Qt::white);
+    QFont font = painter.font();
+    font.setPointSize(14);
+    font.setBold(true);
+    painter.setFont(font);
+
+    QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
+    QFontMetrics fm(font);
+    int textWidth = fm.horizontalAdvance(hint);
+    int x = (width() - textWidth) / 2;
+    int y = height() - 60;
+
+    painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
+    painter.drawText(x, y, hint);
 }

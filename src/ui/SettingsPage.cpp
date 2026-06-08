@@ -1,5 +1,6 @@
 #include "SettingsPage.h"
 
+#include <QCheckBox>
 #include <QComboBox>
 #include <QFileDialog>
 #include <QFormLayout>
@@ -8,6 +9,7 @@
 #include <QPushButton>
 #include <QSettings>
 #include <QSpinBox>
+#include <QStandardPaths>
 #include <QVBoxLayout>
 
 SettingsPage::SettingsPage(QWidget *parent)
@@ -30,9 +32,10 @@ SettingsPage::SettingsPage(QWidget *parent)
 
     QSettings defaults;
 
+    QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation)
+        + QStringLiteral("/BlueCap");
     m_pathEdit = new QLineEdit(form);
-    m_pathEdit->setText(defaults.value(QStringLiteral("settings/savePath"),
-        QStringLiteral("Videos/BlueCap")).toString());
+    m_pathEdit->setText(defaults.value(QStringLiteral("settings/savePath"), defaultPath).toString());
     auto *browseBtn = new QPushButton(QStringLiteral("浏览..."), form);
     browseBtn->setFixedWidth(80);
     auto *pathRow = new QWidget(form);
@@ -62,16 +65,35 @@ SettingsPage::SettingsPage(QWidget *parent)
     if (idx >= 0) m_qualityCombo->setCurrentIndex(idx);
     layout->addRow(QStringLiteral("画质"), m_qualityCombo);
 
-    root->addWidget(form);
+    m_confirmStopCheck = new QCheckBox(QStringLiteral("停止录制时确认"), form);
+    m_confirmStopCheck->setChecked(defaults.value(QStringLiteral("settings/confirmStop"), false).toBool());
+    layout->addRow(QStringLiteral(""), m_confirmStopCheck);
 
-    auto *applyBtn = new QPushButton(QStringLiteral("应用"), this);
-    applyBtn->setObjectName(QStringLiteral("applyButton"));
-    applyBtn->setFixedSize(90, 30);
-    root->addWidget(applyBtn, 0, Qt::AlignRight);
+    m_startTimeoutSpin = new QSpinBox(form);
+    m_startTimeoutSpin->setRange(1, 30);
+    m_startTimeoutSpin->setValue(defaults.value(QStringLiteral("settings/startTimeout"), 5).toInt());
+    m_startTimeoutSpin->setSuffix(QStringLiteral(" 秒"));
+    layout->addRow(QStringLiteral("启动超时"), m_startTimeoutSpin);
+
+    m_stopTimeoutSpin = new QSpinBox(form);
+    m_stopTimeoutSpin->setRange(1, 30);
+    m_stopTimeoutSpin->setValue(defaults.value(QStringLiteral("settings/stopTimeout"), 5).toInt());
+    m_stopTimeoutSpin->setSuffix(QStringLiteral(" 秒"));
+    layout->addRow(QStringLiteral("停止超时"), m_stopTimeoutSpin);
+
+    root->addWidget(form);
     root->addStretch();
 
     connect(browseBtn, &QPushButton::clicked, this, &SettingsPage::browsePath);
-    connect(applyBtn, &QPushButton::clicked, this, &SettingsPage::applySettings);
+
+    connect(m_pathEdit, &QLineEdit::textChanged, this, &SettingsPage::applySettings);
+    connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    connect(m_qualityCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, [this] {
+        applySettings();
+    });
+    connect(m_confirmStopCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
+    connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    connect(m_stopTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
 }
 
 void SettingsPage::browsePath()
@@ -89,8 +111,14 @@ void SettingsPage::applySettings()
     settings.setValue(QStringLiteral("settings/savePath"), m_pathEdit->text());
     settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
     settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
+    settings.setValue(QStringLiteral("settings/confirmStop"), m_confirmStopCheck->isChecked());
+    settings.setValue(QStringLiteral("settings/startTimeout"), m_startTimeoutSpin->value());
+    settings.setValue(QStringLiteral("settings/stopTimeout"), m_stopTimeoutSpin->value());
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
     emit savePathChanged(m_pathEdit->text());
+    emit confirmStopChanged(m_confirmStopCheck->isChecked());
+    emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
+    emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 }

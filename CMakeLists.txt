@@ -26,6 +26,8 @@ add_executable(BlueCap WIN32
     src/ui/RegionSelector.h
     src/ui/SettingsPage.cpp
     src/ui/SettingsPage.h
+    src/ui/WindowPicker.cpp
+    src/ui/WindowPicker.h
     src/ui/VideoLibraryPage.cpp
     src/ui/VideoLibraryPage.h
     src/recorder/RecorderController.cpp
