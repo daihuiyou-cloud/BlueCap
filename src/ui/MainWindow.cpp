@@ -138,6 +138,9 @@ void MainWindow::setupConnections()
             for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
                 titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, titleNormal, titleActive, titleDisabled));
             }
+            m_maximizeButton->setIcon(icon::coloredIcon(
+                m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
+                20, titleNormal, titleActive, titleDisabled));
         });
 
         settingsPage->loadSettings();
@@ -449,8 +452,11 @@ QWidget *MainWindow::createTitleBar()
     m_minimizeButton->setIcon(icon::coloredIcon(
         QStringLiteral(":/icons/title-minimize.svg"), 20,
         QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
-    m_maximizeButton = createTitleBarButton(QStringLiteral("□"), QStringLiteral("最大化"));
+    m_maximizeButton = createWindowButton(QString(), QStringLiteral("最大化"));
     m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
+    m_maximizeButton->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/title-maximize.svg"), 20,
+        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
     m_closeButton = createWindowButton(QString(), QStringLiteral("关闭"), QStringLiteral("closeButton"));
     m_closeButton->setIcon(icon::coloredIcon(
         QStringLiteral(":/icons/title-close.svg"), 20,
@@ -512,7 +518,12 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
 void MainWindow::updateMaximizeButton()
 {
     m_maximized = isMaximized();
-    m_maximizeButton->setText(m_maximized ? QStringLiteral("❐") : QStringLiteral("□"));
+    QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
+    QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
+    QColor titleDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
+    m_maximizeButton->setIcon(icon::coloredIcon(
+        m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
+        20, titleNormal, titleActive, titleDisabled));
     m_maximizeButton->setToolTip(m_maximized ? QStringLiteral("还原") : QStringLiteral("最大化"));
 }
 

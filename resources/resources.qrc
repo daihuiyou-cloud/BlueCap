@@ -11,6 +11,8 @@
         <file>icons/mode-window.svg</file>
         <file>icons/title-settings.svg</file>
         <file>icons/title-minimize.svg</file>
+        <file>icons/title-maximize.svg</file>
+        <file>icons/title-restore.svg</file>
         <file>icons/title-close.svg</file>
         <file>icons/clock.svg</file>
         <file>icons/keyboard.svg</file>
