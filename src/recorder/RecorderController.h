@@ -2,8 +2,10 @@
 
 #include "ui/ModeSwitch.h"
 
+#include <QList>
 #include <QMap>
 #include <QObject>
+#include <QPair>
 #include <QProcess>
 #include <QRect>
 #include <QString>
@@ -29,7 +31,12 @@ public:
     void setStartTimeout(int ms);
     void setStopTimeout(int ms);
 
-    static QMap<QString, QString> enumerateWindows();
+    struct WindowEntry {
+        QString displayName;
+        QString title;
+        qulonglong hwnd;
+    };
+    static QList<WindowEntry> enumerateWindows();
 
 public slots:
     void startFullScreenRecording();

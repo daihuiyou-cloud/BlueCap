@@ -30,6 +30,7 @@ private:
     void applyFilter();
     void showToast(const QString &message);
     QPixmap getVideoThumbnail(const QString &filePath);
+    void processNextThumbnail();
 
     VideoLibrary *m_library = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -42,5 +43,6 @@ private:
     QTimer *m_toastTimer = nullptr;
     QMap<QString, QPixmap> m_thumbnailCache;
     QStringList m_thumbnailLRU;
+    QStringList m_pendingThumbnails;
     static constexpr int kMaxThumbnails = 50;
 };

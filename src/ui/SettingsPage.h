@@ -28,8 +28,9 @@ signals:
 
 private slots:
     void browsePath();
-    void applySettings();
+    void applySettings(bool showFeedback = false);
     void resetDefaults();
+    void showPathError(const QString &msg);
 
 public:
     void loadSettings();
@@ -44,6 +45,5 @@ private:
     QSpinBox *m_stopTimeoutSpin = nullptr;
     QLabel *m_saveFeedback = nullptr;
     QTimer *m_feedbackTimer = nullptr;
-    QPushButton *m_applyBtn = nullptr;
     QPushButton *m_resetBtn = nullptr;
 };

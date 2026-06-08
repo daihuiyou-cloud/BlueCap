@@ -130,6 +130,7 @@ void VideoLibraryPage::refreshList(const QStringList &videos)
 void VideoLibraryPage::applyFilter()
 {
     m_list->clear();
+    m_pendingThumbnails.clear();
     QString filter = m_filterEdit->text().trimmed();
 
     QStringList matched;
@@ -154,15 +155,45 @@ void VideoLibraryPage::applyFilter()
             + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
             + QStringLiteral("  |  ") + format::fileSize(fi.size());
 
-        QPixmap thumb = getVideoThumbnail(path);
-        QIcon icon = thumb.isNull()
-            ? QIcon(QStringLiteral(":/icons/nav-record.svg"))
-            : QIcon(thumb);
-        auto *item = new QListWidgetItem(icon, text, m_list);
+        // Use placeholder icon first, load thumbnails asynchronously
+        auto *item = new QListWidgetItem(
+            QIcon(QStringLiteral(":/icons/nav-record.svg")), text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
         item->setSizeHint(QSize(0, 80));
+
+        // Cache hit — set icon immediately
+        if (m_thumbnailCache.contains(path)) {
+            item->setIcon(QIcon(m_thumbnailCache[path]));
+        } else {
+            m_pendingThumbnails.append(path);
+        }
     }
+
+    if (!m_pendingThumbnails.isEmpty())
+        QTimer::singleShot(30, this, &VideoLibraryPage::processNextThumbnail);
+}
+
+void VideoLibraryPage::processNextThumbnail()
+{
+    if (m_pendingThumbnails.isEmpty())
+        return;
+
+    QString path = m_pendingThumbnails.takeFirst();
+    QPixmap thumb = getVideoThumbnail(path);
+    if (!thumb.isNull()) {
+        // Update the matching list item
+        for (int i = 0; i < m_list->count(); ++i) {
+            auto *item = m_list->item(i);
+            if (item && item->data(Qt::UserRole).toString() == path) {
+                item->setIcon(QIcon(thumb));
+                break;
+            }
+        }
+    }
+
+    if (!m_pendingThumbnails.isEmpty())
+        QTimer::singleShot(30, this, &VideoLibraryPage::processNextThumbnail);
 }
 
 void VideoLibraryPage::openSelected()

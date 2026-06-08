@@ -30,6 +30,7 @@
 #include <QResizeEvent>
 #include <QScreen>
 #include <windows.h>
+#include <windowsx.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -218,18 +219,20 @@ void MainWindow::setupTray()
 
 QIcon MainWindow::makeTrayIcon(bool recording)
 {
-    QPixmap px(32, 32);
+    // Draw at 2x resolution for crisp display on high-DPI screens
+    QPixmap px(64, 64);
+    px.setDevicePixelRatio(2.0);
     px.fill(Qt::transparent);
     QPainter p(&px);
     p.setRenderHint(QPainter::Antialiasing);
     p.setBrush(recording ? QColor(239, 48, 57) : QColor(9, 103, 242));
     p.setPen(Qt::NoPen);
-    p.drawRoundedRect(2, 2, 28, 28, 6, 6);
+    p.drawRoundedRect(4, 4, 56, 56, 12, 12);
     if (recording) {
-        p.fillRect(10, 10, 12, 12, Qt::white);
+        p.fillRect(20, 20, 24, 24, Qt::white);
     } else {
         p.setBrush(Qt::white);
-        p.drawEllipse(10, 10, 12, 12);
+        p.drawEllipse(20, 20, 24, 24);
     }
     p.end();
     return QIcon(px);
@@ -266,6 +269,29 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
             if (result) {
                 *result = 0;
             }
+            return true;
+        }
+
+        if (msg->message == WM_NCHITTEST) {
+            RECT winRect;
+            GetWindowRect(msg->hwnd, &winRect);
+            int x = GET_X_LPARAM(msg->lParam);
+            int y = GET_Y_LPARAM(msg->lParam);
+
+            bool left   = x < winRect.left   + kResizeBorder;
+            bool right  = x > winRect.right  - kResizeBorder;
+            bool top    = y < winRect.top    + kResizeBorder;
+            bool bottom = y > winRect.bottom - kResizeBorder;
+
+            if (top && left)       *result = HTTOPLEFT;
+            else if (top && right) *result = HTTOPRIGHT;
+            else if (bottom && left) *result = HTBOTTOMLEFT;
+            else if (bottom && right) *result = HTBOTTOMRIGHT;
+            else if (top)          *result = HTTOP;
+            else if (bottom)       *result = HTBOTTOM;
+            else if (left)         *result = HTLEFT;
+            else if (right)        *result = HTRIGHT;
+            else                   return false;
             return true;
         }
     }

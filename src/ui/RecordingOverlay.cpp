@@ -85,7 +85,7 @@ void RecordingOverlay::paintEvent(QPaintEvent *)
     painter.setBrush(Qt::NoBrush);
     painter.drawRoundedRect(inner, radius, radius);
 
-    if (!m_isFullscreen) {
+    {
         const qreal dotR = 4;
         QPointF dotCenter(inner.right() - 14, inner.top() + 14);
         int alpha = m_pulseState ? 230 : 100;

@@ -1,11 +1,14 @@
 #pragma once
 
+#include "recorder/RecorderController.h"
+
 #include <QDialog>
-#include <QMap>
+#include <QList>
 #include <QStringList>
 
 class QListWidget;
 class QLineEdit;
+class QPushButton;
 
 class WindowPicker : public QDialog
 {
@@ -18,8 +21,10 @@ public:
 
 private:
     void populateList(const QString &filter = {});
+    void refreshWindows();
 
     QListWidget *m_list = nullptr;
     QLineEdit *m_filterEdit = nullptr;
-    QMap<QString, QString> m_windows;
+    QPushButton *m_refreshBtn = nullptr;
+    QList<RecorderController::WindowEntry> m_windows;
 };

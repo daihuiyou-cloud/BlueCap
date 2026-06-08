@@ -105,24 +105,24 @@ SettingsPage::SettingsPage(QWidget *parent)
         "border-radius: 6px; padding: 8px 20px; font-size: 13px; color: #53617a; } "
         "QPushButton:hover { background: rgba(232, 242, 255, 0.66); }"));
 
-    m_applyBtn = new QPushButton(QStringLiteral("应用"), this);
-    m_applyBtn->setCursor(Qt::PointingHandCursor);
-    m_applyBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { background: #0967f2; border: none; border-radius: 6px; "
-        "padding: 8px 28px; font-size: 13px; font-weight: 700; color: #ffffff; } "
-        "QPushButton:hover { background: #075ce0; }"));
-
     btnLayout->addStretch();
     btnLayout->addWidget(m_resetBtn);
-    btnLayout->addWidget(m_applyBtn);
     root->addWidget(btnRow);
 
     root->addStretch();
 
     loadSettings();
 
+    // Auto-save on any change
+    connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    connect(m_qualityCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SettingsPage::applySettings);
+    connect(m_confirmStopCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
+    connect(m_showCursorCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
+    connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    connect(m_stopTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    connect(m_pathEdit, &QLineEdit::editingFinished, this, [this] { applySettings(true); });
+
     connect(browseBtn, &QPushButton::clicked, this, &SettingsPage::browsePath);
-    connect(m_applyBtn, &QPushButton::clicked, this, &SettingsPage::applySettings);
     connect(m_resetBtn, &QPushButton::clicked, this, &SettingsPage::resetDefaults);
 }
 
@@ -160,6 +160,7 @@ void SettingsPage::browsePath()
         QStringLiteral("选择保存路径"), m_pathEdit->text());
     if (!dir.isEmpty()) {
         m_pathEdit->setText(dir);
+        applySettings(true);
     }
 }
 
@@ -174,18 +175,15 @@ void SettingsPage::resetDefaults()
     m_startTimeoutSpin->setValue(5);
     m_stopTimeoutSpin->setValue(5);
 
-    applySettings();
-    m_saveFeedback->setText(QStringLiteral("已恢复默认设置 ✓"));
+    applySettings(true);
 }
 
-void SettingsPage::applySettings()
+void SettingsPage::applySettings(bool showFeedback)
 {
     QString path = m_pathEdit->text().trimmed();
+
     if (path.isEmpty()) {
-        m_saveFeedback->setText(QStringLiteral("保存路径不能为空"));
-        m_saveFeedback->setStyleSheet(QStringLiteral("color: #e0525e; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
-        m_saveFeedback->setVisible(true);
-        m_feedbackTimer->start(2000);
+        showPathError(QStringLiteral("保存路径不能为空"));
         return;
     }
 
@@ -194,10 +192,7 @@ void SettingsPage::applySettings()
         dir.mkpath(QStringLiteral("."));
     }
     if (!dir.exists() || !QFileInfo(path).isWritable()) {
-        m_saveFeedback->setText(QStringLiteral("路径不可写，请选择其他路径"));
-        m_saveFeedback->setStyleSheet(QStringLiteral("color: #e0525e; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
-        m_saveFeedback->setVisible(true);
-        m_feedbackTimer->start(2000);
+        showPathError(QStringLiteral("路径不可写，请选择其他路径"));
         return;
     }
 
@@ -218,8 +213,18 @@ void SettingsPage::applySettings()
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 
-    m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
-    m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
+    if (showFeedback) {
+        m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
+        m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
+        m_saveFeedback->setVisible(true);
+        m_feedbackTimer->start(2000);
+    }
+}
+
+void SettingsPage::showPathError(const QString &msg)
+{
+    m_saveFeedback->setStyleSheet(QStringLiteral("color: #e0525e; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
+    m_saveFeedback->setText(msg);
     m_saveFeedback->setVisible(true);
-    m_feedbackTimer->start(2000);
+    m_feedbackTimer->start(3000);
 }

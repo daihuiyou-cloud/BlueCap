@@ -8,8 +8,9 @@ RecordButton::RecordButton(QWidget *parent)
     : QAbstractButton(parent)
 {
     setCursor(Qt::PointingHandCursor);
-    setFocusPolicy(Qt::NoFocus);
+    setFocusPolicy(Qt::StrongFocus);
     setToolTip(QStringLiteral("开始/停止录制"));
+    setAccessibleName(QStringLiteral("录制按钮"));
 }
 
 QSize RecordButton::sizeHint() const

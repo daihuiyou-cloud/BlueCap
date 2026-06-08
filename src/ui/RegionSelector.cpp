@@ -9,6 +9,25 @@
 #include <QScreen>
 #include <QTimer>
 
+struct ScreenLayout {
+    QPoint topLeft;
+    int width;
+    int height;
+};
+
+static ScreenLayout screenForPoint(const QPoint &pt)
+{
+    const auto screens = QGuiApplication::screens();
+    for (const auto *screen : screens) {
+        QRect geo = screen->geometry();
+        if (geo.contains(pt))
+            return { geo.topLeft(), geo.width(), geo.height() };
+    }
+    // fallback: primary screen
+    QRect primary = QGuiApplication::primaryScreen()->geometry();
+    return { primary.topLeft(), primary.width(), primary.height() };
+}
+
 RegionSelector::RegionSelector(QWidget *parent)
     : QWidget(parent)
 {
@@ -92,15 +111,21 @@ void RegionSelector::paintEvent(QPaintEvent *)
     font.setBold(true);
     painter.setFont(font);
 
-    QScreen *primaryScreen = QGuiApplication::primaryScreen();
-    QRect primaryGeo = primaryScreen->geometry();
-    QPoint topLeft = mapFromGlobal(primaryGeo.topLeft());
+    // Determine which screen to draw hints on — use selection center if selecting, else mouse position
+    QPoint refPoint = m_selecting ? QRect(m_origin, m_currentPos).center() : m_currentPos;
+    if (refPoint.isNull())
+        refPoint = m_origin;
+    if (refPoint.isNull())
+        refPoint = QGuiApplication::primaryScreen()->geometry().center();
+
+    ScreenLayout screen = screenForPoint(mapToGlobal(refPoint));
+    QPoint screenTopLeft = mapFromGlobal(screen.topLeft);
 
     QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
     QFontMetrics fm(font);
     int textWidth = fm.horizontalAdvance(hint);
-    int x = topLeft.x() + (primaryGeo.width() - textWidth) / 2;
-    int y = topLeft.y() + primaryGeo.height() - 60;
+    int x = screenTopLeft.x() + (screen.width - textWidth) / 2;
+    int y = screenTopLeft.y() + screen.height - 60;
 
     painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
     painter.drawText(x, y, hint);
@@ -117,8 +142,8 @@ void RegionSelector::paintEvent(QPaintEvent *)
             painter.setFont(hintFont);
             QFontMetrics hintFm(hintFont);
             int tw = hintFm.horizontalAdvance(tooSmallHint);
-            int sx = topLeft.x() + (primaryGeo.width() - tw) / 2;
-            int sy = topLeft.y() + 60;
+            int sx = screenTopLeft.x() + (screen.width - tw) / 2;
+            int sy = screenTopLeft.y() + 60;
             painter.fillRect(sx - 24, sy - 40, tw + 48, 52, QColor(180, 40, 40, 200));
             painter.setPen(Qt::white);
             painter.drawText(sx, sy, tooSmallHint);
@@ -132,8 +157,8 @@ void RegionSelector::paintEvent(QPaintEvent *)
 
             QFontMetrics sizeFm(sizeFont);
             int sw = sizeFm.horizontalAdvance(sizeText);
-            int sx = topLeft.x() + (primaryGeo.width() - sw) / 2;
-            int sy = topLeft.y() + 60;
+            int sx = screenTopLeft.x() + (screen.width - sw) / 2;
+            int sy = screenTopLeft.y() + 60;
 
             painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
             painter.setPen(Qt::white);

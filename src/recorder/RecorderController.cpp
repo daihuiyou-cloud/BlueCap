@@ -121,7 +121,7 @@ void RecorderController::setStopTimeout(int ms)
     m_stopTimeoutMs = ms;
 }
 
-QMap<QString, QString> RecorderController::enumerateWindows()
+QList<RecorderController::WindowEntry> RecorderController::enumerateWindows()
 {
     struct WindowInfo {
         QString title;
@@ -141,7 +141,7 @@ QMap<QString, QString> RecorderController::enumerateWindows()
     }, reinterpret_cast<LPARAM>(&windows));
 
     QMap<QString, int> counts;
-    QMap<QString, QString> result;
+    QList<WindowEntry> result;
     for (const auto &info : windows) {
         const QString &original = info.title;
         QString display = original;
@@ -149,7 +149,7 @@ QMap<QString, QString> RecorderController::enumerateWindows()
         if (count > 0) {
             display += QStringLiteral(" (%1)").arg(count + 1);
         }
-        result.insert(display, original);
+        result.append({ display, original, reinterpret_cast<qulonglong>(info.hwnd) });
         count++;
     }
     return result;
@@ -285,10 +285,19 @@ void RecorderController::handleStopTimeout()
 {
     m_forceKilled = true;
     m_process->terminate();
-    QTimer::singleShot(1500, this, [this] {
+    // Safety net: force-report failure after kill attempt
+    QTimer::singleShot(2000, this, [this] {
         if (m_process->state() != QProcess::NotRunning) {
             m_process->kill();
         }
+        // If the process still hasn't emitted finished after kill, fire signals directly
+        QTimer::singleShot(500, this, [this] {
+            if (m_process->state() != QProcess::NotRunning) {
+                return; // handleFinished will still fire
+            }
+            emit recordingChanged(false);
+            emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
+        });
     });
 }
 

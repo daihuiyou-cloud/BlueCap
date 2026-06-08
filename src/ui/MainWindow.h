@@ -69,4 +69,6 @@ private:
     RecordingOverlay *m_overlay = nullptr;
     QPixmap m_shadowCache;
     void renderShadowCache();
+
+    static constexpr int kResizeBorder = 5;
 };
