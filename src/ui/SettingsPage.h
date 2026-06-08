@@ -25,6 +25,7 @@ signals:
     void showCursorChanged(bool show);
     void startTimeoutChanged(int ms);
     void stopTimeoutChanged(int ms);
+    void themeChanged(int theme);
 
 private slots:
     void browsePath();
@@ -39,6 +40,7 @@ private:
     QLineEdit *m_pathEdit = nullptr;
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;
+    QComboBox *m_themeCombo = nullptr;
     QCheckBox *m_confirmStopCheck = nullptr;
     QCheckBox *m_showCursorCheck = nullptr;
     QSpinBox *m_startTimeoutSpin = nullptr;

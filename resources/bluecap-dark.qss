@@ -1,0 +1,232 @@
+QWidget {
+    font-family: "Microsoft YaHei UI", "Segoe UI";
+    color: #c8d0dc;
+}
+
+#surface {
+    border-radius: 20px;
+    background: rgba(30, 35, 45, 0.96);
+}
+
+#titleBar {
+    background: transparent;
+}
+
+#appLogo {
+    border-radius: 8px;
+    color: #ef3348;
+    font-size: 14px;
+    font-weight: 900;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 #4d7dbf, stop:0.52 #3a7fdd, stop:1 #2a6dcc);
+}
+
+#windowTitle {
+    color: #e0e4ed;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+#titleButton, #closeButton {
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: #9aa8bc;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+#titleButton:hover, #closeButton:hover {
+    background: rgba(50, 60, 80, 0.72);
+}
+
+#closeButton:hover {
+    color: #ffffff;
+    background: #e0525e;
+}
+
+#recordingIndicator {
+    color: #e0525e;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 4px 12px;
+    background: rgba(224, 82, 94, 0.12);
+    border: 1px solid rgba(224, 82, 94, 0.30);
+    border-radius: 12px;
+}
+
+#sidebar {
+    background: transparent;
+}
+
+#sidebarButton {
+    border: 0;
+    border-radius: 18px;
+    text-align: left;
+    padding-left: 22px;
+    color: #c8d0dc;
+    background: transparent;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+#sidebarButton:checked {
+    color: #4da3ff;
+    background: rgba(40, 55, 80, 0.86);
+}
+
+#sidebarButton:hover {
+    background: rgba(50, 60, 80, 0.66);
+}
+
+#modeButton {
+    border: 0;
+    border-radius: 20px;
+    color: #b0bcc8;
+    font-size: 17px;
+    font-weight: 700;
+    background: transparent;
+}
+
+#modeButton:checked {
+    color: #4da3ff;
+    background: rgba(20, 24, 32, 0.78);
+}
+
+#modeButton:hover {
+    background: rgba(20, 24, 32, 0.46);
+}
+
+#modeButton:disabled {
+    color: #505868;
+    background: transparent;
+}
+
+#recordTitle {
+    color: #d4dce8;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+#recordHotkey {
+    color: #8898b0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+#recordStatus {
+    color: #7080a0;
+    font-size: 13px;
+}
+
+#bottomBar {
+    border-top: 1px solid rgba(60, 70, 85, 0.95);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+#bottomNavSection {
+    background: transparent;
+    border-radius: 6px;
+}
+
+#bottomNavSection:hover {
+    background: rgba(40, 55, 80, 0.86);
+}
+
+#bottomSeparator {
+    background: rgba(60, 70, 85, 0.6);
+}
+
+#bottomIcon, #bottomTitle {
+    color: #7a8aa0;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+#bottomDetail {
+    color: #5a6a80;
+    font-size: 12px;
+}
+
+#shortcutText {
+    color: #7a8aa0;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+#placeholderTitle {
+    color: #d4dce8;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+#placeholderSubtitle {
+    color: #8090a8;
+    font-size: 14px;
+}
+
+#pageHeader {
+    color: #d4dce8;
+    font-size: 20px;
+    font-weight: 800;
+}
+
+QListWidget {
+    border: 1px solid rgba(60, 70, 85, 0.95);
+    border-radius: 8px;
+    background: rgba(20, 24, 32, 0.5);
+    font-size: 13px;
+    color: #b0bcc8;
+    padding: 3px;
+}
+
+QListWidget::item {
+    padding: 6px 8px;
+    border-radius: 4px;
+}
+
+QListWidget::item:selected {
+    background: rgba(40, 55, 80, 0.86);
+    color: #4da3ff;
+}
+
+QListWidget::item:hover {
+    background: rgba(50, 60, 80, 0.66);
+}
+
+QFormLayout QLabel {
+    color: #7084a0;
+    font-size: 13px;
+}
+
+QLineEdit, QSpinBox, QComboBox {
+    border: 1px solid rgba(60, 70, 85, 0.95);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 13px;
+    background: rgba(20, 24, 32, 0.6);
+    color: #b0bcc8;
+}
+
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border-color: #4da3ff;
+}
+
+QProgressBar {
+    border: 1px solid rgba(60, 70, 85, 0.6);
+    background: rgba(40, 50, 65, 0.3);
+    border-radius: 3px;
+}
+
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0,
+        stop:0 #4d7dbf, stop:0.52 #3a7fdd, stop:1 #2a6dcc);
+    border-radius: 3px;
+}
+
+#saveFeedback {
+    color: #3dbe75;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+}

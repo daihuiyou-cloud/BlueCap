@@ -61,6 +61,13 @@ SettingsPage::SettingsPage(QWidget *parent)
     m_qualityCombo->setToolTip(QStringLiteral("画质越高，视频文件越大。推荐选择「fast」获得较好的平衡。"));
     layout->addRow(QStringLiteral("画质"), m_qualityCombo);
 
+    m_themeCombo = new QComboBox(form);
+    m_themeCombo->addItem(QStringLiteral("跟随系统"), 0);
+    m_themeCombo->addItem(QStringLiteral("浅色模式"), 1);
+    m_themeCombo->addItem(QStringLiteral("深色模式"), 2);
+    m_themeCombo->setToolTip(QStringLiteral("选择应用的外观主题，可跟随 Windows 系统设置"));
+    layout->addRow(QStringLiteral("主题"), m_themeCombo);
+
     m_confirmStopCheck = new QCheckBox(QStringLiteral("停止录制时确认"), form);
     m_confirmStopCheck->setToolTip(QStringLiteral("启用后，停止录制时会弹出确认对话框"));
     layout->addRow(QStringLiteral(""), m_confirmStopCheck);
@@ -116,6 +123,7 @@ SettingsPage::SettingsPage(QWidget *parent)
     // Auto-save on any change
     connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
     connect(m_qualityCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SettingsPage::applySettings);
+    connect(m_themeCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SettingsPage::applySettings);
     connect(m_confirmStopCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
     connect(m_showCursorCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
     connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
@@ -140,6 +148,9 @@ void SettingsPage::loadSettings()
     int idx = m_qualityCombo->findData(savedPreset);
     if (idx >= 0) m_qualityCombo->setCurrentIndex(idx);
 
+    int themeIdx = m_themeCombo->findData(s.value(QStringLiteral("settings/theme"), 0).toInt());
+    if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
+
     m_confirmStopCheck->setChecked(s.value(QStringLiteral("settings/confirmStop"), false).toBool());
     m_showCursorCheck->setChecked(s.value(QStringLiteral("settings/showCursor"), true).toBool());
     m_startTimeoutSpin->setValue(s.value(QStringLiteral("settings/startTimeout"), 5).toInt());
@@ -152,6 +163,7 @@ void SettingsPage::loadSettings()
     emit showCursorChanged(m_showCursorCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
+    emit themeChanged(m_themeCombo->currentData().toInt());
 }
 
 void SettingsPage::browsePath()
@@ -174,6 +186,8 @@ void SettingsPage::resetDefaults()
     m_showCursorCheck->setChecked(true);
     m_startTimeoutSpin->setValue(5);
     m_stopTimeoutSpin->setValue(5);
+    int themeIdx = m_themeCombo->findData(0);
+    if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
 
     applySettings(true);
 }
@@ -207,10 +221,12 @@ void SettingsPage::applySettings(bool showFeedback)
     settings.setValue(QStringLiteral("settings/showCursor"), m_showCursorCheck->isChecked());
     settings.setValue(QStringLiteral("settings/startTimeout"), m_startTimeoutSpin->value());
     settings.setValue(QStringLiteral("settings/stopTimeout"), m_stopTimeoutSpin->value());
+    settings.setValue(QStringLiteral("settings/theme"), m_themeCombo->currentData().toInt());
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
     emit savePathChanged(path);
+    emit themeChanged(m_themeCombo->currentData().toInt());
     emit confirmStopChanged(m_confirmStopCheck->isChecked());
     emit showCursorChanged(m_showCursorCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
