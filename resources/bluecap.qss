@@ -5,7 +5,7 @@ QWidget {
 
 #surface {
     border-radius: 20px;
-    background: rgba(245, 249, 255, 0.94);
+    background: rgba(244, 248, 255, 0.95);
 }
 
 #titleBar {
@@ -67,7 +67,7 @@ QWidget {
 
 #sidebarButton {
     border: 0;
-    border-radius: 18px;
+    border-radius: 16px;
     text-align: left;
     padding-left: 22px;
     color: #172033;
@@ -78,12 +78,12 @@ QWidget {
 
 #sidebarButton:checked {
     color: #0967f2;
-    background: rgba(222, 237, 255, 0.86);
+    background: rgba(218, 234, 255, 0.74);
 }
 
 #sidebarButton:hover {
     color: #0967f2;
-    background: rgba(232, 242, 255, 0.66);
+    background: rgba(232, 242, 255, 0.76);
 }
 
 #sidebarButton:disabled {
@@ -93,20 +93,20 @@ QWidget {
 
 #modeButton {
     border: 0;
-    border-radius: 20px;
+    border-radius: 18px;
     color: #1f2940;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     background: transparent;
 }
 
 #modeButton:checked {
     color: #0967f2;
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.92);
 }
 
 #modeButton:hover {
-    background: rgba(255, 255, 255, 0.46);
+    background: rgba(255, 255, 255, 0.68);
 }
 
 #modeButton:disabled {
@@ -116,13 +116,13 @@ QWidget {
 
 #recordTitle {
     color: #162039;
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 800;
 }
 
 #recordHotkey {
     color: #475673;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
 }
 
@@ -132,8 +132,9 @@ QWidget {
 }
 
 #bottomBar {
-    border-top: 1px solid rgba(207, 216, 232, 0.95);
-    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(204, 216, 235, 0.9);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.56);
 }
 
 #bottomNavSection {
@@ -151,7 +152,7 @@ QWidget {
 
 #bottomIcon, #bottomTitle {
     color: #53617a;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
 }
 
@@ -162,7 +163,7 @@ QWidget {
 
 #shortcutText {
     color: #53617a;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
 }
 

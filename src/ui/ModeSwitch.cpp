@@ -14,11 +14,11 @@ QToolButton *createModeButton(const QString &text, bool checked = false)
     auto *button = new QToolButton;
     button->setObjectName(QStringLiteral("modeButton"));
     button->setText(text);
-    button->setIconSize(QSize(24, 24));
+    button->setIconSize(QSize(22, 22));
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
-    button->setMinimumSize(180, 44);
+    button->setMinimumSize(168, 42);
     button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     return button;
 }
@@ -31,14 +31,14 @@ ModeSwitch::ModeSwitch(QWidget *parent)
     , m_pillFill(247, 250, 255, 232)
     , m_dividerColor(218, 224, 237)
 {
-    setFixedHeight(52);
-    setMinimumWidth(580);
+    setFixedHeight(54);
+    setMinimumWidth(560);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QHBoxLayout(this);
-    layout->setContentsMargins(6, 5, 6, 5);
+    layout->setContentsMargins(5, 5, 5, 5);
     layout->setSpacing(0);
 
     const QStringList paths = {
@@ -84,14 +84,15 @@ RecordMode ModeSwitch::currentMode() const
 
 void ModeSwitch::setDarkMode(bool dark)
 {
+    m_darkMode = dark;
     if (dark) {
-        m_pillBorder = QColor(60, 70, 85);
-        m_pillFill = QColor(35, 42, 55, 232);
-        m_dividerColor = QColor(60, 70, 85);
+        m_pillBorder = QColor(72, 84, 106);
+        m_pillFill = QColor(31, 38, 50, 222);
+        m_dividerColor = QColor(74, 86, 108);
     } else {
-        m_pillBorder = QColor(214, 222, 238);
-        m_pillFill = QColor(247, 250, 255, 232);
-        m_dividerColor = QColor(218, 224, 237);
+        m_pillBorder = QColor(202, 212, 230);
+        m_pillFill = QColor(249, 252, 255, 232);
+        m_dividerColor = QColor(210, 218, 232);
     }
     updateIcons();
     update();
@@ -136,11 +137,18 @@ void ModeSwitch::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing);
 
     const QRectF pill = rect().adjusted(0.5, 0.5, -0.5, -0.5);
-    painter.setPen(m_pillBorder);
+    painter.setPen(QPen(m_pillBorder, 1.2));
     painter.setBrush(m_pillFill);
     painter.drawRoundedRect(pill, 38, 38);
 
-    painter.setPen(m_dividerColor);
+    QLinearGradient glow(pill.topLeft(), pill.bottomLeft());
+    glow.setColorAt(0.0, m_darkMode ? QColor(255, 255, 255, 18) : QColor(255, 255, 255, 95));
+    glow.setColorAt(0.45, QColor(255, 255, 255, 0));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(glow);
+    painter.drawRoundedRect(pill.adjusted(1, 1, -1, -1), 37, 37);
+
+    painter.setPen(QPen(m_dividerColor, 1));
     const auto buttons = m_group->buttons();
     const int count = buttons.size();
     for (int i = 1; i < count; ++i) {

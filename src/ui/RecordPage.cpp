@@ -54,12 +54,12 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     connect(m_stopProgressTimer, &QTimer::timeout, this, &RecordPage::updateStopProgress);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(40, 40, 40, 0);
+    root->setContentsMargins(48, 38, 48, 16);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
-    root->addSpacing(36);
+    root->addSpacing(42);
 
     connect(m_modeSwitch, &ModeSwitch::modeChanged, this, [this](RecordMode mode) {
         if (!m_recorder->isRecording()) {
@@ -69,7 +69,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
-    root->addSpacing(14);
+    root->addSpacing(18);
 
     m_titleLabel = new QLabel(QStringLiteral("开始录制"), this);
     m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
@@ -93,9 +93,9 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     root->addWidget(m_titleLabel);
     root->addWidget(m_countdownLabel);
     root->addWidget(m_hotkeyLabel);
-    root->addSpacing(6);
+    root->addSpacing(8);
     root->addWidget(m_statusLabel);
-    root->addSpacing(4);
+    root->addSpacing(6);
 
     m_stopStatusLabel = new QLabel(QStringLiteral("正在结束录制并写入视频文件..."), this);
     m_stopStatusLabel->setObjectName(QStringLiteral("stopStatusLabel"));
@@ -144,7 +144,7 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
 {
     auto *bottomBar = new QFrame(this);
     bottomBar->setObjectName(QStringLiteral("bottomBar"));
-    bottomBar->setMinimumHeight(68);
+    bottomBar->setMinimumHeight(74);
 
     auto *bottomLayout = new QHBoxLayout(bottomBar);
     bottomLayout->setContentsMargins(0, 0, 0, 0);
@@ -155,8 +155,8 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     m_bottomNavSection->setCursor(Qt::PointingHandCursor);
     m_bottomNavSection->setToolTip(QStringLiteral("点击查看全部录制视频"));
     auto *navLayout = new QHBoxLayout(m_bottomNavSection);
-    navLayout->setContentsMargins(28, 0, 18, 0);
-    navLayout->setSpacing(14);
+    navLayout->setContentsMargins(30, 0, 20, 0);
+    navLayout->setSpacing(15);
 
     m_recentIcon = new QLabel(m_bottomNavSection);
     m_recentIcon->setObjectName(QStringLiteral("bottomIcon"));
@@ -181,8 +181,8 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
 
     auto *rightSection = new QWidget(bottomBar);
     auto *rightLayout = new QHBoxLayout(rightSection);
-    rightLayout->setContentsMargins(14, 0, 24, 0);
-    rightLayout->setSpacing(14);
+    rightLayout->setContentsMargins(18, 0, 26, 0);
+    rightLayout->setSpacing(15);
 
     m_keyboardIcon = new QLabel(rightSection);
     m_keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
@@ -238,16 +238,24 @@ void RecordPage::paintEvent(QPaintEvent *)
 
     QLinearGradient fill(panel.topLeft(), panel.bottomRight());
     if (m_darkMode) {
-        painter.setPen(QColor(50, 58, 72));
-        fill.setColorAt(0.0, QColor(35, 42, 55, 240));
-        fill.setColorAt(1.0, QColor(30, 36, 48, 235));
+        painter.setPen(QColor(56, 66, 84));
+        fill.setColorAt(0.0, QColor(35, 42, 55, 238));
+        fill.setColorAt(0.55, QColor(31, 38, 50, 236));
+        fill.setColorAt(1.0, QColor(28, 34, 45, 234));
     } else {
-        painter.setPen(QColor(230, 236, 247));
+        painter.setPen(QColor(220, 229, 244));
         fill.setColorAt(0.0, QColor(255, 255, 255, 235));
         fill.setColorAt(1.0, QColor(242, 247, 255, 224));
     }
     painter.setBrush(fill);
     painter.drawRoundedRect(panel, 34, 34);
+
+    QLinearGradient sheen(panel.topLeft(), panel.bottomLeft());
+    sheen.setColorAt(0.0, m_darkMode ? QColor(255, 255, 255, 16) : QColor(255, 255, 255, 70));
+    sheen.setColorAt(0.34, QColor(255, 255, 255, 0));
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(sheen);
+    painter.drawRoundedRect(panel.adjusted(1, 1, -1, -1), 33, 33);
 }
 
 void RecordPage::setConfirmStop(bool confirm)

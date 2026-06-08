@@ -15,7 +15,7 @@ RecordButton::RecordButton(QWidget *parent)
 
 QSize RecordButton::sizeHint() const
 {
-    return QSize(130, 130);
+    return QSize(122, 122);
 }
 
 void RecordButton::setRecording(bool recording)
@@ -49,25 +49,26 @@ void RecordButton::renderCache()
     QPainter p(&m_bgCache);
     p.setRenderHint(QPainter::Antialiasing);
 
-    const QRectF bounds = rect().adjusted(4, 4, -4, -4);
+    const QRectF bounds = rect().adjusted(5, 5, -5, -5);
     const QPointF center = bounds.center();
     const qreal d = qMin(bounds.width(), bounds.height());
     const qreal r = d / 2.0;
 
-    QRadialGradient shadow(center + QPointF(0, d * 0.1), r * 1.25);
-    int shadowAlpha = m_darkMode ? 30 : 60;
+    QRadialGradient shadow(center + QPointF(0, d * 0.12), r * 1.2);
+    int shadowAlpha = m_darkMode ? 34 : 58;
     shadow.setColorAt(0.2, QColor(36, 100, 220, shadowAlpha));
     shadow.setColorAt(1.0, QColor(36, 100, 220, 0));
     p.setPen(Qt::NoPen);
     p.setBrush(shadow);
     p.drawEllipse(center, r * 1.08, r * 1.08);
 
-    p.setBrush(m_darkMode ? QColor(45, 52, 66) : QColor(246, 250, 255));
+    p.setBrush(m_darkMode ? QColor(43, 51, 66) : QColor(246, 250, 255));
     p.drawEllipse(bounds);
 
-    const qreal w = d * 0.391;
-    p.setBrush(m_darkMode ? QColor(35, 42, 55) : QColor(255, 255, 255));
-    p.drawEllipse(bounds.adjusted(w, w, -w, -w));
+    QPen rim(m_darkMode ? QColor(65, 76, 96) : QColor(225, 234, 248), 1.2);
+    p.setPen(rim);
+    p.setBrush(Qt::NoBrush);
+    p.drawEllipse(bounds.adjusted(0.5, 0.5, -0.5, -0.5));
 }
 
 void RecordButton::paintEvent(QPaintEvent *)
@@ -78,7 +79,7 @@ void RecordButton::paintEvent(QPaintEvent *)
     if (!m_bgCache.isNull())
         painter.drawPixmap(0, 0, m_bgCache);
 
-    const QRectF bounds = rect().adjusted(4, 4, -4, -4);
+    const QRectF bounds = rect().adjusted(5, 5, -5, -5);
     const QPointF center = bounds.center();
     const qreal d = qMin(bounds.width(), bounds.height());
 
@@ -86,10 +87,15 @@ void RecordButton::paintEvent(QPaintEvent *)
     blue.setColorAt(0.0, m_recording ? QColor(255, 89, 89) : QColor(77, 166, 255));
     blue.setColorAt(1.0, m_recording ? QColor(210, 29, 45) : QColor(10, 91, 238));
 
-    const qreal g = d * 0.126;
+    const qreal g = d * 0.135;
     painter.setPen(Qt::NoPen);
     painter.setBrush(blue);
     painter.drawEllipse(bounds.adjusted(g, g, -g, -g));
+
+    QPen highlight(QColor(255, 255, 255, m_darkMode ? 42 : 70), 1.4);
+    painter.setPen(highlight);
+    painter.setBrush(Qt::NoBrush);
+    painter.drawEllipse(bounds.adjusted(g + 1.2, g + 1.2, -g - 1.2, -g - 1.2));
 
     painter.setBrush(m_recording ? QColor(255, 255, 255) : QColor(239, 48, 57));
     if (m_recording) {

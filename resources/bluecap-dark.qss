@@ -5,7 +5,7 @@ QWidget {
 
 #surface {
     border-radius: 20px;
-    background: rgba(30, 35, 45, 0.96);
+    background: rgba(28, 34, 45, 0.97);
 }
 
 #titleBar {
@@ -67,7 +67,7 @@ QWidget {
 
 #sidebarButton {
     border: 0;
-    border-radius: 18px;
+    border-radius: 16px;
     text-align: left;
     padding-left: 22px;
     color: #c8d0dc;
@@ -78,12 +78,12 @@ QWidget {
 
 #sidebarButton:checked {
     color: #4da3ff;
-    background: rgba(40, 55, 80, 0.86);
+    background: rgba(55, 78, 112, 0.62);
 }
 
 #sidebarButton:hover {
     color: #4da3ff;
-    background: rgba(50, 60, 80, 0.66);
+    background: rgba(46, 58, 78, 0.58);
 }
 
 #sidebarButton:disabled {
@@ -93,20 +93,20 @@ QWidget {
 
 #modeButton {
     border: 0;
-    border-radius: 20px;
+    border-radius: 18px;
     color: #b0bcc8;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 700;
     background: transparent;
 }
 
 #modeButton:checked {
     color: #4da3ff;
-    background: rgba(20, 24, 32, 0.78);
+    background: rgba(15, 20, 29, 0.82);
 }
 
 #modeButton:hover {
-    background: rgba(20, 24, 32, 0.46);
+    background: rgba(22, 29, 40, 0.56);
 }
 
 #modeButton:disabled {
@@ -116,24 +116,25 @@ QWidget {
 
 #recordTitle {
     color: #d4dce8;
-    font-size: 22px;
+    font-size: 21px;
     font-weight: 800;
 }
 
 #recordHotkey {
-    color: #8898b0;
-    font-size: 17px;
+    color: #94a6c0;
+    font-size: 16px;
     font-weight: 600;
 }
 
 #recordStatus {
-    color: #7080a0;
+    color: #8192ad;
     font-size: 13px;
 }
 
 #bottomBar {
-    border-top: 1px solid rgba(60, 70, 85, 0.95);
-    background: rgba(0, 0, 0, 0.18);
+    border: 1px solid rgba(58, 70, 90, 0.82);
+    border-radius: 10px;
+    background: rgba(17, 22, 31, 0.42);
 }
 
 #bottomNavSection {
@@ -142,27 +143,27 @@ QWidget {
 }
 
 #bottomNavSection:hover {
-    background: rgba(40, 55, 80, 0.86);
+    background: rgba(44, 58, 80, 0.54);
 }
 
 #bottomSeparator {
-    background: rgba(60, 70, 85, 0.6);
+    background: rgba(74, 88, 112, 0.7);
 }
 
 #bottomIcon, #bottomTitle {
-    color: #7a8aa0;
-    font-size: 17px;
+    color: #93a2b8;
+    font-size: 16px;
     font-weight: 700;
 }
 
 #bottomDetail {
-    color: #5a6a80;
+    color: #6f8098;
     font-size: 12px;
 }
 
 #shortcutText {
-    color: #7a8aa0;
-    font-size: 17px;
+    color: #93a2b8;
+    font-size: 16px;
     font-weight: 600;
 }
 
