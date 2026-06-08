@@ -14,7 +14,7 @@ RecordButton::RecordButton(QWidget *parent)
 
 QSize RecordButton::sizeHint() const
 {
-    return QSize(190, 190);
+    return QSize(130, 130);
 }
 
 void RecordButton::setRecording(bool recording)

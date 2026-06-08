@@ -26,8 +26,8 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(QStringLiteral("BlueCap"));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
-    resize(1384, 856);
-    setMinimumSize(1060, 660);
+    resize(960, 600);
+    setMinimumSize(740, 460);
 
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
@@ -37,7 +37,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("ultrafast")).toString());
 
     auto *shell = new QVBoxLayout(this);
-    shell->setContentsMargins(18, 18, 18, 18);
+    shell->setContentsMargins(12, 12, 12, 12);
     shell->setSpacing(0);
 
     auto *surface = new QWidget(this);
@@ -51,8 +51,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto *body = new QWidget(surface);
     auto *bodyLayout = new QHBoxLayout(body);
-    bodyLayout->setContentsMargins(0, 0, 32, 32);
-    bodyLayout->setSpacing(32);
+    bodyLayout->setContentsMargins(0, 0, 20, 20);
+    bodyLayout->setSpacing(20);
 
     m_sidebar = new Sidebar(body);
     bodyLayout->addWidget(m_sidebar);
@@ -148,8 +148,8 @@ void MainWindow::paintEvent(QPaintEvent *event)
     painter.setRenderHint(QPainter::Antialiasing);
     painter.setPen(Qt::NoPen);
 
-    const QRectF shadowRect = rect().adjusted(18, 18, -18, -18);
-    for (int i = 14; i >= 1; --i) {
+    const QRectF shadowRect = rect().adjusted(12, 12, -12, -12);
+    for (int i = 10; i >= 1; --i) {
         painter.setBrush(QColor(38, 80, 150, 2 + i));
         painter.drawRoundedRect(shadowRect.adjusted(-i, -i + 6, i, i + 6), 34 + i, 34 + i);
     }
@@ -161,17 +161,17 @@ QWidget *MainWindow::createTitleBar()
 {
     auto *titleBar = new QWidget(this);
     titleBar->setObjectName(QStringLiteral("titleBar"));
-    titleBar->setFixedHeight(128);
+    titleBar->setFixedHeight(80);
 
     auto *layout = new QHBoxLayout(titleBar);
-    layout->setContentsMargins(54, 0, 48, 0);
-    layout->setSpacing(18);
+    layout->setContentsMargins(32, 0, 28, 0);
+    layout->setSpacing(14);
 
     auto *logo = new QLabel(titleBar);
     logo->setObjectName(QStringLiteral("appLogo"));
-    logo->setFixedSize(48, 48);
+    logo->setFixedSize(32, 32);
     logo->setAlignment(Qt::AlignCenter);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(48, 48));
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(32, 32));
 
     auto *title = new QLabel(QStringLiteral("屏幕录制"), titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
@@ -202,8 +202,8 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
     auto *button = new QPushButton(this);
     button->setObjectName(objectName.isEmpty() ? QStringLiteral("titleButton") : objectName);
     button->setIcon(QIcon(iconPath));
-    button->setIconSize(QSize(32, 32));
-    button->setFixedSize(52, 52);
+    button->setIconSize(QSize(22, 22));
+    button->setFixedSize(36, 36);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
     return button;
@@ -211,6 +211,6 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
 
 bool MainWindow::inTitleDragArea(const QPoint &position) const
 {
-    return position.y() >= 18 && position.y() <= 130
-        && position.x() > 18 && position.x() < width() - 230;
+    return position.y() >= 12 && position.y() <= 90
+        && position.x() > 12 && position.x() < width() - 160;
 }

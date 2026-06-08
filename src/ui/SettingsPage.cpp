@@ -16,8 +16,8 @@ SettingsPage::SettingsPage(QWidget *parent)
     qRegisterMetaTypeStreamOperators<QStringList>("QStringList");
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(24, 20, 24, 16);
-    root->setSpacing(12);
+    root->setContentsMargins(16, 14, 16, 12);
+    root->setSpacing(8);
 
     auto *header = new QLabel(QStringLiteral("设置"));
     header->setObjectName(QStringLiteral("pageHeader"));
@@ -66,7 +66,7 @@ SettingsPage::SettingsPage(QWidget *parent)
 
     auto *applyBtn = new QPushButton(QStringLiteral("应用"), this);
     applyBtn->setObjectName(QStringLiteral("applyButton"));
-    applyBtn->setFixedSize(120, 36);
+    applyBtn->setFixedSize(90, 30);
     root->addWidget(applyBtn, 0, Qt::AlignRight);
     root->addStretch();
 

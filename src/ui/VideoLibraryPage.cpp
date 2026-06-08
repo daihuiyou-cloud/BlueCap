@@ -15,8 +15,8 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     , m_library(library)
 {
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(24, 20, 24, 16);
-    root->setSpacing(12);
+    root->setContentsMargins(16, 14, 16, 12);
+    root->setSpacing(8);
 
     auto *header = new QLabel(QStringLiteral("视频库"));
     header->setObjectName(QStringLiteral("pageHeader"));

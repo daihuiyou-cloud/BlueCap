@@ -24,16 +24,16 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     setAttribute(Qt::WA_StyledBackground, false);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(72, 78, 72, 0);
+    root->setContentsMargins(40, 40, 40, 0);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
-    root->addSpacing(70);
+    root->addSpacing(36);
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
-    root->addSpacing(22);
+    root->addSpacing(14);
 
     m_titleLabel = new QLabel(QStringLiteral("开始录制"), this);
     m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
@@ -49,21 +49,21 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     root->addWidget(m_titleLabel);
     root->addWidget(m_hotkeyLabel);
-    root->addSpacing(12);
+    root->addSpacing(6);
     root->addWidget(m_statusLabel);
     root->addStretch();
 
     auto *bottomBar = new QFrame(this);
     bottomBar->setObjectName(QStringLiteral("bottomBar"));
-    bottomBar->setMinimumHeight(100);
+    bottomBar->setMinimumHeight(68);
 
     auto *bottomLayout = new QHBoxLayout(bottomBar);
-    bottomLayout->setContentsMargins(48, 0, 40, 0);
-    bottomLayout->setSpacing(18);
+    bottomLayout->setContentsMargins(28, 0, 24, 0);
+    bottomLayout->setSpacing(14);
 
     auto *recentIcon = new QLabel(bottomBar);
     recentIcon->setObjectName(QStringLiteral("bottomIcon"));
-    recentIcon->setPixmap(QIcon(QStringLiteral(":/icons/clock.svg")).pixmap(34, 34));
+    recentIcon->setPixmap(QIcon(QStringLiteral(":/icons/clock.svg")).pixmap(24, 24));
 
     auto *recentTitle = new QLabel(QStringLiteral("最近视频"), bottomBar);
     recentTitle->setObjectName(QStringLiteral("bottomTitle"));
@@ -73,14 +73,14 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     auto *keyboardIcon = new QLabel(bottomBar);
     keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
-    keyboardIcon->setPixmap(QIcon(QStringLiteral(":/icons/keyboard.svg")).pixmap(34, 34));
+    keyboardIcon->setPixmap(QIcon(QStringLiteral(":/icons/keyboard.svg")).pixmap(24, 24));
 
     auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), bottomBar);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
 
     auto *chevronIcon = new QLabel(bottomBar);
     chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
-    chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(30, 30));
+    chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(20, 20));
 
     bottomLayout->addWidget(recentIcon);
     bottomLayout->addWidget(recentTitle);

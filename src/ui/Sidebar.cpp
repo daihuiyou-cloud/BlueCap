@@ -12,11 +12,11 @@ QPushButton *createNavButton(const QString &text, const QString &iconPath, bool 
     auto *button = new QPushButton(text);
     button->setObjectName(QStringLiteral("sidebarButton"));
     button->setIcon(QIcon(iconPath));
-    button->setIconSize(QSize(34, 34));
+    button->setIconSize(QSize(24, 24));
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
-    button->setMinimumHeight(102);
+    button->setMinimumHeight(64);
     button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     return button;
 }
@@ -27,14 +27,14 @@ Sidebar::Sidebar(QWidget *parent)
     : QWidget(parent)
 {
     setObjectName(QStringLiteral("sidebar"));
-    setFixedWidth(288);
+    setFixedWidth(180);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(40, 24, 24, 34);
-    layout->setSpacing(34);
+    layout->setContentsMargins(20, 16, 16, 20);
+    layout->setSpacing(20);
 
     const QList<QPushButton *> buttons = {
         createNavButton(QStringLiteral("录制"), QStringLiteral(":/icons/nav-record.svg"), true),
