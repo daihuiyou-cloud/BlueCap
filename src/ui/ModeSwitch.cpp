@@ -3,21 +3,24 @@
 #include <QAbstractButton>
 #include <QButtonGroup>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QPainter>
 #include <QToolButton>
 
 namespace {
 
-QToolButton *createModeButton(const QString &text, bool checked = false)
+QToolButton *createModeButton(const QString &text, const QString &iconPath, bool checked = false)
 {
     auto *button = new QToolButton;
     button->setObjectName(QStringLiteral("modeButton"));
     button->setText(text);
+    button->setIcon(QIcon(iconPath));
+    button->setIconSize(QSize(34, 34));
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
     button->setMinimumSize(250, 66);
-    button->setToolButtonStyle(Qt::ToolButtonTextOnly);
+    button->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     return button;
 }
 
@@ -37,9 +40,9 @@ ModeSwitch::ModeSwitch(QWidget *parent)
     layout->setSpacing(0);
 
     const QList<QToolButton *> buttons = {
-        createModeButton(QStringLiteral("▰  全屏"), true),
-        createModeButton(QStringLiteral("▣  区域")),
-        createModeButton(QStringLiteral("▭  窗口"))
+        createModeButton(QStringLiteral("全屏"), QStringLiteral(":/icons/mode-fullscreen.svg"), true),
+        createModeButton(QStringLiteral("区域"), QStringLiteral(":/icons/mode-region.svg")),
+        createModeButton(QStringLiteral("窗口"), QStringLiteral(":/icons/mode-window.svg"))
     };
 
     for (int i = 0; i < buttons.size(); ++i) {

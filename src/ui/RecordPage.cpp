@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
@@ -60,8 +61,9 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     bottomLayout->setContentsMargins(48, 0, 40, 0);
     bottomLayout->setSpacing(18);
 
-    auto *recentIcon = new QLabel(QStringLiteral("◷"), bottomBar);
+    auto *recentIcon = new QLabel(bottomBar);
     recentIcon->setObjectName(QStringLiteral("bottomIcon"));
+    recentIcon->setPixmap(QIcon(QStringLiteral(":/icons/clock.svg")).pixmap(34, 34));
 
     auto *recentTitle = new QLabel(QStringLiteral("最近视频"), bottomBar);
     recentTitle->setObjectName(QStringLiteral("bottomTitle"));
@@ -69,13 +71,23 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_recentDetailLabel = new QLabel(bottomBar);
     m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
 
-    auto *shortcutLabel = new QLabel(QStringLiteral("⌘  Ctrl + Shift + R   ›"), bottomBar);
+    auto *keyboardIcon = new QLabel(bottomBar);
+    keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
+    keyboardIcon->setPixmap(QIcon(QStringLiteral(":/icons/keyboard.svg")).pixmap(34, 34));
+
+    auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), bottomBar);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
+
+    auto *chevronIcon = new QLabel(bottomBar);
+    chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
+    chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(30, 30));
 
     bottomLayout->addWidget(recentIcon);
     bottomLayout->addWidget(recentTitle);
     bottomLayout->addWidget(m_recentDetailLabel, 1);
+    bottomLayout->addWidget(keyboardIcon);
     bottomLayout->addWidget(shortcutLabel);
+    bottomLayout->addWidget(chevronIcon);
 
     root->addWidget(bottomBar);
 

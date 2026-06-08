@@ -1,5 +1,18 @@
 <RCC>
     <qresource prefix="/">
         <file>bluecap.qss</file>
+        <file>icons/app-logo.svg</file>
+        <file>icons/nav-record.svg</file>
+        <file>icons/nav-library.svg</file>
+        <file>icons/nav-settings.svg</file>
+        <file>icons/mode-fullscreen.svg</file>
+        <file>icons/mode-region.svg</file>
+        <file>icons/mode-window.svg</file>
+        <file>icons/title-settings.svg</file>
+        <file>icons/title-minimize.svg</file>
+        <file>icons/title-close.svg</file>
+        <file>icons/clock.svg</file>
+        <file>icons/keyboard.svg</file>
+        <file>icons/chevron-right.svg</file>
     </qresource>
 </RCC>

@@ -31,7 +31,7 @@ protected:
 
 private:
     QWidget *createTitleBar();
-    QPushButton *createWindowButton(const QString &text, const QString &tooltip, const QString &objectName = {});
+    QPushButton *createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName = {});
     bool inTitleDragArea(const QPoint &position) const;
 
     Sidebar *m_sidebar = nullptr;

@@ -1,15 +1,18 @@
 #include "Sidebar.h"
 
 #include <QButtonGroup>
+#include <QIcon>
 #include <QPushButton>
 #include <QVBoxLayout>
 
 namespace {
 
-QPushButton *createNavButton(const QString &text, bool checked = false)
+QPushButton *createNavButton(const QString &text, const QString &iconPath, bool checked = false)
 {
     auto *button = new QPushButton(text);
     button->setObjectName(QStringLiteral("sidebarButton"));
+    button->setIcon(QIcon(iconPath));
+    button->setIconSize(QSize(34, 34));
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
@@ -34,9 +37,9 @@ Sidebar::Sidebar(QWidget *parent)
     layout->setSpacing(34);
 
     const QList<QPushButton *> buttons = {
-        createNavButton(QStringLiteral("■  录制"), true),
-        createNavButton(QStringLiteral("□  视频库")),
-        createNavButton(QStringLiteral("◇  设置"))
+        createNavButton(QStringLiteral("录制"), QStringLiteral(":/icons/nav-record.svg"), true),
+        createNavButton(QStringLiteral("视频库"), QStringLiteral(":/icons/nav-library.svg")),
+        createNavButton(QStringLiteral("设置"), QStringLiteral(":/icons/nav-settings.svg"))
     };
 
     for (int i = 0; i < buttons.size(); ++i) {

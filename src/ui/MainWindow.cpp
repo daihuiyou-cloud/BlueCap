@@ -9,6 +9,7 @@
 
 #include <QApplication>
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
@@ -166,17 +167,18 @@ QWidget *MainWindow::createTitleBar()
     layout->setContentsMargins(54, 0, 48, 0);
     layout->setSpacing(18);
 
-    auto *logo = new QLabel(QStringLiteral("●"), titleBar);
+    auto *logo = new QLabel(titleBar);
     logo->setObjectName(QStringLiteral("appLogo"));
     logo->setFixedSize(48, 48);
     logo->setAlignment(Qt::AlignCenter);
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(48, 48));
 
     auto *title = new QLabel(QStringLiteral("屏幕录制"), titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
 
-    auto *settingsButton = createWindowButton(QStringLiteral("⚙"), QStringLiteral("设置"));
-    auto *minimizeButton = createWindowButton(QStringLiteral("—"), QStringLiteral("最小化"));
-    auto *closeButton = createWindowButton(QStringLiteral("×"), QStringLiteral("关闭"), QStringLiteral("closeButton"));
+    auto *settingsButton = createWindowButton(QStringLiteral(":/icons/title-settings.svg"), QStringLiteral("设置"));
+    auto *minimizeButton = createWindowButton(QStringLiteral(":/icons/title-minimize.svg"), QStringLiteral("最小化"));
+    auto *closeButton = createWindowButton(QStringLiteral(":/icons/title-close.svg"), QStringLiteral("关闭"), QStringLiteral("closeButton"));
 
     layout->addWidget(logo);
     layout->addWidget(title);
@@ -195,10 +197,12 @@ QWidget *MainWindow::createTitleBar()
     return titleBar;
 }
 
-QPushButton *MainWindow::createWindowButton(const QString &text, const QString &tooltip, const QString &objectName)
+QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName)
 {
-    auto *button = new QPushButton(text, this);
+    auto *button = new QPushButton(this);
     button->setObjectName(objectName.isEmpty() ? QStringLiteral("titleButton") : objectName);
+    button->setIcon(QIcon(iconPath));
+    button->setIconSize(QSize(32, 32));
     button->setFixedSize(52, 52);
     button->setCursor(Qt::PointingHandCursor);
     button->setToolTip(tooltip);
