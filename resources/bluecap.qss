@@ -96,3 +96,55 @@ ModeSwitch QToolButton:hover {
     color: #64708a;
     font-size: 14px;
 }
+
+#pageHeader {
+    color: #162039;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+QListWidget {
+    border: 1px solid rgba(207, 216, 232, 0.95);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    font-size: 13px;
+    color: #1f2940;
+    padding: 4px;
+}
+QListWidget::item {
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+QListWidget::item:selected {
+    background: rgba(222, 237, 255, 0.86);
+    color: #0967f2;
+}
+QListWidget::item:hover {
+    background: rgba(232, 242, 255, 0.66);
+}
+
+QFormLayout QLabel {
+    color: #53617a;
+    font-size: 13px;
+}
+
+QLineEdit, QSpinBox, QComboBox {
+    border: 1px solid rgba(207, 216, 232, 0.95);
+    border-radius: 8px;
+    padding: 4px 8px;
+    font-size: 13px;
+    background: rgba(255, 255, 255, 0.6);
+    color: #1f2940;
+}
+
+#applyButton {
+    border: 0;
+    border-radius: 18px;
+    background: #0967f2;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+}
+#applyButton:hover {
+    background: #0755cc;
+}

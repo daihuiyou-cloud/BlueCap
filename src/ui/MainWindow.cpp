@@ -1,10 +1,12 @@
 #include "MainWindow.h"
 
-#include "PlaceholderPage.h"
 #include "RecordPage.h"
+#include "SettingsPage.h"
+#include "VideoLibraryPage.h"
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QApplication>
 #include <QButtonGroup>
 #include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
@@ -13,6 +15,8 @@
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QVBoxLayout>
+
+#include <windows.h>
 
 MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
@@ -53,15 +57,38 @@ MainWindow::MainWindow(QWidget *parent)
     bodyLayout->setSpacing(0);
 
     m_stack = new QStackedWidget(body);
-    m_stack->addWidget(new RecordPage(m_recorder, m_library, m_stack));
-    m_stack->addWidget(new PlaceholderPage(QStringLiteral("视频库"),
-        QStringLiteral("这里会展示最近录制、打开文件位置和基础管理操作。"), m_stack));
-    m_stack->addWidget(new PlaceholderPage(QStringLiteral("设置"),
-        QStringLiteral("保存路径、画质、帧率、快捷键和音频输入会放在这里。"), m_stack));
+
+    m_recordPage = new RecordPage(m_recorder, m_library, m_stack);
+    m_stack->addWidget(m_recordPage);
+    m_stack->addWidget(new VideoLibraryPage(m_library, m_stack));
+    m_stack->addWidget(new SettingsPage(m_stack));
+
     bodyLayout->addWidget(m_stack, 1);
 
     surfaceLayout->addWidget(body, 1);
     shell->addWidget(surface);
+
+    qApp->installNativeEventFilter(this);
+}
+
+MainWindow::~MainWindow()
+{
+    qApp->removeNativeEventFilter(this);
+    UnregisterHotKey(nullptr, 1);
+}
+
+bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
+{
+    if (eventType == QStringLiteral("windows_generic_MSG") ||
+        eventType == QStringLiteral("windows_dispatcher_MSG")) {
+        auto *msg = static_cast<MSG *>(message);
+        if (msg->message == WM_HOTKEY && msg->wParam == 1) {
+            m_recordPage->toggleRecording();
+            if (result) *result = 0;
+            return true;
+        }
+    }
+    return false;
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
@@ -91,6 +118,18 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 {
     m_dragging = false;
     QWidget::mouseReleaseEvent(event);
+}
+
+void MainWindow::showEvent(QShowEvent *event)
+{
+    QWidget::showEvent(event);
+    RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
+}
+
+void MainWindow::hideEvent(QHideEvent *event)
+{
+    QWidget::hideEvent(event);
+    UnregisterHotKey(nullptr, 1);
 }
 
 QWidget *MainWindow::createTitleBar()

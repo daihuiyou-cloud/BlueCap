@@ -30,6 +30,16 @@ void VideoLibrary::addRecentVideo(const QString &path)
     emit recentVideosChanged(videos);
 }
 
+void VideoLibrary::clearAndReplace(const QStringList &videos)
+{
+    QStringList filtered = videos;
+    while (filtered.size() > kMaxRecentVideos) {
+        filtered.removeLast();
+    }
+    save(filtered);
+    emit recentVideosChanged(filtered);
+}
+
 QStringList VideoLibrary::load() const
 {
     QSettings settings;

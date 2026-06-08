@@ -14,6 +14,7 @@ public:
 
 public slots:
     void addRecentVideo(const QString &path);
+    void clearAndReplace(const QStringList &videos);
 
 signals:
     void recentVideosChanged(const QStringList &videos);

@@ -2,7 +2,9 @@
 
 #include <QObject>
 #include <QProcess>
+#include <QRect>
 #include <QString>
+#include <QStringList>
 
 class RecorderController : public QObject
 {
@@ -14,8 +16,12 @@ public:
     bool isRecording() const;
     QString currentOutputPath() const;
 
+    static QStringList enumerateWindows();
+
 public slots:
     void startFullScreenRecording();
+    void startRegionRecording(const QRect &region);
+    void startWindowRecording(const QString &windowTitle);
     void stopRecording();
 
 signals:
@@ -31,6 +37,7 @@ private slots:
 private:
     QString resolveFfmpegPath() const;
     QString createOutputPath() const;
+    void start(const QStringList &args);
 
     QProcess *m_process = nullptr;
     QString m_currentOutputPath;

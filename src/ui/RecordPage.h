@@ -15,17 +15,22 @@ class RecordPage : public QWidget
 public:
     explicit RecordPage(RecorderController *recorder, VideoLibrary *library, QWidget *parent = nullptr);
 
+public slots:
+    void toggleRecording();
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 private slots:
-    void toggleRecording();
     void handleRecordingChanged(bool recording);
     void handleVideoSaved(const QString &path);
     void handleError(const QString &message);
     void updateRecentVideos(const QStringList &videos);
 
 private:
+    void startRegionSelection();
+    void pickWindow();
+
     ModeSwitch *m_modeSwitch = nullptr;
     RecordButton *m_recordButton = nullptr;
     QLabel *m_titleLabel = nullptr;

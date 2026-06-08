@@ -6,6 +6,8 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 
+#include <windows.h>
+
 RecorderController::RecorderController(QObject *parent)
     : QObject(parent)
 {
@@ -28,11 +30,31 @@ QString RecorderController::currentOutputPath() const
     return m_currentOutputPath;
 }
 
+QStringList RecorderController::enumerateWindows()
+{
+    struct EnumData { QStringList titles; };
+    EnumData data;
+
+    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
+        if (!IsWindowVisible(hwnd) || !GetWindowTextLengthW(hwnd)) {
+            return TRUE;
+        }
+        wchar_t buf[256];
+        GetWindowTextW(hwnd, buf, 256);
+        auto &titles = reinterpret_cast<EnumData*>(lParam)->titles;
+        const QString t = QString::fromWCharArray(buf);
+        if (!titles.contains(t)) {
+            titles.append(t);
+        }
+        return TRUE;
+    }, reinterpret_cast<LPARAM>(&data));
+
+    return data.titles;
+}
+
 void RecorderController::startFullScreenRecording()
 {
-    if (isRecording()) {
-        return;
-    }
+    if (isRecording()) return;
 
     const QString ffmpegPath = resolveFfmpegPath();
     if (!QFileInfo::exists(ffmpegPath)) {
@@ -54,6 +76,74 @@ void RecorderController::startFullScreenRecording()
         m_currentOutputPath
     };
 
+    start(args);
+}
+
+void RecorderController::startRegionRecording(const QRect &region)
+{
+    if (isRecording()) return;
+
+    const QString ffmpegPath = resolveFfmpegPath();
+    if (!QFileInfo::exists(ffmpegPath)) {
+        emit errorOccurred(QStringLiteral("未找到 FFmpeg：%1").arg(ffmpegPath));
+        return;
+    }
+
+    m_currentOutputPath = createOutputPath();
+    m_stopRequested = false;
+
+    const QString videoSize = QStringLiteral("%1x%2")
+        .arg(region.width()).arg(region.height());
+    const QString offset = QStringLiteral("%1,%2")
+        .arg(region.x()).arg(region.y());
+
+    const QStringList args = {
+        QStringLiteral("-y"),
+        QStringLiteral("-f"), QStringLiteral("gdigrab"),
+        QStringLiteral("-framerate"), QStringLiteral("30"),
+        QStringLiteral("-offset_x"), QString::number(region.x()),
+        QStringLiteral("-offset_y"), QString::number(region.y()),
+        QStringLiteral("-video_size"), videoSize,
+        QStringLiteral("-i"), QStringLiteral("desktop"),
+        QStringLiteral("-c:v"), QStringLiteral("libx264"),
+        QStringLiteral("-preset"), QStringLiteral("ultrafast"),
+        QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
+        m_currentOutputPath
+    };
+
+    start(args);
+}
+
+void RecorderController::startWindowRecording(const QString &windowTitle)
+{
+    if (isRecording()) return;
+
+    const QString ffmpegPath = resolveFfmpegPath();
+    if (!QFileInfo::exists(ffmpegPath)) {
+        emit errorOccurred(QStringLiteral("未找到 FFmpeg：%1").arg(ffmpegPath));
+        return;
+    }
+
+    m_currentOutputPath = createOutputPath();
+    m_stopRequested = false;
+
+    const QStringList args = {
+        QStringLiteral("-y"),
+        QStringLiteral("-f"), QStringLiteral("gdigrab"),
+        QStringLiteral("-framerate"), QStringLiteral("30"),
+        QStringLiteral("-i"), QStringLiteral("title=%1").arg(windowTitle),
+        QStringLiteral("-c:v"), QStringLiteral("libx264"),
+        QStringLiteral("-preset"), QStringLiteral("ultrafast"),
+        QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
+        m_currentOutputPath
+    };
+
+    start(args);
+}
+
+void RecorderController::start(const QStringList &args)
+{
+    const QString ffmpegPath = resolveFfmpegPath();
     emit outputPathChanged(m_currentOutputPath);
     m_process->start(ffmpegPath, args);
 
@@ -67,9 +157,7 @@ void RecorderController::startFullScreenRecording()
 
 void RecorderController::stopRecording()
 {
-    if (!isRecording()) {
-        return;
-    }
+    if (!isRecording()) return;
 
     m_stopRequested = true;
     m_process->write("q\n");

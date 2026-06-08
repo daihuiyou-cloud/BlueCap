@@ -2,12 +2,14 @@
 
 #include "ModeSwitch.h"
 #include "RecordButton.h"
+#include "RegionSelector.h"
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
 #include <QFileInfo>
 #include <QFrame>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QLabel>
 #include <QMessageBox>
 #include <QPainter>
@@ -113,13 +115,48 @@ void RecordPage::toggleRecording()
         return;
     }
 
-    if (m_modeSwitch->currentMode() != RecordMode::FullScreen) {
+    switch (m_modeSwitch->currentMode()) {
+    case RecordMode::FullScreen:
+        m_recorder->startFullScreenRecording();
+        break;
+    case RecordMode::Region:
+        startRegionSelection();
+        break;
+    case RecordMode::Window:
+        pickWindow();
+        break;
+    }
+}
+
+void RecordPage::startRegionSelection()
+{
+    auto *selector = new RegionSelector;
+    selector->setAttribute(Qt::WA_DeleteOnClose);
+    connect(selector, &RegionSelector::regionSelected, this,
+        [this](const QRect &region) {
+            m_recorder->startRegionRecording(region);
+        });
+    selector->show();
+}
+
+void RecordPage::pickWindow()
+{
+    QStringList windows = RecorderController::enumerateWindows();
+    if (windows.isEmpty()) {
         QMessageBox::information(this, QStringLiteral("BlueCap"),
-            QStringLiteral("区域和窗口录制将在下一步接入。当前 MVP 先支持全屏录制。"));
+            QStringLiteral("未找到可见窗口。"));
         return;
     }
 
-    m_recorder->startFullScreenRecording();
+    bool ok = false;
+    QString selected = QInputDialog::getItem(this,
+        QStringLiteral("选择窗口"),
+        QStringLiteral("请选择要录制的窗口："),
+        windows, 0, false, &ok);
+
+    if (ok && !selected.isEmpty()) {
+        m_recorder->startWindowRecording(selected);
+    }
 }
 
 void RecordPage::handleRecordingChanged(bool recording)
@@ -128,7 +165,7 @@ void RecordPage::handleRecordingChanged(bool recording)
     m_titleLabel->setText(recording ? QStringLiteral("停止录制") : QStringLiteral("开始录制"));
     m_hotkeyLabel->setText(QStringLiteral("Ctrl + Shift + R"));
     m_statusLabel->setText(recording
-        ? QStringLiteral("正在录制全屏，点击按钮停止")
+        ? QStringLiteral("正在录制，点击按钮停止")
         : QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"));
 }
 

@@ -20,8 +20,12 @@ add_executable(BlueCap WIN32
     src/ui/RecordButton.h
     src/ui/RecordPage.cpp
     src/ui/RecordPage.h
-    src/ui/PlaceholderPage.cpp
-    src/ui/PlaceholderPage.h
+    src/ui/RegionSelector.cpp
+    src/ui/RegionSelector.h
+    src/ui/SettingsPage.cpp
+    src/ui/SettingsPage.h
+    src/ui/VideoLibraryPage.cpp
+    src/ui/VideoLibraryPage.h
     src/recorder/RecorderController.cpp
     src/recorder/RecorderController.h
     src/storage/VideoLibrary.cpp
