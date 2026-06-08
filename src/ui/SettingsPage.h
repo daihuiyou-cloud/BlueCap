@@ -15,6 +15,7 @@ public:
 
 signals:
     void frameRateChanged(int fps);
+    void presetChanged(const QString &preset);
     void savePathChanged(const QString &path);
 
 private slots:

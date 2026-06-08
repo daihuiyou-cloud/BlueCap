@@ -8,11 +8,12 @@
 
 #include <QApplication>
 #include <QButtonGroup>
-#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QPushButton>
+#include <QSettings>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -30,6 +31,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
 
+    QSettings saved;
+    m_recorder->setFrameRate(saved.value(QStringLiteral("settings/frameRate"), 30).toInt());
+    m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("ultrafast")).toString());
+
     auto *shell = new QVBoxLayout(this);
     shell->setContentsMargins(12, 12, 12, 12);
     shell->setSpacing(0);
@@ -37,12 +42,6 @@ MainWindow::MainWindow(QWidget *parent)
     auto *surface = new QWidget(this);
     surface->setObjectName(QStringLiteral("surface"));
     surface->setAttribute(Qt::WA_StyledBackground, true);
-
-    auto *shadow = new QGraphicsDropShadowEffect(surface);
-    shadow->setBlurRadius(20);
-    shadow->setOffset(0, 6);
-    shadow->setColor(QColor(42, 80, 150, 70));
-    surface->setGraphicsEffect(shadow);
 
     auto *surfaceLayout = new QVBoxLayout(surface);
     surfaceLayout->setContentsMargins(0, 0, 0, 0);
@@ -60,8 +59,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_recordPage = new RecordPage(m_recorder, m_library, m_stack);
     m_stack->addWidget(m_recordPage);
+    auto *settingsPage = new SettingsPage(m_stack);
     m_stack->addWidget(new VideoLibraryPage(m_library, m_stack));
-    m_stack->addWidget(new SettingsPage(m_stack));
+    m_stack->addWidget(settingsPage);
+
+    connect(settingsPage, &SettingsPage::frameRateChanged,
+            m_recorder, &RecorderController::setFrameRate);
+    connect(settingsPage, &SettingsPage::presetChanged,
+            m_recorder, &RecorderController::setPreset);
 
     bodyLayout->addWidget(m_stack, 1);
 
@@ -79,8 +84,9 @@ MainWindow::~MainWindow()
 
 bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
 {
-    if (eventType == QStringLiteral("windows_generic_MSG") ||
-        eventType == QStringLiteral("windows_dispatcher_MSG")) {
+    static const QByteArray kMsgGen = QByteArrayLiteral("windows_generic_MSG");
+    static const QByteArray kMsgDsp = QByteArrayLiteral("windows_dispatcher_MSG");
+    if (eventType == kMsgGen || eventType == kMsgDsp) {
         auto *msg = static_cast<MSG *>(message);
         if (msg->message == WM_HOTKEY && msg->wParam == 1) {
             m_recordPage->toggleRecording();
@@ -130,6 +136,26 @@ void MainWindow::hideEvent(QHideEvent *event)
 {
     QWidget::hideEvent(event);
     UnregisterHotKey(nullptr, 1);
+}
+
+void MainWindow::paintEvent(QPaintEvent *event)
+{
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+
+    const int m = 12;
+    const QRectF sr = rect().adjusted(m, m, -m, -m);
+
+    for (int i = 4; i >= 0; --i) {
+        int alpha = 12 - i * 2;
+        if (alpha > 0) {
+            p.setBrush(QColor(42, 80, 150, alpha));
+            p.drawRoundedRect(sr.adjusted(-i, -i + 2, i, i + 2), 20 + i, 20 + i);
+        }
+    }
+
+    QWidget::paintEvent(event);
 }
 
 QWidget *MainWindow::createTitleBar()

@@ -6,6 +6,8 @@
 #include <QString>
 #include <QStringList>
 
+class QTimer;
+
 class RecorderController : public QObject
 {
     Q_OBJECT
@@ -15,6 +17,9 @@ public:
 
     bool isRecording() const;
     QString currentOutputPath() const;
+
+    void setFrameRate(int fps);
+    void setPreset(const QString &preset);
 
     static QStringList enumerateWindows();
 
@@ -31,15 +36,23 @@ signals:
     void errorOccurred(const QString &message);
 
 private slots:
+    void handleStarted();
     void handleFinished(int exitCode, QProcess::ExitStatus status);
     void handleProcessError(QProcess::ProcessError error);
+    void handleStartTimeout();
+    void handleStopTimeout();
 
 private:
-    QString resolveFfmpegPath() const;
+    QString resolveFfmpegPath();
     QString createOutputPath() const;
     void start(const QStringList &args);
 
     QProcess *m_process = nullptr;
+    QTimer *m_startTimer = nullptr;
+    QTimer *m_stopTimer = nullptr;
     QString m_currentOutputPath;
     bool m_stopRequested = false;
+    int m_frameRate = 30;
+    QString m_preset = QStringLiteral("ultrafast");
+    QString m_ffmpegPath;
 };

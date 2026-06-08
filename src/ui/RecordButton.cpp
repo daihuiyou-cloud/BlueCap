@@ -2,6 +2,7 @@
 
 #include <QPainter>
 #include <QPainterPath>
+#include <QResizeEvent>
 
 RecordButton::RecordButton(QWidget *parent)
     : QAbstractButton(parent)
@@ -18,18 +19,26 @@ QSize RecordButton::sizeHint() const
 
 void RecordButton::setRecording(bool recording)
 {
-    if (m_recording == recording) {
+    if (m_recording == recording)
         return;
-    }
 
     m_recording = recording;
     update();
 }
 
-void RecordButton::paintEvent(QPaintEvent *)
+void RecordButton::resizeEvent(QResizeEvent *event)
 {
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
+    renderCache();
+    QAbstractButton::resizeEvent(event);
+}
+
+void RecordButton::renderCache()
+{
+    m_bgCache = QPixmap(size());
+    m_bgCache.fill(Qt::transparent);
+
+    QPainter p(&m_bgCache);
+    p.setRenderHint(QPainter::Antialiasing);
 
     const QRectF bounds = rect().adjusted(4, 4, -4, -4);
     const QPointF center = bounds.center();
@@ -39,24 +48,38 @@ void RecordButton::paintEvent(QPaintEvent *)
     QRadialGradient shadow(center + QPointF(0, d * 0.1), r * 1.25);
     shadow.setColorAt(0.2, QColor(36, 100, 220, 60));
     shadow.setColorAt(1.0, QColor(36, 100, 220, 0));
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(shadow);
-    painter.drawEllipse(center, r * 1.08, r * 1.08);
+    p.setPen(Qt::NoPen);
+    p.setBrush(shadow);
+    p.drawEllipse(center, r * 1.08, r * 1.08);
 
-    painter.setBrush(QColor(246, 250, 255));
-    painter.drawEllipse(bounds);
+    p.setBrush(QColor(246, 250, 255));
+    p.drawEllipse(bounds);
+
+    const qreal w = d * 0.391;
+    p.setBrush(QColor(255, 255, 255));
+    p.drawEllipse(bounds.adjusted(w, w, -w, -w));
+}
+
+void RecordButton::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    if (!m_bgCache.isNull())
+        painter.drawPixmap(0, 0, m_bgCache);
+
+    const QRectF bounds = rect().adjusted(4, 4, -4, -4);
+    const QPointF center = bounds.center();
+    const qreal d = qMin(bounds.width(), bounds.height());
 
     QLinearGradient blue(bounds.topLeft(), bounds.bottomRight());
     blue.setColorAt(0.0, m_recording ? QColor(255, 89, 89) : QColor(77, 166, 255));
     blue.setColorAt(1.0, m_recording ? QColor(210, 29, 45) : QColor(10, 91, 238));
 
     const qreal g = d * 0.126;
+    painter.setPen(Qt::NoPen);
     painter.setBrush(blue);
     painter.drawEllipse(bounds.adjusted(g, g, -g, -g));
-
-    const qreal w = d * 0.391;
-    painter.setBrush(QColor(255, 255, 255));
-    painter.drawEllipse(bounds.adjusted(w, w, -w, -w));
 
     painter.setBrush(m_recording ? QColor(255, 255, 255) : QColor(239, 48, 57));
     if (m_recording) {

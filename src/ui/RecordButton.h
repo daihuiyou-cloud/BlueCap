@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractButton>
+#include <QPixmap>
 
 class RecordButton : public QAbstractButton
 {
@@ -14,7 +15,11 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
+    void renderCache();
+
     bool m_recording = false;
+    QPixmap m_bgCache;
 };

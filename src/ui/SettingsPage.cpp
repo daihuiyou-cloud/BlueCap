@@ -89,4 +89,8 @@ void SettingsPage::applySettings()
     settings.setValue(QStringLiteral("settings/savePath"), m_pathEdit->text());
     settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
     settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
+
+    emit frameRateChanged(m_fpsSpin->value());
+    emit presetChanged(m_qualityCombo->currentData().toString());
+    emit savePathChanged(m_pathEdit->text());
 }

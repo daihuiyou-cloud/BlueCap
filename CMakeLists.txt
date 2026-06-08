@@ -43,6 +43,10 @@ target_compile_definitions(BlueCap PRIVATE
 
 if(MSVC)
     target_compile_options(BlueCap PRIVATE /utf-8)
+    target_compile_options(BlueCap PRIVATE
+        $<$<CONFIG:Release>:/O2 /arch:AVX2 /GL>
+    )
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
 endif()
 
 set(BLUECAP_FFMPEG_DIR "${CMAKE_SOURCE_DIR}/3rd/ffmpeg")

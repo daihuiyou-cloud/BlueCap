@@ -9,35 +9,35 @@ constexpr int kMaxRecentVideos = 8;
 VideoLibrary::VideoLibrary(QObject *parent)
     : QObject(parent)
 {
+    m_cache = load();
 }
 
 QStringList VideoLibrary::recentVideos() const
 {
-    return load();
+    return m_cache;
 }
 
 void VideoLibrary::addRecentVideo(const QString &path)
 {
-    QStringList videos = load();
-    videos.removeAll(path);
-    videos.prepend(path);
+    m_cache.removeAll(path);
+    m_cache.prepend(path);
 
-    while (videos.size() > kMaxRecentVideos) {
-        videos.removeLast();
+    while (m_cache.size() > kMaxRecentVideos) {
+        m_cache.removeLast();
     }
 
-    save(videos);
-    emit recentVideosChanged(videos);
+    save(m_cache);
+    emit recentVideosChanged(m_cache);
 }
 
 void VideoLibrary::clearAndReplace(const QStringList &videos)
 {
-    QStringList filtered = videos;
-    while (filtered.size() > kMaxRecentVideos) {
-        filtered.removeLast();
+    m_cache = videos;
+    while (m_cache.size() > kMaxRecentVideos) {
+        m_cache.removeLast();
     }
-    save(filtered);
-    emit recentVideosChanged(filtered);
+    save(m_cache);
+    emit recentVideosChanged(m_cache);
 }
 
 QStringList VideoLibrary::load() const

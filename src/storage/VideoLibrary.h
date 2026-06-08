@@ -22,4 +22,6 @@ signals:
 private:
     QStringList load() const;
     void save(const QStringList &videos) const;
+
+    mutable QStringList m_cache;
 };
