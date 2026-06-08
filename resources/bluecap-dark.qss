@@ -159,12 +159,29 @@ QWidget {
 #bottomDetail {
     color: #6f8098;
     font-size: 12px;
+    font-weight: 500;
 }
 
 #shortcutText {
     color: #93a2b8;
     font-size: 16px;
     font-weight: 600;
+}
+
+QPushButton#bottomIcon {
+    border: 1px solid rgba(82, 98, 125, 0.82);
+    border-radius: 8px;
+    padding: 0;
+    background: rgba(18, 24, 34, 0.42);
+}
+
+QPushButton#bottomIcon:hover {
+    border-color: rgba(77, 163, 255, 0.72);
+    background: rgba(42, 93, 154, 0.22);
+}
+
+QPushButton#bottomIcon:pressed {
+    background: rgba(42, 93, 154, 0.34);
 }
 
 #placeholderTitle {

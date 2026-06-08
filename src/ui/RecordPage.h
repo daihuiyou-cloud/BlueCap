@@ -46,6 +46,7 @@ private slots:
     void doStartRecording();
 
 private:
+    void openSaveFolder();
     void startRegionSelection();
     void pickWindow();
     void updateStatusForMode(RecordMode mode);
@@ -75,6 +76,7 @@ private:
     bool m_confirmStop = false;
     bool m_darkMode = false;
     bool m_hiddenForRecording = false;
+    bool m_statusOpensSavedVideo = false;
     QString m_lastSavedPath;
     QString m_stopOutputPath;
 };

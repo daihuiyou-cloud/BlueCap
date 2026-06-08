@@ -10,6 +10,7 @@
 #include "utils/Format.h"
 
 #include <QDesktopServices>
+#include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFrame>
@@ -21,6 +22,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QShortcut>
+#include <QSizePolicy>
 #include <QUrl>
 #include <QPainter>
 #include <QTimer>
@@ -88,6 +90,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_statusLabel->setObjectName(QStringLiteral("recordStatus"));
     m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setCursor(Qt::PointingHandCursor);
+    m_statusLabel->setToolTip(QStringLiteral("点击打开保存位置"));
     m_statusLabel->installEventFilter(this);
 
     root->addWidget(m_titleLabel);
@@ -138,6 +141,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
             this, &RecordPage::updateRecentVideos);
 
     updateRecentVideos(m_library->recentVideos());
+    updateStatusForMode(m_modeSwitch->currentMode());
 }
 
 void RecordPage::setupBottomBar(QVBoxLayout *root)
@@ -168,10 +172,16 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
 
     m_recentDetailLabel = new QLabel(m_bottomNavSection);
     m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
+    m_recentDetailLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+
+    auto *recentTextLayout = new QVBoxLayout;
+    recentTextLayout->setContentsMargins(0, 0, 0, 0);
+    recentTextLayout->setSpacing(2);
+    recentTextLayout->addWidget(recentTitle);
+    recentTextLayout->addWidget(m_recentDetailLabel);
 
     navLayout->addWidget(m_recentIcon);
-    navLayout->addWidget(recentTitle);
-    navLayout->addWidget(m_recentDetailLabel, 1);
+    navLayout->addLayout(recentTextLayout, 1);
     navLayout->addSpacing(4);
 
     auto *separator = new QFrame(bottomBar);
@@ -198,16 +208,11 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
         QStringLiteral(":/icons/folder.svg"), 20,
         QColor(0x53, 0x61, 0x7a), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
     m_openFolderIcon->setIconSize(QSize(20, 20));
+    m_openFolderIcon->setFixedSize(48, 34);
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
     m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
-    m_openFolderIcon->setVisible(false);
     m_openFolderIcon->setFlat(true);
-    connect(m_openFolderIcon, &QPushButton::clicked, this, [this] {
-        const QString path = m_recorder->currentSavePath();
-        if (!path.isEmpty()) {
-            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
-        }
-    });
+    connect(m_openFolderIcon, &QPushButton::clicked, this, &RecordPage::openSaveFolder);
 
     m_chevronIcon = new QLabel(bottomBar);
     m_chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
@@ -354,6 +359,16 @@ void RecordPage::doStartRecording()
     }
 }
 
+void RecordPage::openSaveFolder()
+{
+    const QString path = m_recorder->currentSavePath();
+    if (path.isEmpty())
+        return;
+
+    QDir().mkpath(path);
+    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+}
+
 void RecordPage::startRegionSelection()
 {
     auto *selector = new RegionSelector;
@@ -388,8 +403,10 @@ void RecordPage::handleRecordingChanged(bool recording)
     if (recording) {
         m_recordingTimer->start(1000);
         m_elapsed->start();
-        m_titleLabel->setText(QStringLiteral("停止录制"));
-        m_statusLabel->setText(QStringLiteral("正在录制，点击按钮停止"));
+        m_titleLabel->setText(QStringLiteral("正在录制 00:00"));
+        m_statusLabel->setText(QStringLiteral("点击中间按钮或按 Esc 停止录制"));
+        m_statusLabel->setToolTip(QStringLiteral("录制完成后可点击打开视频"));
+        m_statusOpensSavedVideo = false;
     } else {
         m_recordingTimer->stop();
         m_stopProgressTimer->stop();
@@ -407,7 +424,9 @@ void RecordPage::handleRecordingChanged(bool recording)
         }
     }
 
-    m_hotkeyLabel->setText(QStringLiteral("Ctrl + Shift + R"));
+    m_hotkeyLabel->setText(recording
+        ? QStringLiteral("Esc 停止  |  Ctrl + Shift + R")
+        : QStringLiteral("Ctrl + Shift + R"));
 }
 
 void RecordPage::handleVideoSaved(const QString &path)
@@ -416,6 +435,8 @@ void RecordPage::handleVideoSaved(const QString &path)
     m_lastSavedPath = path;
     QFileInfo fi(path);
     m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)").arg(fi.fileName(), format::fileSize(fi.size())));
+    m_statusLabel->setToolTip(QStringLiteral("点击打开刚保存的视频"));
+    m_statusOpensSavedVideo = true;
 }
 
 void RecordPage::handleError(const QString &message)
@@ -434,6 +455,7 @@ void RecordPage::handleError(const QString &message)
     m_statusLabel->setText(QStringLiteral("录制失败"));
     m_modeSwitch->setModeEnabled(true);
     updateStatusForMode(m_modeSwitch->currentMode());
+    m_statusLabel->setText(QStringLiteral("录制启动失败，请尝试切换录制模式或检查安全软件拦截"));
 
     if (m_hiddenForRecording) {
         m_hiddenForRecording = false;
@@ -448,25 +470,26 @@ void RecordPage::updateRecentVideos(const QStringList &videos)
 {
     if (videos.isEmpty()) {
         m_recentDetailLabel->setText(QStringLiteral("还没有录制文件"));
-        m_openFolderIcon->setVisible(false);
         return;
     }
 
     m_recentDetailLabel->setText(QFileInfo(videos.first()).fileName());
-    m_openFolderIcon->setVisible(true);
 }
 
 void RecordPage::updateStatusForMode(RecordMode mode)
 {
+    m_statusOpensSavedVideo = false;
+    m_statusLabel->setToolTip(QStringLiteral("点击打开保存位置"));
+
     switch (mode) {
     case RecordMode::FullScreen:
-        m_statusLabel->setText(QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"));
+        m_statusLabel->setText(QStringLiteral("点击开始后录制整个屏幕，视频会保存到 BlueCap 文件夹"));
         break;
     case RecordMode::Region:
-        m_statusLabel->setText(QStringLiteral("拖动选择录制区域"));
+        m_statusLabel->setText(QStringLiteral("点击开始后拖动选择录制区域"));
         break;
     case RecordMode::Window:
-        m_statusLabel->setText(QStringLiteral("选择要录制的窗口"));
+        m_statusLabel->setText(QStringLiteral("点击开始后选择一个窗口"));
         break;
     }
 }
@@ -478,12 +501,12 @@ void RecordPage::updateElapsedTime()
     int m = (secs % 3600) / 60;
     int s = secs % 60;
     if (h > 0) {
-        m_statusLabel->setText(QStringLiteral("正在录制 %1:%2:%3")
+        m_titleLabel->setText(QStringLiteral("正在录制 %1:%2:%3")
             .arg(h, 2, 10, QChar('0'))
             .arg(m, 2, 10, QChar('0'))
             .arg(s, 2, 10, QChar('0')));
     } else {
-        m_statusLabel->setText(QStringLiteral("正在录制 %1:%2")
+        m_titleLabel->setText(QStringLiteral("正在录制 %1:%2")
             .arg(m, 2, 10, QChar('0'))
             .arg(s, 2, 10, QChar('0')));
     }
@@ -504,8 +527,10 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
         auto *me = static_cast<QMouseEvent *>(event);
         if (me->button() == Qt::LeftButton) {
             if (obj == m_statusLabel) {
-                if (!m_lastSavedPath.isEmpty()) {
+                if (m_statusOpensSavedVideo && !m_lastSavedPath.isEmpty()) {
                     QDesktopServices::openUrl(QUrl::fromLocalFile(m_lastSavedPath));
+                } else {
+                    openSaveFolder();
                 }
                 return true;
             }
