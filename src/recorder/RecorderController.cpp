@@ -215,7 +215,6 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
     if (m_encoder == QStringLiteral("libx264"))
         args << QStringLiteral("-preset") << m_preset;
     args << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
-    args << QStringLiteral("-vsync") << QStringLiteral("vfr");
     if (!m_showCursor)
         args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
     args << extraArgs << m_currentOutputPath;
@@ -371,15 +370,17 @@ QString RecorderController::detectHardwareEncoder()
         return QStringLiteral("libx264");
     }
     const QString output = QString::fromLocal8Bit(probe.readAllStandardOutput());
-    const QStringList preferred = {
-        QStringLiteral("h264_nvenc"),
-        QStringLiteral("h264_amf"),
-        QStringLiteral("h264_qsv")
-    };
-    for (const auto &enc : preferred) {
-        if (output.contains(enc))
-            return enc;
-    }
+
+    // h264_mf (MediaFoundation) is built into Windows, always reliable
+    if (output.contains(QStringLiteral("h264_mf")))
+        return QStringLiteral("h264_mf");
+    if (output.contains(QStringLiteral("h264_nvenc")))
+        return QStringLiteral("h264_nvenc");
+    if (output.contains(QStringLiteral("h264_amf")))
+        return QStringLiteral("h264_amf");
+    if (output.contains(QStringLiteral("h264_qsv")))
+        return QStringLiteral("h264_qsv");
+
     return QStringLiteral("libx264");
 }
 
