@@ -3,6 +3,7 @@
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
 
+#include <QAbstractItemView>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
@@ -47,24 +48,33 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     : QWidget(parent)
     , m_library(library)
 {
+    setObjectName(QStringLiteral("videoLibraryPage"));
+
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(16, 14, 16, 12);
-    root->setSpacing(8);
+    root->setContentsMargins(18, 16, 18, 14);
+    root->setSpacing(10);
 
     auto *header = new QLabel(QStringLiteral("视频库"));
     header->setObjectName(QStringLiteral("pageHeader"));
     root->addWidget(header);
 
     m_filterEdit = new QLineEdit(this);
+    m_filterEdit->setObjectName(QStringLiteral("videoLibrarySearch"));
     m_filterEdit->setPlaceholderText(QStringLiteral("搜索视频..."));
     m_filterEdit->setClearButtonEnabled(true);
+    m_filterEdit->setFixedHeight(40);
     root->addWidget(m_filterEdit);
 
     m_stack = new QStackedWidget(this);
+    m_stack->setObjectName(QStringLiteral("videoLibraryStack"));
 
     m_list = new QListWidget(this);
-    m_list->setAlternatingRowColors(true);
+    m_list->setObjectName(QStringLiteral("videoLibraryList"));
+    m_list->setAlternatingRowColors(false);
     m_list->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_list->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
+    m_list->setSpacing(6);
     m_stack->addWidget(m_list);
 
     m_emptyWidget = new QWidget(this);
@@ -146,7 +156,7 @@ void VideoLibraryPage::applyFilter()
     }
     m_stack->setCurrentWidget(m_list);
 
-    m_list->setIconSize(QSize(120, 68));
+    m_list->setIconSize(QSize(104, 58));
 
     for (const auto &path : matched) {
         QFileInfo fi(path);
@@ -165,7 +175,7 @@ void VideoLibraryPage::applyFilter()
             text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
-        item->setSizeHint(QSize(0, 100));
+        item->setSizeHint(QSize(0, 82));
 
         // Cache hit — set icon immediately
         if (m_thumbnailCache.contains(path)) {

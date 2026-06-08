@@ -514,3 +514,74 @@ QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {
     font-weight: 600;
     background: transparent;
 }
+
+QLineEdit#videoLibrarySearch {
+    border: 1px solid rgba(82, 96, 120, 0.95);
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 14px;
+    background: rgba(15, 19, 28, 0.58);
+    color: #d4dce8;
+}
+
+QLineEdit#videoLibrarySearch:hover {
+    border-color: rgba(100, 132, 176, 0.95);
+    background: rgba(18, 23, 34, 0.74);
+}
+
+QLineEdit#videoLibrarySearch:focus {
+    border-color: #4da3ff;
+    background: rgba(18, 23, 34, 0.92);
+}
+
+QListWidget#videoLibraryList {
+    border: 1px solid rgba(72, 86, 110, 0.95);
+    border-radius: 10px;
+    background: rgba(15, 19, 28, 0.48);
+    color: #c8d0dc;
+    font-size: 14px;
+    padding: 8px;
+    outline: 0;
+    show-decoration-selected: 0;
+}
+
+QListWidget#videoLibraryList::item {
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #c8d0dc;
+    background: transparent;
+}
+
+QListWidget#videoLibraryList::item:hover {
+    border-color: rgba(90, 110, 138, 0.72);
+    background: rgba(42, 52, 70, 0.58);
+}
+
+QListWidget#videoLibraryList::item:selected,
+QListWidget#videoLibraryList::item:selected:!active {
+    border-color: rgba(77, 163, 255, 0.72);
+    background: rgba(42, 93, 154, 0.30);
+    color: #e4f1ff;
+}
+
+QListWidget#videoLibraryList QScrollBar:vertical {
+    width: 10px;
+    margin: 8px 2px 8px 0;
+}
+
+QListWidget#videoLibraryList QScrollBar::handle:vertical {
+    background: rgba(92, 108, 132, 0.72);
+    border-radius: 5px;
+    min-height: 36px;
+}
+
+QListWidget#videoLibraryList QScrollBar::handle:vertical:hover {
+    background: rgba(120, 142, 172, 0.92);
+}
+
+QWidget#toastWidget {
+    background: rgba(45, 58, 78, 0.98);
+    border: 1px solid rgba(77, 163, 255, 0.28);
+    border-radius: 8px;
+}
