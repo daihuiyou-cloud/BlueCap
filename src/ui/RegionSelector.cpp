@@ -41,6 +41,7 @@ void RegionSelector::mouseMoveEvent(QMouseEvent *event)
     if (m_selecting) {
         m_currentPos = event->pos();
         m_rubberBand->setGeometry(QRect(m_origin, m_currentPos).normalized());
+        update();
     }
 }
 
