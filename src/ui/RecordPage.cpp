@@ -7,6 +7,7 @@
 #include "../recorder/RecorderController.h"
 #include "../storage/VideoLibrary.h"
 
+#include <QDesktopServices>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFrame>
@@ -15,6 +16,7 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <QUrl>
 #include <QPainter>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -35,10 +37,12 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
         m_countdownValue--;
         if (m_countdownValue <= 0) {
             m_countdownTimer->stop();
+            m_countdownLabel->setVisible(false);
+            m_titleLabel->setVisible(true);
             doStartRecording();
             return;
         }
-        m_titleLabel->setText(QString::number(m_countdownValue));
+        m_countdownLabel->setText(QString::number(m_countdownValue));
     });
 
     auto *root = new QVBoxLayout(this);
@@ -63,6 +67,11 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
     m_titleLabel->setAlignment(Qt::AlignCenter);
 
+    m_countdownLabel = new QLabel(this);
+    m_countdownLabel->setObjectName(QStringLiteral("recordTitle"));
+    m_countdownLabel->setAlignment(Qt::AlignCenter);
+    m_countdownLabel->setVisible(false);
+
     m_hotkeyLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), this);
     m_hotkeyLabel->setObjectName(QStringLiteral("recordHotkey"));
     m_hotkeyLabel->setAlignment(Qt::AlignCenter);
@@ -72,6 +81,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     m_statusLabel->setAlignment(Qt::AlignCenter);
 
     root->addWidget(m_titleLabel);
+    root->addWidget(m_countdownLabel);
     root->addWidget(m_hotkeyLabel);
     root->addSpacing(6);
     root->addWidget(m_statusLabel);
@@ -102,6 +112,13 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), bottomBar);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
 
+    m_openFolderIcon = new QLabel(bottomBar);
+    m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
+    m_openFolderIcon->setPixmap(QIcon(QStringLiteral(":/icons/folder.svg")).pixmap(20, 20));
+    m_openFolderIcon->setCursor(Qt::PointingHandCursor);
+    m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
+    m_openFolderIcon->setVisible(false);
+
     auto *chevronIcon = new QLabel(bottomBar);
     chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
     chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(20, 20));
@@ -111,12 +128,15 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     bottomLayout->addWidget(m_recentDetailLabel, 1);
     bottomLayout->addWidget(keyboardIcon);
     bottomLayout->addWidget(shortcutLabel);
+    bottomLayout->addWidget(m_openFolderIcon);
+    bottomLayout->addSpacing(4);
     bottomLayout->addWidget(chevronIcon);
 
     root->addWidget(bottomBar);
 
     bottomBar->setCursor(Qt::PointingHandCursor);
     bottomBar->installEventFilter(this);
+    m_openFolderIcon->installEventFilter(this);
 
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
     connect(m_recorder, &RecorderController::recordingChanged,
@@ -175,7 +195,9 @@ void RecordPage::toggleRecording()
     case RecordMode::Window:
         m_recordButton->setEnabled(false);
         m_countdownValue = 3;
-        m_titleLabel->setText(QStringLiteral("3"));
+        m_titleLabel->setVisible(false);
+        m_countdownLabel->setText(QStringLiteral("3"));
+        m_countdownLabel->setVisible(true);
         m_statusLabel->setText(QStringLiteral("录制即将开始..."));
         m_countdownTimer->start(1000);
         break;
@@ -211,14 +233,16 @@ void RecordPage::startRegionSelection()
 
 void RecordPage::pickWindow()
 {
-    auto *picker = new WindowPicker(this);
+    auto *picker = new WindowPicker();
     picker->setAttribute(Qt::WA_DeleteOnClose);
-    if (picker->exec() == QDialog::Accepted) {
+    picker->setWindowModality(Qt::WindowModal);
+    connect(picker, &QDialog::accepted, this, [this, picker] {
         QString selected = picker->selectedWindow();
         if (!selected.isEmpty()) {
             m_recorder->startWindowRecording(selected);
         }
-    }
+    });
+    picker->show();
 }
 
 void RecordPage::handleRecordingChanged(bool recording)
@@ -252,6 +276,8 @@ void RecordPage::handleError(const QString &message)
     m_recordButton->setEnabled(true);
     m_recordingTimer->stop();
     m_countdownTimer->stop();
+    m_countdownLabel->setVisible(false);
+    m_titleLabel->setVisible(true);
     m_titleLabel->setText(QStringLiteral("开始录制"));
     m_statusLabel->setText(QStringLiteral("录制失败"));
     updateStatusForMode(m_modeSwitch->currentMode());
@@ -262,10 +288,12 @@ void RecordPage::updateRecentVideos(const QStringList &videos)
 {
     if (videos.isEmpty()) {
         m_recentDetailLabel->setText(QStringLiteral("还没有录制文件"));
+        m_openFolderIcon->setVisible(false);
         return;
     }
 
     m_recentDetailLabel->setText(QFileInfo(videos.first()).fileName());
+    m_openFolderIcon->setVisible(true);
 }
 
 void RecordPage::updateStatusForMode(RecordMode mode)
@@ -300,6 +328,13 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
     if (event->type() == QEvent::MouseButtonPress) {
         auto *me = static_cast<QMouseEvent *>(event);
         if (me->button() == Qt::LeftButton) {
+            if (obj == m_openFolderIcon) {
+                const QString path = m_recorder->currentSavePath();
+                if (!path.isEmpty()) {
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+                }
+                return true;
+            }
             emit recentVideosClicked();
             return true;
         }

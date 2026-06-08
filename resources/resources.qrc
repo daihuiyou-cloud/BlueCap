@@ -14,5 +14,6 @@
         <file>icons/clock.svg</file>
         <file>icons/keyboard.svg</file>
         <file>icons/chevron-right.svg</file>
+        <file>icons/folder.svg</file>
     </qresource>
 </RCC>

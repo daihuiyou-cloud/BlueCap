@@ -193,6 +193,13 @@ QLineEdit, QSpinBox, QComboBox {
     color: #1f2940;
 }
 
+#saveFeedback {
+    color: #28965c;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 8px;
+}
+
 #applyButton {
     border: 0;
     border-radius: 14px;

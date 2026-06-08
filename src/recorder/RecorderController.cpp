@@ -57,6 +57,16 @@ QString RecorderController::currentOutputPath() const
     return m_currentOutputPath;
 }
 
+QString RecorderController::currentSavePath() const
+{
+    if (!m_savePath.isEmpty())
+        return m_savePath;
+    QString baseDir = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    if (baseDir.isEmpty())
+        baseDir = QDir::homePath();
+    return baseDir + QStringLiteral("/BlueCap");
+}
+
 void RecorderController::setFrameRate(int fps)
 {
     m_frameRate = fps;
@@ -70,6 +80,11 @@ void RecorderController::setPreset(const QString &preset)
 void RecorderController::setStartTimeout(int ms)
 {
     m_startTimeoutMs = ms;
+}
+
+void RecorderController::setSavePath(const QString &path)
+{
+    m_savePath = path;
 }
 
 void RecorderController::setStopTimeout(int ms)
@@ -290,12 +305,16 @@ QString RecorderController::resolveFfmpegPath()
 
 QString RecorderController::createOutputPath() const
 {
-    QString baseDir = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    QString baseDir = m_savePath;
     if (baseDir.isEmpty()) {
-        baseDir = QDir::homePath();
+        baseDir = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+        if (baseDir.isEmpty()) {
+            baseDir = QDir::homePath();
+        }
+        baseDir += QStringLiteral("/BlueCap");
     }
 
-    QDir dir(baseDir + QStringLiteral("/BlueCap"));
+    QDir dir(baseDir);
     if (!dir.exists()) {
         dir.mkpath(QStringLiteral("."));
     }

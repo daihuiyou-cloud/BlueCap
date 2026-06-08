@@ -10,6 +10,7 @@
 #include <QSettings>
 #include <QSpinBox>
 #include <QStandardPaths>
+#include <QTimer>
 #include <QVBoxLayout>
 
 SettingsPage::SettingsPage(QWidget *parent)
@@ -82,6 +83,17 @@ SettingsPage::SettingsPage(QWidget *parent)
     layout->addRow(QStringLiteral("停止超时"), m_stopTimeoutSpin);
 
     root->addWidget(form);
+
+    m_saveFeedback = new QLabel(QStringLiteral("✓ 已保存"), this);
+    m_saveFeedback->setObjectName(QStringLiteral("saveFeedback"));
+    m_saveFeedback->setAlignment(Qt::AlignRight);
+    m_saveFeedback->setVisible(false);
+    root->addWidget(m_saveFeedback);
+
+    m_feedbackTimer = new QTimer(this);
+    m_feedbackTimer->setSingleShot(true);
+    connect(m_feedbackTimer, &QTimer::timeout, m_saveFeedback, &QLabel::hide);
+
     root->addStretch();
 
     connect(browseBtn, &QPushButton::clicked, this, &SettingsPage::browsePath);
@@ -121,4 +133,7 @@ void SettingsPage::applySettings()
     emit confirmStopChanged(m_confirmStopCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
+
+    m_saveFeedback->setVisible(true);
+    m_feedbackTimer->start(2000);
 }

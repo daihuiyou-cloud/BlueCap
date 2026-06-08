@@ -2,7 +2,9 @@
 
 #include <QWidget>
 
+class QLabel;
 class QListWidget;
+class QStackedWidget;
 class VideoLibrary;
 
 class VideoLibraryPage : public QWidget
@@ -20,5 +22,7 @@ private slots:
 
 private:
     VideoLibrary *m_library = nullptr;
+    QStackedWidget *m_stack = nullptr;
     QListWidget *m_list = nullptr;
+    QWidget *m_emptyWidget = nullptr;
 };

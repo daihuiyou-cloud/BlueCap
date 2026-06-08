@@ -16,6 +16,7 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPixmap>
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
@@ -39,6 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     QSettings saved;
     m_recorder->setFrameRate(saved.value(QStringLiteral("settings/frameRate"), 30).toInt());
     m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("ultrafast")).toString());
+    m_recorder->setSavePath(saved.value(QStringLiteral("settings/savePath"), QString()).toString());
 
     auto *shell = new QVBoxLayout(this);
     shell->setContentsMargins(12, 12, 12, 12);
@@ -82,6 +84,8 @@ MainWindow::MainWindow(QWidget *parent)
             m_recorder, &RecorderController::setStartTimeout);
     connect(settingsPage, &SettingsPage::stopTimeoutChanged,
             m_recorder, &RecorderController::setStopTimeout);
+    connect(settingsPage, &SettingsPage::savePathChanged,
+            m_recorder, &RecorderController::setSavePath);
     connect(settingsPage, &SettingsPage::confirmStopChanged,
             m_recordPage, &RecordPage::setConfirmStop);
 
@@ -96,7 +100,14 @@ MainWindow::MainWindow(QWidget *parent)
         m_hotkeyRegistered = RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
     }
 
-    m_trayIcon = new QSystemTrayIcon(QIcon(QStringLiteral(":/icons/app-logo.svg")), this);
+    QPixmap normalPx(32, 32);
+    normalPx.fill(Qt::transparent);
+    { QPainter p(&normalPx); p.setRenderHint(QPainter::Antialiasing);
+      p.setBrush(QColor(9, 103, 242)); p.setPen(Qt::NoPen);
+      p.drawRoundedRect(2, 2, 28, 28, 6, 6);
+      p.setBrush(Qt::white); p.drawEllipse(10, 10, 12, 12); }
+
+    m_trayIcon = new QSystemTrayIcon(QIcon(normalPx), this);
     m_trayMenu = new QMenu(this);
     QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
     QAction *recordAction = m_trayMenu->addAction(QStringLiteral("开始/停止录制"));
@@ -123,8 +134,27 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
-    connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {
+    auto makeTrayIcon = [this](bool recording) -> QIcon {
+        QPixmap px(32, 32);
+        px.fill(Qt::transparent);
+        QPainter p(&px);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(recording ? QColor(239, 48, 57) : QColor(9, 103, 242));
+        p.setPen(Qt::NoPen);
+        p.drawRoundedRect(2, 2, 28, 28, 6, 6);
+        if (recording) {
+            p.fillRect(10, 10, 12, 12, Qt::white);
+        } else {
+            p.setBrush(Qt::white);
+            p.drawEllipse(10, 10, 12, 12);
+        }
+        p.end();
+        return QIcon(px);
+    };
+
+    connect(m_recorder, &RecorderController::recordingChanged, this, [this, makeTrayIcon](bool recording) {
         m_recordingIndicator->setVisible(recording);
+        m_trayIcon->setIcon(makeTrayIcon(recording));
         m_trayMenu->actions()[1]->setText(recording
             ? QStringLiteral("停止录制")
             : QStringLiteral("开始/停止录制"));
@@ -194,8 +224,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
             QSystemTrayIcon::Information, 3000);
         event->ignore();
     } else {
-        hide();
-        event->ignore();
+        qApp->quit();
     }
 }
 

@@ -8,6 +8,8 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QStackedWidget>
 #include <QUrl>
 #include <QVBoxLayout>
 
@@ -23,10 +25,33 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     header->setObjectName(QStringLiteral("pageHeader"));
     root->addWidget(header);
 
+    m_stack = new QStackedWidget(this);
+
     m_list = new QListWidget(this);
     m_list->setAlternatingRowColors(true);
     m_list->setContextMenuPolicy(Qt::CustomContextMenu);
-    root->addWidget(m_list, 1);
+    m_stack->addWidget(m_list);
+
+    m_emptyWidget = new QWidget(this);
+    auto *emptyLayout = new QVBoxLayout(m_emptyWidget);
+    emptyLayout->setSpacing(16);
+    auto *emptyIcon = new QLabel(m_emptyWidget);
+    emptyIcon->setPixmap(QIcon(QStringLiteral(":/icons/nav-record.svg")).pixmap(48, 48));
+    emptyIcon->setAlignment(Qt::AlignCenter);
+    auto *emptyTitle = new QLabel(QStringLiteral("还没有录制文件"), m_emptyWidget);
+    emptyTitle->setObjectName(QStringLiteral("placeholderTitle"));
+    emptyTitle->setAlignment(Qt::AlignCenter);
+    auto *emptyHint = new QLabel(QStringLiteral("点击「开始录制」创建你的第一个屏幕录制吧"), m_emptyWidget);
+    emptyHint->setObjectName(QStringLiteral("placeholderSubtitle"));
+    emptyHint->setAlignment(Qt::AlignCenter);
+    emptyLayout->addStretch();
+    emptyLayout->addWidget(emptyIcon);
+    emptyLayout->addWidget(emptyTitle);
+    emptyLayout->addWidget(emptyHint);
+    emptyLayout->addStretch();
+    m_stack->addWidget(m_emptyWidget);
+
+    root->addWidget(m_stack, 1);
 
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
@@ -38,6 +63,11 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 void VideoLibraryPage::refreshList(const QStringList &videos)
 {
     m_list->clear();
+    if (videos.isEmpty()) {
+        m_stack->setCurrentWidget(m_emptyWidget);
+        return;
+    }
+    m_stack->setCurrentWidget(m_list);
     for (const auto &path : videos) {
         QFileInfo fi(path);
         qint64 size = fi.size();

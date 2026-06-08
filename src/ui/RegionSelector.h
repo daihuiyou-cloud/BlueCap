@@ -22,6 +22,7 @@ protected:
 
 private:
     QPoint m_origin;
+    QPoint m_currentPos;
     QRubberBand *m_rubberBand = nullptr;
     bool m_selecting = false;
 };

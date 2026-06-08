@@ -4,8 +4,10 @@
 
 class QCheckBox;
 class QComboBox;
+class QLabel;
 class QLineEdit;
 class QSpinBox;
+class QTimer;
 
 class SettingsPage : public QWidget
 {
@@ -33,4 +35,6 @@ private:
     QCheckBox *m_confirmStopCheck = nullptr;
     QSpinBox *m_startTimeoutSpin = nullptr;
     QSpinBox *m_stopTimeoutSpin = nullptr;
+    QLabel *m_saveFeedback = nullptr;
+    QTimer *m_feedbackTimer = nullptr;
 };

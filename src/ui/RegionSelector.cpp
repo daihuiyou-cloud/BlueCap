@@ -34,7 +34,8 @@ void RegionSelector::mousePressEvent(QMouseEvent *event)
 void RegionSelector::mouseMoveEvent(QMouseEvent *event)
 {
     if (m_selecting) {
-        m_rubberBand->setGeometry(QRect(m_origin, event->pos()).normalized());
+        m_currentPos = event->pos();
+        m_rubberBand->setGeometry(QRect(m_origin, m_currentPos).normalized());
     }
 }
 
@@ -55,6 +56,17 @@ void RegionSelector::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape) {
         close();
+        return;
+    }
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        if (m_selecting) {
+            QRect region = QRect(m_origin, m_currentPos).normalized();
+            if (region.width() > 10 && region.height() > 10) {
+                m_rubberBand->hide();
+                emit regionSelected(region);
+            }
+            close();
+        }
     }
 }
 

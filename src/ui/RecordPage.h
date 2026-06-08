@@ -46,9 +46,11 @@ private:
     ModeSwitch *m_modeSwitch = nullptr;
     RecordButton *m_recordButton = nullptr;
     QLabel *m_titleLabel = nullptr;
+    QLabel *m_countdownLabel = nullptr;
     QLabel *m_hotkeyLabel = nullptr;
     QLabel *m_statusLabel = nullptr;
     QLabel *m_recentDetailLabel = nullptr;
+    QLabel *m_openFolderIcon = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     QTimer *m_recordingTimer = nullptr;

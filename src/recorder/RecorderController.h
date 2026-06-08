@@ -17,9 +17,11 @@ public:
 
     bool isRecording() const;
     QString currentOutputPath() const;
+    QString currentSavePath() const;
 
     void setFrameRate(int fps);
     void setPreset(const QString &preset);
+    void setSavePath(const QString &path);
     void setStartTimeout(int ms);
     void setStopTimeout(int ms);
 
@@ -58,5 +60,6 @@ private:
     int m_startTimeoutMs = 5000;
     int m_stopTimeoutMs = 5000;
     QString m_preset = QStringLiteral("ultrafast");
+    QString m_savePath;
     QString m_ffmpegPath;
 };
