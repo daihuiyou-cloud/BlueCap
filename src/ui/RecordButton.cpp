@@ -89,4 +89,11 @@ void RecordButton::paintEvent(QPaintEvent *)
     } else {
         painter.drawEllipse(center, d * 0.172, d * 0.172);
     }
+
+    if (hasFocus()) {
+        QPen focusPen(QColor(9, 103, 242), 2);
+        painter.setPen(focusPen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawEllipse(bounds.adjusted(2, 2, -2, -2));
+    }
 }

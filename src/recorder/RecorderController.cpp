@@ -290,13 +290,13 @@ void RecorderController::handleStopTimeout()
         if (m_process->state() != QProcess::NotRunning) {
             m_process->kill();
         }
-        // If the process still hasn't emitted finished after kill, fire signals directly
+        // If the process is still alive after kill, force-report (handleFinished won't fire)
         QTimer::singleShot(500, this, [this] {
             if (m_process->state() != QProcess::NotRunning) {
-                return; // handleFinished will still fire
+                emit recordingChanged(false);
+                emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
             }
-            emit recordingChanged(false);
-            emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
+            // If process is NotRunning, handleFinished already handled it — skip
         });
     });
 }

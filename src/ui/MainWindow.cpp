@@ -273,6 +273,8 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
         }
 
         if (msg->message == WM_NCHITTEST) {
+            if (IsZoomed(msg->hwnd))
+                return false;
             RECT winRect;
             GetWindowRect(msg->hwnd, &winRect);
             int x = GET_X_LPARAM(msg->lParam);
