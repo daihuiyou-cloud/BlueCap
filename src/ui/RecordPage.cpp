@@ -1,4 +1,5 @@
 #include "RecordPage.h"
+#include "IconHelper.h"
 
 #include "ModeSwitch.h"
 #include "RecordButton.h"
@@ -191,7 +192,9 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
 
     m_openFolderIcon = new QPushButton(rightSection);
     m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_openFolderIcon->setIcon(QIcon(QStringLiteral(":/icons/folder.svg")));
+    m_openFolderIcon->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/folder.svg"), 20,
+        QColor(0x53, 0x61, 0x7a), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
     m_openFolderIcon->setIconSize(QSize(20, 20));
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
     m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
@@ -254,6 +257,13 @@ void RecordPage::setDarkMode(bool dark)
     m_darkMode = dark;
     m_modeSwitch->setDarkMode(dark);
     m_recordButton->setDarkMode(dark);
+
+    QColor folderNormal = dark ? QColor(0x7a, 0x8a, 0xa0) : QColor(0x53, 0x61, 0x7a);
+    QColor folderActive = dark ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
+    QColor folderDisabled = dark ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
+    m_openFolderIcon->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/folder.svg"), 20, folderNormal, folderActive, folderDisabled));
+
     update();
 }
 

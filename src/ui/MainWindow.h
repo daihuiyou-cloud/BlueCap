@@ -64,6 +64,8 @@ private:
     bool m_maximized = false;
     bool m_darkMode = false;
     bool m_hotkeyRegistered = false;
+    QPushButton *m_settingsButton = nullptr;
+    QPushButton *m_minimizeButton = nullptr;
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;
     QWidget *m_titleBar = nullptr;

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <QColor>
+#include <QList>
 #include <QWidget>
 
 class QButtonGroup;
+class QToolButton;
 
 enum class RecordMode { FullScreen, Region, Window };
 
@@ -25,8 +27,12 @@ protected:
     void paintEvent(QPaintEvent *event) override;
 
 private:
+    void updateIcons();
+
     QButtonGroup *m_group = nullptr;
+    QList<QToolButton *> m_buttons;
     QColor m_pillBorder;
     QColor m_pillFill;
     QColor m_dividerColor;
+    bool m_darkMode = false;
 };

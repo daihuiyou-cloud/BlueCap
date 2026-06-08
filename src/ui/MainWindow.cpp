@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "IconHelper.h"
 #include "utils/Theme.h"
 
 #include "RecordPage.h"
@@ -122,6 +123,21 @@ void MainWindow::setupConnections()
             const int resolved = theme::resolve(preference);
             m_darkMode = (resolved == ThemeDark);
             m_recordPage->setDarkMode(m_darkMode);
+            m_sidebar->setDarkMode(m_darkMode);
+
+            QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
+            QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
+            QColor titleDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
+
+            const QStringList titlePaths = {
+                QStringLiteral(":/icons/title-settings.svg"),
+                QStringLiteral(":/icons/title-minimize.svg"),
+                QStringLiteral(":/icons/title-close.svg")
+            };
+            QList<QPushButton *> titleBtns = { m_settingsButton, m_minimizeButton, m_closeButton };
+            for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
+                titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, titleNormal, titleActive, titleDisabled));
+            }
         });
 
         settingsPage->loadSettings();
@@ -423,13 +439,22 @@ QWidget *MainWindow::createTitleBar()
     auto *title = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
 
-    auto *settingsButton = createWindowButton(QStringLiteral(":/icons/title-settings.svg"), QStringLiteral("设置"));
-    settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
-    auto *minimizeButton = createWindowButton(QStringLiteral(":/icons/title-minimize.svg"), QStringLiteral("最小化"));
-    minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
+    m_settingsButton = createWindowButton(QString(), QStringLiteral("设置"));
+    m_settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
+    m_settingsButton->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/title-settings.svg"), 20,
+        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+    m_minimizeButton = createWindowButton(QString(), QStringLiteral("最小化"));
+    m_minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
+    m_minimizeButton->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/title-minimize.svg"), 20,
+        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
     m_maximizeButton = createTitleBarButton(QStringLiteral("□"), QStringLiteral("最大化"));
     m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
-    m_closeButton = createWindowButton(QStringLiteral(":/icons/title-close.svg"), QStringLiteral("关闭"), QStringLiteral("closeButton"));
+    m_closeButton = createWindowButton(QString(), QStringLiteral("关闭"), QStringLiteral("closeButton"));
+    m_closeButton->setIcon(icon::coloredIcon(
+        QStringLiteral(":/icons/title-close.svg"), 20,
+        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
     m_closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
 
     layout->addWidget(logo);
@@ -441,16 +466,16 @@ QWidget *MainWindow::createTitleBar()
     layout->addWidget(m_recordingIndicator);
     layout->addStretch();
 
-    layout->addWidget(settingsButton);
+    layout->addWidget(m_settingsButton);
     layout->addSpacing(10);
-    layout->addWidget(minimizeButton);
+    layout->addWidget(m_minimizeButton);
     layout->addWidget(m_maximizeButton);
     layout->addWidget(m_closeButton);
 
-    connect(settingsButton, &QPushButton::clicked, this, [this] {
+    connect(m_settingsButton, &QPushButton::clicked, this, [this] {
         m_stack->setCurrentIndex(2);
     });
-    connect(minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(m_minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
     connect(m_maximizeButton, &QPushButton::clicked, this, [this] {
         if (m_maximized) {
             showNormal();
