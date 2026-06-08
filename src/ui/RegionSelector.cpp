@@ -47,6 +47,7 @@ void RegionSelector::mouseReleaseEvent(QMouseEvent *event)
         m_rubberBand->hide();
         QRect region = QRect(m_origin, event->pos()).normalized();
         if (region.width() > 10 && region.height() > 10) {
+            hide();
             emit regionSelected(region);
             close();
         } else {
@@ -68,6 +69,7 @@ void RegionSelector::keyPressEvent(QKeyEvent *event)
             QRect region = QRect(m_origin, m_currentPos).normalized();
             if (region.width() > 10 && region.height() > 10) {
                 m_rubberBand->hide();
+                hide();
                 emit regionSelected(region);
             }
             close();
