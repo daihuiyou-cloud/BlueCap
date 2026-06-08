@@ -89,7 +89,8 @@ void MainWindow::setupUI()
     m_stack = new QStackedWidget(body);
     m_recordPage = new RecordPage(m_recorder, m_library, m_stack);
     m_stack->addWidget(m_recordPage);
-    m_stack->addWidget(new VideoLibraryPage(m_library, m_stack));
+    m_videoLibraryPage = new VideoLibraryPage(m_library, m_stack);
+    m_stack->addWidget(m_videoLibraryPage);
     m_stack->addWidget(new SettingsPage(m_stack));
     bodyLayout->addWidget(m_stack, 1);
 
@@ -124,6 +125,7 @@ void MainWindow::setupConnections()
             m_darkMode = (resolved == ThemeDark);
             m_recordPage->setDarkMode(m_darkMode);
             m_sidebar->setDarkMode(m_darkMode);
+            m_videoLibraryPage->setDarkMode(m_darkMode);
 
             QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
             QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);

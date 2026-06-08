@@ -18,6 +18,7 @@ class VideoLibraryPage : public QWidget
 
 public:
     explicit VideoLibraryPage(VideoLibrary *library, QWidget *parent = nullptr);
+    void setDarkMode(bool dark);
 
 private slots:
     void refreshList(const QStringList &videos);
@@ -37,6 +38,8 @@ private:
     QListWidget *m_list = nullptr;
     QWidget *m_emptyWidget = nullptr;
     QLineEdit *m_filterEdit = nullptr;
+    QLabel *m_emptyIcon = nullptr;
+    bool m_darkMode = false;
     QStringList m_allVideos;
     QWidget *m_toastWidget = nullptr;
     QLabel *m_toastLabel = nullptr;

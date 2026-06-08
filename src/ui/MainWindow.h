@@ -15,6 +15,7 @@ class RecorderController;
 class RecordingOverlay;
 class Sidebar;
 class VideoLibrary;
+class VideoLibraryPage;
 
 class MainWindow : public QWidget, public QAbstractNativeEventFilter
 {
@@ -54,6 +55,7 @@ private:
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;
+    VideoLibraryPage *m_videoLibraryPage = nullptr;
     QLabel *m_recordingIndicator = nullptr;
     QTimer *m_pulseTimer = nullptr;
     bool m_pulseState = false;

@@ -70,10 +70,10 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     m_emptyWidget = new QWidget(this);
     auto *emptyLayout = new QVBoxLayout(m_emptyWidget);
     emptyLayout->setSpacing(16);
-    auto *emptyIcon = new QLabel(m_emptyWidget);
-    emptyIcon->setPixmap(icon::renderSvg(
+    m_emptyIcon = new QLabel(m_emptyWidget);
+    m_emptyIcon->setPixmap(icon::renderSvg(
         QStringLiteral(":/icons/nav-record.svg"), QColor(0x64, 0x70, 0x8a), 48));
-    emptyIcon->setAlignment(Qt::AlignCenter);
+    m_emptyIcon->setAlignment(Qt::AlignCenter);
     auto *emptyTitle = new QLabel(QStringLiteral("还没有录制文件"), m_emptyWidget);
     emptyTitle->setObjectName(QStringLiteral("placeholderTitle"));
     emptyTitle->setAlignment(Qt::AlignCenter);
@@ -81,7 +81,7 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     emptyHint->setObjectName(QStringLiteral("placeholderSubtitle"));
     emptyHint->setAlignment(Qt::AlignCenter);
     emptyLayout->addStretch();
-    emptyLayout->addWidget(emptyIcon);
+    emptyLayout->addWidget(m_emptyIcon);
     emptyLayout->addWidget(emptyTitle);
     emptyLayout->addWidget(emptyHint);
     emptyLayout->addStretch();
@@ -158,9 +158,10 @@ void VideoLibraryPage::applyFilter()
             + QStringLiteral("  |  ") + format::fileSize(fi.size());
 
         // Use placeholder icon first, load thumbnails asynchronously
+        QColor placeholderNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x7a, 0x85, 0x99);
         auto *item = new QListWidgetItem(
             icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
-                QColor(0x7a, 0x85, 0x99), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)),
+                placeholderNormal, QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)),
             text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
@@ -245,6 +246,15 @@ void VideoLibraryPage::deleteSelected()
             ? QStringLiteral("已删除「%1」，可从回收站恢复").arg(fi.fileName())
             : QStringLiteral("已永久删除「%1」").arg(fi.fileName()));
     }
+}
+
+void VideoLibraryPage::setDarkMode(bool dark)
+{
+    m_darkMode = dark;
+    QColor emptyColor = dark ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x64, 0x70, 0x8a);
+    m_emptyIcon->setPixmap(icon::renderSvg(
+        QStringLiteral(":/icons/nav-record.svg"), emptyColor, 48));
+    applyFilter();
 }
 
 void VideoLibraryPage::showToast(const QString &message)
