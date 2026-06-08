@@ -16,7 +16,6 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QStackedWidget>
-#include <QStandardPaths>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -96,22 +95,12 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     m_toastLabel = new QLabel(m_toastWidget);
     m_toastLabel->setStyleSheet(QStringLiteral(
         "color: #ffffff; font-size: 13px; font-weight: 600; background: transparent;"));
-    m_toastUndoBtn = new QPushButton(QStringLiteral("撤销"), m_toastWidget);
-    m_toastUndoBtn->setStyleSheet(QStringLiteral(
-        "QPushButton { color: #78bdff; font-size: 13px; font-weight: 700; "
-        "background: transparent; border: 1px solid #78bdff; border-radius: 4px; "
-        "padding: 4px 12px; } "
-        "QPushButton:hover { background: rgba(120, 189, 255, 0.15); }"));
-    m_toastUndoBtn->setCursor(Qt::PointingHandCursor);
     toastLayout->addWidget(m_toastLabel, 1);
-    toastLayout->addWidget(m_toastUndoBtn);
     root->addWidget(m_toastWidget);
 
     m_toastTimer = new QTimer(this);
     m_toastTimer->setSingleShot(true);
-    connect(m_toastTimer, &QTimer::timeout, this, &VideoLibraryPage::cleanupUndo);
     connect(m_toastTimer, &QTimer::timeout, m_toastWidget, &QWidget::hide);
-    connect(m_toastUndoBtn, &QPushButton::clicked, this, &VideoLibraryPage::undoDelete);
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, &VideoLibraryPage::applyFilter);
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
@@ -203,16 +192,8 @@ void VideoLibraryPage::deleteSelected()
         QMessageBox::Yes | QMessageBox::No);
 
     if (result == QMessageBox::Yes) {
-        cleanupUndo();
-
-        if (fi.exists()) {
-            QString undoDir = QStandardPaths::writableLocation(QStandardPaths::TempLocation)
-                + QStringLiteral("/BlueCap/undo");
-            QDir().mkpath(undoDir);
-            m_undoBackupPath = undoDir + QStringLiteral("/") + fi.fileName();
-            QFile::copy(path, m_undoBackupPath);
-            m_undoOriginalPath = path;
-        }
+        m_toastWidget->setVisible(false);
+        m_toastTimer->stop();
 
         if (!moveToTrash(path)) {
             QFile::remove(path);
@@ -229,7 +210,7 @@ void VideoLibraryPage::deleteSelected()
         }
         m_library->clearAndReplace(videos);
 
-        showToast(QStringLiteral("已删除「%1」").arg(fi.fileName()));
+        showToast(QStringLiteral("已删除「%1」，可从回收站恢复").arg(fi.fileName()));
     }
 }
 
@@ -238,49 +219,6 @@ void VideoLibraryPage::showToast(const QString &message)
     m_toastLabel->setText(message);
     m_toastWidget->setVisible(true);
     m_toastTimer->start(5000);
-}
-
-void VideoLibraryPage::undoDelete()
-{
-    if (m_undoBackupPath.isEmpty() || m_undoOriginalPath.isEmpty())
-        return;
-
-    QFileInfo backup(m_undoBackupPath);
-    if (!backup.exists()) {
-        QMessageBox::information(this, QStringLiteral("撤销失败"),
-            QStringLiteral("备份文件已不存在，无法恢复。"));
-        cleanupUndo();
-        return;
-    }
-
-    if (QFileInfo::exists(m_undoOriginalPath)) {
-        QMessageBox::information(this, QStringLiteral("撤销失败"),
-            QStringLiteral("原文件已存在，无法恢复。"));
-        cleanupUndo();
-        return;
-    }
-
-    QDir().mkpath(QFileInfo(m_undoOriginalPath).path());
-    if (QFile::copy(m_undoBackupPath, m_undoOriginalPath)) {
-        m_library->addRecentVideo(m_undoOriginalPath);
-        m_toastLabel->setText(QStringLiteral("已撤销删除"));
-        m_toastUndoBtn->setVisible(false);
-        m_toastTimer->start(2000);
-    } else {
-        QMessageBox::warning(this, QStringLiteral("撤销失败"),
-            QStringLiteral("无法恢复文件，请检查磁盘空间或权限。"));
-    }
-    cleanupUndo();
-}
-
-void VideoLibraryPage::cleanupUndo()
-{
-    if (!m_undoBackupPath.isEmpty()) {
-        QFile::remove(m_undoBackupPath);
-        m_undoBackupPath.clear();
-    }
-    m_undoOriginalPath.clear();
-    m_toastUndoBtn->setVisible(true);
 }
 
 static QPixmap hBitmapToPixmap(HBITMAP hBitmap)
@@ -309,8 +247,11 @@ static QPixmap hBitmapToPixmap(HBITMAP hBitmap)
 
 QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
 {
-    if (m_thumbnailCache.contains(filePath))
+    if (m_thumbnailCache.contains(filePath)) {
+        m_thumbnailLRU.removeAll(filePath);
+        m_thumbnailLRU.prepend(filePath);
         return m_thumbnailCache[filePath];
+    }
 
     QPixmap fallback;
     IShellItemImageFactory *factory = nullptr;
@@ -330,7 +271,13 @@ QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
     }
 
     if (!fallback.isNull()) {
+        if (m_thumbnailCache.size() >= kMaxThumbnails) {
+            QString oldest = m_thumbnailLRU.takeLast();
+            m_thumbnailCache.remove(oldest);
+        }
         m_thumbnailCache[filePath] = fallback;
+        m_thumbnailLRU.removeAll(filePath);
+        m_thumbnailLRU.prepend(filePath);
     }
     return fallback;
 }

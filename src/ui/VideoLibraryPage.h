@@ -25,12 +25,10 @@ private slots:
     void deleteSelected();
     void renameSelected();
     void showContextMenu(const QPoint &pos);
-    void undoDelete();
 
 private:
     void applyFilter();
     void showToast(const QString &message);
-    void cleanupUndo();
     QPixmap getVideoThumbnail(const QString &filePath);
 
     VideoLibrary *m_library = nullptr;
@@ -41,9 +39,8 @@ private:
     QStringList m_allVideos;
     QWidget *m_toastWidget = nullptr;
     QLabel *m_toastLabel = nullptr;
-    QPushButton *m_toastUndoBtn = nullptr;
     QTimer *m_toastTimer = nullptr;
-    QString m_undoOriginalPath;
-    QString m_undoBackupPath;
     QMap<QString, QPixmap> m_thumbnailCache;
+    QStringList m_thumbnailLRU;
+    static constexpr int kMaxThumbnails = 50;
 };

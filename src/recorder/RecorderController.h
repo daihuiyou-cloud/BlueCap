@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMap>
 #include <QObject>
 #include <QProcess>
 #include <QRect>
@@ -26,7 +27,7 @@ public:
     void setStartTimeout(int ms);
     void setStopTimeout(int ms);
 
-    static QStringList enumerateWindows();
+    static QMap<QString, QString> enumerateWindows();
 
 public slots:
     void startFullScreenRecording();
@@ -51,6 +52,7 @@ private:
     QString resolveFfmpegPath();
     QString createOutputPath() const;
     void start(const QStringList &args);
+    void startCapture(const QString &inputSpec, const QStringList &extraArgs = {});
 
     QProcess *m_process = nullptr;
     QTimer *m_startTimer = nullptr;

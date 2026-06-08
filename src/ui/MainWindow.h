@@ -42,6 +42,12 @@ private:
     void updateMaximizeButton();
     bool inTitleDragArea(const QPoint &position) const;
 
+    void setupUI();
+    void setupConnections();
+    void setupHotkey();
+    void setupTray();
+    QIcon makeTrayIcon(bool recording);
+
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
     RecorderController *m_recorder = nullptr;
@@ -57,6 +63,8 @@ private:
     bool m_maximized = false;
     bool m_hotkeyRegistered = false;
     QPushButton *m_maximizeButton = nullptr;
+    QPushButton *m_closeButton = nullptr;
+    QWidget *m_titleBar = nullptr;
     int m_normalWidth = 960;
     int m_normalHeight = 600;
 };

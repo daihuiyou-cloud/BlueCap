@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QMap>
 #include <QStringList>
 
 class QListWidget;
@@ -18,6 +19,6 @@ public:
 private:
     QListWidget *m_list = nullptr;
     QLineEdit *m_filterEdit = nullptr;
-    QStringList m_windows;
+    QMap<QString, QString> m_windows;
     QString m_selected;
 };

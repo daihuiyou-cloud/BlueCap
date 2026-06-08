@@ -4,8 +4,8 @@
 #include "RecordButton.h"
 #include "RegionSelector.h"
 #include "WindowPicker.h"
-#include "../recorder/RecorderController.h"
-#include "../storage/VideoLibrary.h"
+#include "recorder/RecorderController.h"
+#include "storage/VideoLibrary.h"
 
 #include <QDesktopServices>
 #include <QElapsedTimer>

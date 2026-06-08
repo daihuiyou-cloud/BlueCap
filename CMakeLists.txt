@@ -37,6 +37,7 @@ add_executable(BlueCap WIN32
     resources/resources.qrc
 )
 
+target_include_directories(BlueCap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(BlueCap PRIVATE Qt5::Widgets Qt5::Svg)
 
 target_compile_definitions(BlueCap PRIVATE

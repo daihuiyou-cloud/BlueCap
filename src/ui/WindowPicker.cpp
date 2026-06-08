@@ -1,5 +1,5 @@
 #include "WindowPicker.h"
-#include "../recorder/RecorderController.h"
+#include "recorder/RecorderController.h"
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
@@ -35,9 +35,9 @@ WindowPicker::WindowPicker(QWidget *parent)
     root->addWidget(buttonBox);
 
     m_windows = RecorderController::enumerateWindows();
-    for (const auto &w : m_windows) {
-        auto *item = new QListWidgetItem(w, m_list);
-        item->setToolTip(w);
+    for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+        auto *item = new QListWidgetItem(it.key(), m_list);
+        item->setToolTip(it.key());
     }
 
     m_filterEdit->setFocus();
@@ -50,10 +50,10 @@ WindowPicker::WindowPicker(QWidget *parent)
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
         m_list->clear();
-        for (const auto &w : m_windows) {
-            if (text.isEmpty() || w.contains(text, Qt::CaseInsensitive)) {
-                auto *item = new QListWidgetItem(w, m_list);
-                item->setToolTip(w);
+        for (auto it = m_windows.constBegin(); it != m_windows.constEnd(); ++it) {
+            if (text.isEmpty() || it.key().contains(text, Qt::CaseInsensitive)) {
+                auto *item = new QListWidgetItem(it.key(), m_list);
+                item->setToolTip(it.key());
             }
         }
         if (m_list->count() > 0)
@@ -68,5 +68,6 @@ WindowPicker::WindowPicker(QWidget *parent)
 QString WindowPicker::selectedWindow() const
 {
     auto *item = m_list->currentItem();
-    return item ? item->text() : QString();
+    if (!item) return {};
+    return m_windows.value(item->text());
 }

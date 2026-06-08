@@ -2,6 +2,7 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QFileDialog>
 #include <QFormLayout>
 #include <QHBoxLayout>
@@ -173,8 +174,29 @@ void SettingsPage::resetDefaults()
 
 void SettingsPage::applySettings()
 {
+    QString path = m_pathEdit->text().trimmed();
+    if (path.isEmpty()) {
+        m_saveFeedback->setText(QStringLiteral("保存路径不能为空"));
+        m_saveFeedback->setStyleSheet(QStringLiteral("color: #e0525e; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
+        m_saveFeedback->setVisible(true);
+        m_feedbackTimer->start(2000);
+        return;
+    }
+
+    QDir dir(path);
+    if (!dir.exists()) {
+        dir.mkpath(QStringLiteral("."));
+    }
+    if (!dir.exists() || !QFileInfo(path).isWritable()) {
+        m_saveFeedback->setText(QStringLiteral("路径不可写，请选择其他路径"));
+        m_saveFeedback->setStyleSheet(QStringLiteral("color: #e0525e; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
+        m_saveFeedback->setVisible(true);
+        m_feedbackTimer->start(2000);
+        return;
+    }
+
     QSettings settings;
-    settings.setValue(QStringLiteral("settings/savePath"), m_pathEdit->text());
+    settings.setValue(QStringLiteral("settings/savePath"), path);
     settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
     settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
     settings.setValue(QStringLiteral("settings/confirmStop"), m_confirmStopCheck->isChecked());
@@ -184,12 +206,13 @@ void SettingsPage::applySettings()
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
-    emit savePathChanged(m_pathEdit->text());
+    emit savePathChanged(path);
     emit confirmStopChanged(m_confirmStopCheck->isChecked());
     emit showCursorChanged(m_showCursorCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 
+    m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
     m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
     m_saveFeedback->setVisible(true);
     m_feedbackTimer->start(2000);

@@ -90,7 +90,11 @@ void ModeSwitch::paintEvent(QPaintEvent *)
     painter.drawRoundedRect(pill, 38, 38);
 
     painter.setPen(QColor(218, 224, 237));
-    const int third = width() / 3;
-    painter.drawLine(third, 22, third, height() - 22);
-    painter.drawLine(third * 2, 22, third * 2, height() - 22);
+    const int count = m_group->buttons().size();
+    if (count > 1) {
+        const int step = width() / count;
+        for (int i = 1; i < count; ++i) {
+            painter.drawLine(step * i, 22, step * i, height() - 22);
+        }
+    }
 }

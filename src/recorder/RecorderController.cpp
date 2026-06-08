@@ -115,7 +115,7 @@ void RecorderController::setStopTimeout(int ms)
     m_stopTimeoutMs = ms;
 }
 
-QStringList RecorderController::enumerateWindows()
+QMap<QString, QString> RecorderController::enumerateWindows()
 {
     struct WindowInfo {
         QString title;
@@ -135,20 +135,21 @@ QStringList RecorderController::enumerateWindows()
     }, reinterpret_cast<LPARAM>(&windows));
 
     QMap<QString, int> counts;
-    QStringList result;
+    QMap<QString, QString> result;
     for (const auto &info : windows) {
-        QString title = info.title;
-        int &count = counts[title];
+        const QString &original = info.title;
+        QString display = original;
+        int &count = counts[original];
         if (count > 0) {
-            title += QStringLiteral(" (%1)").arg(count + 1);
+            display += QStringLiteral(" (%1)").arg(count + 1);
         }
-        result.append(title);
+        result.insert(display, original);
         count++;
     }
     return result;
 }
 
-void RecorderController::startFullScreenRecording()
+void RecorderController::startCapture(const QString &inputSpec, const QStringList &extraArgs)
 {
     if (isRecording()) return;
 
@@ -165,7 +166,7 @@ void RecorderController::startFullScreenRecording()
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
         QStringLiteral("-framerate"), QString::number(m_frameRate),
-        QStringLiteral("-i"), QStringLiteral("desktop"),
+        QStringLiteral("-i"), inputSpec,
         QStringLiteral("-c:v"), QStringLiteral("libx264"),
         QStringLiteral("-preset"), m_preset,
         QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
@@ -173,74 +174,27 @@ void RecorderController::startFullScreenRecording()
     if (!m_showCursor) {
         args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
     }
-    args << m_currentOutputPath;
+    args << extraArgs << m_currentOutputPath;
 
     start(args);
+}
+
+void RecorderController::startFullScreenRecording()
+{
+    startCapture(QStringLiteral("desktop"));
 }
 
 void RecorderController::startRegionRecording(const QRect &region)
 {
-    if (isRecording()) return;
-
-    const QString ffmpegPath = resolveFfmpegPath();
-    if (!QFileInfo::exists(ffmpegPath)) {
-        emit errorOccurred(QStringLiteral("未找到录制程序 (ffmpeg.exe)，请确认文件存在。"));
-        return;
-    }
-
-    m_currentOutputPath = createOutputPath();
-    m_stopRequested = false;
-
     const QString cropFilter = QStringLiteral("crop=%1:%2:%3:%4")
         .arg(region.width()).arg(region.height())
         .arg(region.x()).arg(region.y());
-
-    QStringList args = {
-        QStringLiteral("-y"),
-        QStringLiteral("-f"), QStringLiteral("gdigrab"),
-        QStringLiteral("-framerate"), QString::number(m_frameRate),
-        QStringLiteral("-i"), QStringLiteral("desktop"),
-        QStringLiteral("-c:v"), QStringLiteral("libx264"),
-        QStringLiteral("-preset"), m_preset,
-        QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
-        QStringLiteral("-vf"), cropFilter,
-    };
-    if (!m_showCursor) {
-        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
-    }
-    args << m_currentOutputPath;
-
-    start(args);
+    startCapture(QStringLiteral("desktop"), { QStringLiteral("-vf"), cropFilter });
 }
 
 void RecorderController::startWindowRecording(const QString &windowTitle)
 {
-    if (isRecording()) return;
-
-    const QString ffmpegPath = resolveFfmpegPath();
-    if (!QFileInfo::exists(ffmpegPath)) {
-        emit errorOccurred(QStringLiteral("未找到录制程序 (ffmpeg.exe)，请确认文件存在。"));
-        return;
-    }
-
-    m_currentOutputPath = createOutputPath();
-    m_stopRequested = false;
-
-    QStringList args = {
-        QStringLiteral("-y"),
-        QStringLiteral("-f"), QStringLiteral("gdigrab"),
-        QStringLiteral("-framerate"), QString::number(m_frameRate),
-        QStringLiteral("-i"), QStringLiteral("title=%1").arg(windowTitle),
-        QStringLiteral("-c:v"), QStringLiteral("libx264"),
-        QStringLiteral("-preset"), m_preset,
-        QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
-    };
-    if (!m_showCursor) {
-        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
-    }
-    args << m_currentOutputPath;
-
-    start(args);
+    startCapture(QStringLiteral("title=%1").arg(windowTitle));
 }
 
 void RecorderController::start(const QStringList &args)
