@@ -23,16 +23,16 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     setAttribute(Qt::WA_StyledBackground, false);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(20, 16, 20, 12);
+    root->setContentsMargins(72, 78, 72, 0);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
-    root->addSpacing(20);
+    root->addSpacing(70);
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
-    root->addSpacing(12);
+    root->addSpacing(22);
 
     m_titleLabel = new QLabel(QStringLiteral("开始录制"), this);
     m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
@@ -48,17 +48,17 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     root->addWidget(m_titleLabel);
     root->addWidget(m_hotkeyLabel);
-    root->addSpacing(8);
+    root->addSpacing(12);
     root->addWidget(m_statusLabel);
     root->addStretch();
 
     auto *bottomBar = new QFrame(this);
     bottomBar->setObjectName(QStringLiteral("bottomBar"));
-    bottomBar->setMinimumHeight(40);
+    bottomBar->setMinimumHeight(100);
 
     auto *bottomLayout = new QHBoxLayout(bottomBar);
-    bottomLayout->setContentsMargins(20, 0, 16, 0);
-    bottomLayout->setSpacing(10);
+    bottomLayout->setContentsMargins(48, 0, 40, 0);
+    bottomLayout->setSpacing(18);
 
     auto *recentIcon = new QLabel(QStringLiteral("◷"), bottomBar);
     recentIcon->setObjectName(QStringLiteral("bottomIcon"));
@@ -101,8 +101,8 @@ void RecordPage::paintEvent(QPaintEvent *)
     painter.setPen(QColor(230, 236, 247));
 
     QLinearGradient fill(panel.topLeft(), panel.bottomRight());
-    fill.setColorAt(0.0, QColor(255, 255, 255, 230));
-    fill.setColorAt(1.0, QColor(242, 247, 255, 220));
+    fill.setColorAt(0.0, QColor(255, 255, 255, 235));
+    fill.setColorAt(1.0, QColor(242, 247, 255, 224));
     painter.setBrush(fill);
     painter.drawRoundedRect(panel, 34, 34);
 }

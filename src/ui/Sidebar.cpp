@@ -9,6 +9,7 @@ namespace {
 QPushButton *createNavButton(const QString &text, bool checked = false)
 {
     auto *button = new QPushButton(text);
+    button->setObjectName(QStringLiteral("sidebarButton"));
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
@@ -22,7 +23,8 @@ QPushButton *createNavButton(const QString &text, bool checked = false)
 Sidebar::Sidebar(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedWidth(280);
+    setObjectName(QStringLiteral("sidebar"));
+    setFixedWidth(288);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
@@ -32,7 +34,7 @@ Sidebar::Sidebar(QWidget *parent)
     layout->setSpacing(34);
 
     const QList<QPushButton *> buttons = {
-        createNavButton(QStringLiteral("▶  录制"), true),
+        createNavButton(QStringLiteral("■  录制"), true),
         createNavButton(QStringLiteral("□  视频库")),
         createNavButton(QStringLiteral("◇  设置"))
     };

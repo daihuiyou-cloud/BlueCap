@@ -1,15 +1,14 @@
 #pragma once
 
-#include <QWidget>
 #include <QAbstractNativeEventFilter>
+#include <QWidget>
 
-class QButtonGroup;
-class QLabel;
-class QStackedWidget;
 class QPoint;
 class QPushButton;
-class RecorderController;
+class QStackedWidget;
 class RecordPage;
+class RecorderController;
+class Sidebar;
 class VideoLibrary;
 
 class MainWindow : public QWidget, public QAbstractNativeEventFilter
@@ -32,11 +31,10 @@ protected:
 
 private:
     QWidget *createTitleBar();
-    QWidget *createNavBar();
-    QPushButton *createWindowButton(const QString &text, const QString &tooltip);
+    QPushButton *createWindowButton(const QString &text, const QString &tooltip, const QString &objectName = {});
     bool inTitleDragArea(const QPoint &position) const;
 
-    QButtonGroup *m_navGroup = nullptr;
+    Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;

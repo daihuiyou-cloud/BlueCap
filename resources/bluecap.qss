@@ -1,105 +1,145 @@
+QWidget {
+    font-family: "Microsoft YaHei UI", "Segoe UI";
+    color: #172033;
+}
+
 #surface {
-    border-radius: 20px;
+    border-radius: 30px;
     background: rgba(245, 249, 255, 0.94);
 }
 
-MainWindow > QPushButton {
-    border: 0;
-    border-radius: 16px;
+#titleBar {
     background: transparent;
-    color: #26334b;
-    font-size: 20px;
-    font-weight: 400;
 }
-MainWindow > QPushButton:hover {
-    background: rgba(215, 226, 244, 0.72);
+
+#appLogo {
+    border-radius: 12px;
+    color: #ef3348;
+    font-size: 20px;
+    font-weight: 900;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
+        stop:0 #78bdff, stop:0.52 #136ff4, stop:1 #075ce0);
 }
 
 #windowTitle {
     color: #111a2d;
-    font-size: 16px;
+    font-size: 30px;
     font-weight: 800;
 }
 
-#navBar QPushButton {
+#titleButton, #closeButton {
     border: 0;
-    border-radius: 15px;
-    color: #53617a;
+    border-radius: 20px;
     background: transparent;
-    font-size: 14px;
+    color: #26334b;
+    font-size: 32px;
+    font-weight: 400;
+}
+
+#titleButton:hover, #closeButton:hover {
+    background: rgba(215, 226, 244, 0.72);
+}
+
+#closeButton:hover {
+    color: #ffffff;
+    background: #e0525e;
+}
+
+#sidebar {
+    background: transparent;
+}
+
+#sidebarButton {
+    border: 0;
+    border-radius: 28px;
+    text-align: left;
+    padding-left: 34px;
+    color: #172033;
+    background: transparent;
+    font-size: 25px;
     font-weight: 700;
 }
-#navBar QPushButton:checked {
+
+#sidebarButton:checked {
     color: #0967f2;
     background: rgba(222, 237, 255, 0.86);
 }
-#navBar QPushButton:hover {
+
+#sidebarButton:hover {
     background: rgba(232, 242, 255, 0.66);
 }
 
-ModeSwitch QToolButton {
+#modeButton {
     border: 0;
-    border-radius: 17px;
+    border-radius: 31px;
     color: #1f2940;
-    font-size: 14px;
+    font-size: 24px;
     font-weight: 700;
     background: transparent;
 }
-ModeSwitch QToolButton:checked {
+
+#modeButton:checked {
     color: #0967f2;
     background: rgba(255, 255, 255, 0.78);
 }
-ModeSwitch QToolButton:hover {
+
+#modeButton:hover {
     background: rgba(255, 255, 255, 0.46);
 }
 
 #recordTitle {
     color: #162039;
-    font-size: 18px;
+    font-size: 32px;
     font-weight: 800;
 }
+
 #recordHotkey {
     color: #616d85;
-    font-size: 13px;
+    font-size: 24px;
     font-weight: 600;
 }
+
 #recordStatus {
     color: #7a8599;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 #bottomBar {
     border-top: 1px solid rgba(207, 216, 232, 0.95);
     background: rgba(255, 255, 255, 0.18);
 }
+
 #bottomIcon, #bottomTitle {
     color: #53617a;
-    font-size: 14px;
+    font-size: 24px;
     font-weight: 700;
 }
+
 #bottomDetail {
     color: #7a8599;
-    font-size: 12px;
+    font-size: 15px;
 }
+
 #shortcutText {
     color: #53617a;
-    font-size: 14px;
+    font-size: 24px;
     font-weight: 600;
 }
 
 #placeholderTitle {
     color: #162039;
-    font-size: 20px;
+    font-size: 30px;
     font-weight: 800;
 }
+
 #placeholderSubtitle {
     color: #64708a;
-    font-size: 14px;
+    font-size: 18px;
 }
 
 #pageHeader {
     color: #162039;
-    font-size: 18px;
+    font-size: 28px;
     font-weight: 800;
 }
 
@@ -107,32 +147,35 @@ QListWidget {
     border: 1px solid rgba(207, 216, 232, 0.95);
     border-radius: 10px;
     background: rgba(255, 255, 255, 0.5);
-    font-size: 13px;
+    font-size: 15px;
     color: #1f2940;
     padding: 4px;
 }
+
 QListWidget::item {
-    padding: 6px 10px;
+    padding: 8px 10px;
     border-radius: 6px;
 }
+
 QListWidget::item:selected {
     background: rgba(222, 237, 255, 0.86);
     color: #0967f2;
 }
+
 QListWidget::item:hover {
     background: rgba(232, 242, 255, 0.66);
 }
 
 QFormLayout QLabel {
     color: #53617a;
-    font-size: 13px;
+    font-size: 15px;
 }
 
 QLineEdit, QSpinBox, QComboBox {
     border: 1px solid rgba(207, 216, 232, 0.95);
     border-radius: 8px;
-    padding: 4px 8px;
-    font-size: 13px;
+    padding: 6px 8px;
+    font-size: 15px;
     background: rgba(255, 255, 255, 0.6);
     color: #1f2940;
 }
@@ -142,9 +185,10 @@ QLineEdit, QSpinBox, QComboBox {
     border-radius: 18px;
     background: #0967f2;
     color: #ffffff;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 700;
 }
+
 #applyButton:hover {
     background: #0755cc;
 }

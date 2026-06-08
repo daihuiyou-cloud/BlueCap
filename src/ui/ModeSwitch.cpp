@@ -1,7 +1,7 @@
 #include "ModeSwitch.h"
 
-#include <QButtonGroup>
 #include <QAbstractButton>
+#include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QPainter>
 #include <QToolButton>
@@ -11,11 +11,12 @@ namespace {
 QToolButton *createModeButton(const QString &text, bool checked = false)
 {
     auto *button = new QToolButton;
+    button->setObjectName(QStringLiteral("modeButton"));
     button->setText(text);
     button->setCheckable(true);
     button->setChecked(checked);
     button->setCursor(Qt::PointingHandCursor);
-    button->setMinimumSize(140, 34);
+    button->setMinimumSize(250, 66);
     button->setToolButtonStyle(Qt::ToolButtonTextOnly);
     return button;
 }
@@ -25,13 +26,14 @@ QToolButton *createModeButton(const QString &text, bool checked = false)
 ModeSwitch::ModeSwitch(QWidget *parent)
     : QWidget(parent)
 {
-    setFixedHeight(42);
+    setFixedHeight(76);
+    setMinimumWidth(850);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QHBoxLayout(this);
-    layout->setContentsMargins(6, 4, 6, 4);
+    layout->setContentsMargins(8, 7, 8, 7);
     layout->setSpacing(0);
 
     const QList<QToolButton *> buttons = {
@@ -66,11 +68,11 @@ void ModeSwitch::paintEvent(QPaintEvent *)
 
     const QRectF pill = rect().adjusted(0.5, 0.5, -0.5, -0.5);
     painter.setPen(QColor(214, 222, 238));
-    painter.setBrush(QColor(247, 250, 255, 224));
-    painter.drawRoundedRect(pill, 43, 43);
+    painter.setBrush(QColor(247, 250, 255, 232));
+    painter.drawRoundedRect(pill, 38, 38);
 
     painter.setPen(QColor(218, 224, 237));
     const int third = width() / 3;
-    painter.drawLine(third, 24, third, height() - 24);
-    painter.drawLine(third * 2, 24, third * 2, height() - 24);
+    painter.drawLine(third, 22, third, height() - 22);
+    painter.drawLine(third * 2, 22, third * 2, height() - 22);
 }
