@@ -5,6 +5,8 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QGuiApplication>
+#include <QScreen>
 #include <QMap>
 #include <QSet>
 #include <QStandardPaths>
@@ -194,11 +196,14 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
 
 void RecorderController::startFullScreenRecording()
 {
+    QScreen *screen = QGuiApplication::primaryScreen();
+    emit recordingAreaChanged(screen->geometry(), RecordMode::FullScreen);
     startCapture(QStringLiteral("desktop"));
 }
 
 void RecorderController::startRegionRecording(const QRect &region)
 {
+    emit recordingAreaChanged(region, RecordMode::Region);
     const QString cropFilter = QStringLiteral("crop=%1:%2:%3:%4")
         .arg(region.width()).arg(region.height())
         .arg(region.x()).arg(region.y());

@@ -17,6 +17,7 @@ add_executable(BlueCap WIN32
     src/ui/ModeSwitch.cpp
     src/ui/RecordButton.cpp
     src/ui/RecordPage.cpp
+    src/ui/RecordingOverlay.cpp
     src/ui/RegionSelector.cpp
     src/ui/SettingsPage.cpp
     src/ui/WindowPicker.cpp

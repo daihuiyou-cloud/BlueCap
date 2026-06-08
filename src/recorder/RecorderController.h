@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ui/ModeSwitch.h"
+
 #include <QMap>
 #include <QObject>
 #include <QProcess>
@@ -40,6 +42,7 @@ signals:
     void outputPathChanged(const QString &path);
     void videoSaved(const QString &path);
     void errorOccurred(const QString &message);
+    void recordingAreaChanged(const QRect &area, RecordMode mode);
 
 private slots:
     void handleStarted();

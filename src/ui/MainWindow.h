@@ -12,6 +12,7 @@ class QTimer;
 class QSystemTrayIcon;
 class RecordPage;
 class RecorderController;
+class RecordingOverlay;
 class Sidebar;
 class VideoLibrary;
 
@@ -65,6 +66,7 @@ private:
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;
     QWidget *m_titleBar = nullptr;
+    RecordingOverlay *m_overlay = nullptr;
     QPixmap m_shadowCache;
     void renderShadowCache();
 };

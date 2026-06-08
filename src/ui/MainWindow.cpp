@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include "RecordPage.h"
+#include "RecordingOverlay.h"
 #include "SettingsPage.h"
 #include "Sidebar.h"
 #include "VideoLibraryPage.h"
@@ -50,6 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
+    m_overlay = new RecordingOverlay;
 
     setupUI();
     renderShadowCache();
@@ -121,6 +123,14 @@ void MainWindow::setupConnections()
         m_stack->setCurrentIndex(1);
     });
 
+    connect(m_recorder, &RecorderController::recordingAreaChanged, this,
+        [this](const QRect &area, RecordMode mode) {
+            if (mode == RecordMode::FullScreen)
+                m_overlay->showForFullscreen();
+            else
+                m_overlay->showForRegion(area);
+        });
+
     connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {
         m_recordingIndicator->setVisible(recording);
         if (recording) {
@@ -130,12 +140,17 @@ void MainWindow::setupConnections()
         } else {
             m_pulseTimer->stop();
             m_recordingIndicator->setStyleSheet(QString());
+            m_overlay->hideOverlay();
         }
         m_trayIcon->setIcon(makeTrayIcon(recording));
         m_trayMenu->actions()[1]->setEnabled(!recording);
         m_trayMenu->actions()[2]->setText(recording
             ? QStringLiteral("停止录制")
             : QStringLiteral("开始/停止录制"));
+    });
+
+    connect(m_recorder, &RecorderController::errorOccurred, this, [this] {
+        m_overlay->hideOverlay();
     });
 }
 
