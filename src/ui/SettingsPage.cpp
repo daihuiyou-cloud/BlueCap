@@ -36,6 +36,7 @@ SettingsPage::SettingsPage(QWidget *parent)
     m_pathEdit = new QLineEdit(form);
     m_pathEdit->setToolTip(QStringLiteral("录制文件的保存位置，点击「浏览」选择文件夹"));
     auto *browseBtn = new QPushButton(QStringLiteral("浏览..."), form);
+    browseBtn->setObjectName(QStringLiteral("browseBtn"));
     browseBtn->setFixedWidth(80);
     auto *pathRow = new QWidget(form);
     auto *pathLayout = new QHBoxLayout(pathRow);
@@ -191,27 +192,9 @@ void SettingsPage::resetDefaults()
 
 void SettingsPage::applySettings(bool showFeedback)
 {
-    QString path = m_pathEdit->text().trimmed();
-
-    if (path.isEmpty()) {
-        showPathError(QStringLiteral("保存路径不能为空"));
-        return;
-    }
-
-    QDir dir(path);
-    if (!dir.exists()) {
-        if (!dir.mkpath(QStringLiteral("."))) {
-            showPathError(QStringLiteral("无法创建目录，请检查权限"));
-            return;
-        }
-    }
-    if (!QFileInfo(path).isWritable()) {
-        showPathError(QStringLiteral("路径不可写，请选择其他路径"));
-        return;
-    }
-
     QSettings settings;
-    settings.setValue(QStringLiteral("settings/savePath"), path);
+
+    // Always save non-path settings
     settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
     settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
     settings.setValue(QStringLiteral("settings/confirmStop"), m_confirmStopCheck->isChecked());
@@ -222,18 +205,44 @@ void SettingsPage::applySettings(bool showFeedback)
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
-    emit savePathChanged(path);
     emit themeChanged(m_themeCombo->currentData().toInt());
     emit confirmStopChanged(m_confirmStopCheck->isChecked());
     emit showCursorChanged(m_showCursorCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 
+    // Validate and save path separately
+    QString path = m_pathEdit->text().trimmed();
+    bool pathValid = true;
+
+    if (path.isEmpty()) {
+        showPathError(QStringLiteral("保存路径不能为空"));
+        pathValid = false;
+    } else {
+        QDir dir(path);
+        if (!dir.exists()) {
+            if (!dir.mkpath(QStringLiteral("."))) {
+                showPathError(QStringLiteral("无法创建目录，请检查权限"));
+                pathValid = false;
+            }
+        } else if (!QFileInfo(path).isWritable()) {
+            showPathError(QStringLiteral("路径不可写，请选择其他路径"));
+            pathValid = false;
+        }
+    }
+
+    if (pathValid) {
+        settings.setValue(QStringLiteral("settings/savePath"), path);
+        emit savePathChanged(path);
+    }
+
     if (showFeedback) {
-        m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
-        m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
-        m_saveFeedback->setVisible(true);
-        m_feedbackTimer->start(2000);
+        if (pathValid) {
+            m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
+            m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
+            m_saveFeedback->setVisible(true);
+            m_feedbackTimer->start(2000);
+        }
     }
 }
 

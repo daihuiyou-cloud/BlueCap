@@ -60,6 +60,9 @@ private:
     QLabel *m_statusLabel = nullptr;
     QProgressBar *m_stopProgress = nullptr;
     QLabel *m_recentDetailLabel = nullptr;
+    QLabel *m_recentIcon = nullptr;
+    QLabel *m_keyboardIcon = nullptr;
+    QLabel *m_chevronIcon = nullptr;
     QPushButton *m_openFolderIcon = nullptr;
     QFrame *m_bottomNavSection = nullptr;
     RecorderController *m_recorder = nullptr;

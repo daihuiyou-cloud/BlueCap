@@ -224,6 +224,15 @@ QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
     border-color: #0967f2;
 }
 
+QLineEdit:hover, QSpinBox:hover, QComboBox:hover {
+    border-color: rgba(9, 103, 242, 0.5);
+}
+
+QLineEdit:disabled, QSpinBox:disabled, QComboBox:disabled {
+    background: rgba(220, 225, 235, 0.3);
+    color: #a0aab8;
+}
+
 QProgressBar {
     border: 1px solid rgba(207, 216, 232, 0.6);
     background: rgba(207, 216, 232, 0.3);
@@ -256,6 +265,37 @@ QProgressBar::chunk {
     background: rgba(232, 242, 255, 0.66);
 }
 
+#resetBtn:pressed {
+    background: rgba(222, 237, 255, 0.86);
+}
+
+#resetBtn:focus {
+    border-color: #0967f2;
+}
+
+#resetBtn:disabled {
+    background: rgba(220, 225, 235, 0.3);
+    color: #a0aab8;
+}
+
+#browseBtn {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(207, 216, 232, 0.95);
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1f2940;
+    padding: 5px 12px;
+}
+
+#browseBtn:hover {
+    background: rgba(232, 242, 255, 0.66);
+    border-color: #0967f2;
+}
+
+#browseBtn:pressed {
+    background: rgba(222, 237, 255, 0.86);
+}
+
 #stopStatusLabel {
     color: #53617a;
     font-size: 14px;
@@ -263,7 +303,16 @@ QProgressBar::chunk {
 }
 
 QDialog {
+    background: transparent;
+}
+
+#dialogSurface {
     background: rgba(245, 249, 255, 0.98);
+    border-radius: 12px;
+}
+
+#dialogTitleBar {
+    background: transparent;
 }
 
 QPushButton {
@@ -328,6 +377,38 @@ QScrollBar::handle:vertical:hover {
     background: rgba(180, 190, 210, 0.8);
 }
 
+QScrollBar::handle:vertical:pressed {
+    background: rgba(160, 170, 190, 0.9);
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 8px;
+    margin: 0;
+}
+
+QScrollBar::handle:horizontal {
+    background: rgba(207, 216, 232, 0.6);
+    border-radius: 4px;
+    min-width: 30px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: rgba(180, 190, 210, 0.8);
+}
+
+QScrollBar::handle:horizontal:pressed {
+    background: rgba(160, 170, 190, 0.9);
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0;
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
     height: 0;
 }
@@ -368,6 +449,15 @@ QCheckBox::indicator:hover {
     border-color: #0967f2;
 }
 
+QCheckBox::indicator:disabled {
+    background: rgba(207, 216, 232, 0.3);
+    border-color: rgba(207, 216, 232, 0.5);
+}
+
+QCheckBox:disabled {
+    color: #a0aab8;
+}
+
 QComboBox QAbstractItemView {
     background: #ffffff;
     border: 1px solid rgba(207, 216, 232, 0.95);
@@ -397,5 +487,14 @@ QSpinBox::up-button, QSpinBox::down-button {
 QSpinBox::up-arrow, QSpinBox::down-arrow {
     width: 8px;
     height: 8px;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+    background: rgba(222, 237, 255, 0.6);
+    border-radius: 3px;
+}
+
+QSpinBox::up-button:pressed, QSpinBox::down-button:pressed {
+    background: rgba(222, 237, 255, 0.86);
 }
 

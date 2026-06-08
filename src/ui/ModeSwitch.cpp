@@ -141,11 +141,10 @@ void ModeSwitch::paintEvent(QPaintEvent *)
     painter.drawRoundedRect(pill, 38, 38);
 
     painter.setPen(m_dividerColor);
-    const int count = m_group->buttons().size();
-    if (count > 1) {
-        const int step = width() / count;
-        for (int i = 1; i < count; ++i) {
-            painter.drawLine(step * i, 22, step * i, height() - 22);
-        }
+    const auto buttons = m_group->buttons();
+    const int count = buttons.size();
+    for (int i = 1; i < count; ++i) {
+        const int x = buttons[i]->pos().x();
+        painter.drawLine(x, 22, x, height() - 22);
     }
 }

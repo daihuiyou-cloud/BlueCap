@@ -1,4 +1,5 @@
 #include "VideoLibraryPage.h"
+#include "IconHelper.h"
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
 
@@ -70,7 +71,8 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     auto *emptyLayout = new QVBoxLayout(m_emptyWidget);
     emptyLayout->setSpacing(16);
     auto *emptyIcon = new QLabel(m_emptyWidget);
-    emptyIcon->setPixmap(QIcon(QStringLiteral(":/icons/nav-record.svg")).pixmap(48, 48));
+    emptyIcon->setPixmap(icon::renderSvg(
+        QStringLiteral(":/icons/nav-record.svg"), QColor(0x64, 0x70, 0x8a), 48));
     emptyIcon->setAlignment(Qt::AlignCenter);
     auto *emptyTitle = new QLabel(QStringLiteral("还没有录制文件"), m_emptyWidget);
     emptyTitle->setObjectName(QStringLiteral("placeholderTitle"));
@@ -157,10 +159,12 @@ void VideoLibraryPage::applyFilter()
 
         // Use placeholder icon first, load thumbnails asynchronously
         auto *item = new QListWidgetItem(
-            QIcon(QStringLiteral(":/icons/nav-record.svg")), text, m_list);
+            icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
+                QColor(0x7a, 0x85, 0x99), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)),
+            text, m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
-        item->setSizeHint(QSize(0, 80));
+        item->setSizeHint(QSize(0, 100));
 
         // Cache hit — set icon immediately
         if (m_thumbnailCache.contains(path)) {

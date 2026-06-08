@@ -158,9 +158,10 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     navLayout->setContentsMargins(28, 0, 18, 0);
     navLayout->setSpacing(14);
 
-    auto *recentIcon = new QLabel(m_bottomNavSection);
-    recentIcon->setObjectName(QStringLiteral("bottomIcon"));
-    recentIcon->setPixmap(QIcon(QStringLiteral(":/icons/clock.svg")).pixmap(24, 24));
+    m_recentIcon = new QLabel(m_bottomNavSection);
+    m_recentIcon->setObjectName(QStringLiteral("bottomIcon"));
+    m_recentIcon->setPixmap(icon::renderSvg(
+        QStringLiteral(":/icons/clock.svg"), QColor(0x53, 0x61, 0x7a), 24));
 
     auto *recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
     recentTitle->setObjectName(QStringLiteral("bottomTitle"));
@@ -168,7 +169,7 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     m_recentDetailLabel = new QLabel(m_bottomNavSection);
     m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
 
-    navLayout->addWidget(recentIcon);
+    navLayout->addWidget(m_recentIcon);
     navLayout->addWidget(recentTitle);
     navLayout->addWidget(m_recentDetailLabel, 1);
     navLayout->addSpacing(4);
@@ -183,9 +184,10 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     rightLayout->setContentsMargins(14, 0, 24, 0);
     rightLayout->setSpacing(14);
 
-    auto *keyboardIcon = new QLabel(rightSection);
-    keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
-    keyboardIcon->setPixmap(QIcon(QStringLiteral(":/icons/keyboard.svg")).pixmap(24, 24));
+    m_keyboardIcon = new QLabel(rightSection);
+    m_keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
+    m_keyboardIcon->setPixmap(icon::renderSvg(
+        QStringLiteral(":/icons/keyboard.svg"), QColor(0x53, 0x61, 0x7a), 24));
 
     auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
@@ -207,15 +209,16 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
         }
     });
 
-    auto *chevronIcon = new QLabel(bottomBar);
-    chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
-    chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(20, 20));
+    m_chevronIcon = new QLabel(bottomBar);
+    m_chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
+    m_chevronIcon->setPixmap(icon::renderSvg(
+        QStringLiteral(":/icons/chevron-right.svg"), QColor(0x53, 0x61, 0x7a), 20));
 
-    rightLayout->addWidget(keyboardIcon);
+    rightLayout->addWidget(m_keyboardIcon);
     rightLayout->addWidget(shortcutLabel);
     rightLayout->addWidget(m_openFolderIcon);
     rightLayout->addSpacing(4);
-    rightLayout->addWidget(chevronIcon);
+    rightLayout->addWidget(m_chevronIcon);
 
     bottomLayout->addWidget(m_bottomNavSection, 1);
     bottomLayout->addWidget(separator);
@@ -258,7 +261,12 @@ void RecordPage::setDarkMode(bool dark)
     m_modeSwitch->setDarkMode(dark);
     m_recordButton->setDarkMode(dark);
 
-    QColor folderNormal = dark ? QColor(0x7a, 0x8a, 0xa0) : QColor(0x53, 0x61, 0x7a);
+    QColor bottomColor = dark ? QColor(0x7a, 0x8a, 0xa0) : QColor(0x53, 0x61, 0x7a);
+    m_recentIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/clock.svg"), bottomColor, 24));
+    m_keyboardIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/keyboard.svg"), bottomColor, 24));
+    m_chevronIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/chevron-right.svg"), bottomColor, 20));
+
+    QColor folderNormal = bottomColor;
     QColor folderActive = dark ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
     QColor folderDisabled = dark ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
     m_openFolderIcon->setIcon(icon::coloredIcon(

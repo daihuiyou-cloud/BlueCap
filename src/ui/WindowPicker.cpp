@@ -3,8 +3,11 @@
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QIcon>
+#include <QKeyEvent>
+#include <QPainter>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -17,36 +20,68 @@
 WindowPicker::WindowPicker(QWidget *parent)
     : QDialog(parent)
 {
-    setWindowTitle(QStringLiteral("选择窗口"));
-    setMinimumSize(420, 320);
-    resize(480, 400);
+    setWindowFlags(Qt::FramelessWindowHint | Qt::Dialog);
+    setAttribute(Qt::WA_TranslucentBackground);
+    setMinimumSize(476, 376);
+    resize(530, 470);
 
     auto *root = new QVBoxLayout(this);
-    root->setSpacing(12);
+    root->setContentsMargins(14, 14, 14, 14);
 
-    auto *header = new QLabel(QStringLiteral("请选择要录制的窗口："), this);
+    m_surface = new QWidget(this);
+    m_surface->setObjectName(QStringLiteral("dialogSurface"));
+    m_surface->setAttribute(Qt::WA_StyledBackground, true);
+
+    auto *surfaceLayout = new QVBoxLayout(m_surface);
+    surfaceLayout->setSpacing(12);
+    surfaceLayout->setContentsMargins(20, 0, 20, 16);
+
+    m_titleBar = new QWidget(m_surface);
+    m_titleBar->setObjectName(QStringLiteral("dialogTitleBar"));
+    m_titleBar->setFixedHeight(48);
+    auto *titleLayout = new QHBoxLayout(m_titleBar);
+    titleLayout->setContentsMargins(0, 0, 0, 0);
+
+    auto *header = new QLabel(QStringLiteral("选择窗口"), m_titleBar);
     header->setObjectName(QStringLiteral("pageHeader"));
-    root->addWidget(header);
+
+    m_closeBtn = new QPushButton(QStringLiteral("✕"), m_titleBar);
+    m_closeBtn->setObjectName(QStringLiteral("closeButton"));
+    m_closeBtn->setFixedSize(30, 30);
+    m_closeBtn->setCursor(Qt::PointingHandCursor);
+    m_closeBtn->setFlat(true);
+
+    titleLayout->addWidget(header);
+    titleLayout->addStretch();
+    titleLayout->addWidget(m_closeBtn);
+    surfaceLayout->addWidget(m_titleBar);
 
     auto *searchRow = new QHBoxLayout;
     searchRow->setSpacing(8);
-    m_filterEdit = new QLineEdit(this);
+    m_filterEdit = new QLineEdit(m_surface);
     m_filterEdit->setPlaceholderText(QStringLiteral("搜索窗口..."));
     searchRow->addWidget(m_filterEdit, 1);
 
-    m_refreshBtn = new QPushButton(QStringLiteral("刷新"), this);
+    m_refreshBtn = new QPushButton(QStringLiteral("刷新"), m_surface);
     m_refreshBtn->setCursor(Qt::PointingHandCursor);
     m_refreshBtn->setToolTip(QStringLiteral("重新扫描当前打开的窗口"));
     searchRow->addWidget(m_refreshBtn);
-    root->addLayout(searchRow);
+    surfaceLayout->addLayout(searchRow);
 
-    m_list = new QListWidget(this);
-    m_list->setAlternatingRowColors(true);
+    m_list = new QListWidget(m_surface);
     m_list->setIconSize(QSize(24, 24));
-    root->addWidget(m_list, 1);
+    surfaceLayout->addWidget(m_list, 1);
 
-    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    root->addWidget(buttonBox);
+    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, m_surface);
+    surfaceLayout->addWidget(buttonBox);
+
+    root->addWidget(m_surface);
+
+    auto *shadow = new QGraphicsDropShadowEffect(m_surface);
+    shadow->setBlurRadius(20);
+    shadow->setOffset(0, 4);
+    shadow->setColor(QColor(0, 0, 0, 50));
+    m_surface->setGraphicsEffect(shadow);
 
     m_windows = RecorderController::enumerateWindows();
     populateList();
@@ -55,6 +90,8 @@ WindowPicker::WindowPicker(QWidget *parent)
     if (m_list->count() > 0) {
         m_list->setCurrentRow(0);
     }
+
+    connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::reject);
 
     auto *filterShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F), this);
     connect(filterShortcut, &QShortcut::activated, m_filterEdit, qOverload<>(&QWidget::setFocus));
@@ -77,6 +114,60 @@ void WindowPicker::refreshWindows()
     if (m_list->count() > 0)
         m_list->setCurrentRow(0);
     m_filterEdit->setFocus();
+}
+
+void WindowPicker::paintEvent(QPaintEvent *)
+{
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    // Clip away shadow margin area for the background
+    const QRectF body = rect().adjusted(14, 14, -14, -14);
+    painter.setClipRect(body);
+    painter.fillRect(body, Qt::transparent);
+}
+
+void WindowPicker::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton) {
+        QPoint pos = m_surface->mapFrom(this, event->pos());
+        if (m_titleBar->geometry().contains(pos)) {
+            m_dragging = true;
+            m_dragPosition = event->globalPos() - frameGeometry().topLeft();
+            event->accept();
+            return;
+        }
+    }
+    QDialog::mousePressEvent(event);
+}
+
+void WindowPicker::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+        move(event->globalPos() - m_dragPosition);
+        event->accept();
+        return;
+    }
+    QDialog::mouseMoveEvent(event);
+}
+
+void WindowPicker::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_dragging = false;
+    QDialog::mouseReleaseEvent(event);
+}
+
+void WindowPicker::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        reject();
+        return;
+    }
+    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
+        accept();
+        return;
+    }
+    QDialog::keyPressEvent(event);
 }
 
 namespace {
@@ -128,7 +219,6 @@ void WindowPicker::populateList(const QString &filter)
         item->setData(Qt::UserRole, entry.title);
         item->setToolTip(display);
 
-        // Try to retrieve the window icon
         HWND hwnd = reinterpret_cast<HWND>(entry.hwnd);
         HICON hIcon = reinterpret_cast<HICON>(
             SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0));
