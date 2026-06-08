@@ -12,7 +12,6 @@
 #include <QCloseEvent>
 #include <QEvent>
 #include <QHBoxLayout>
-#include <QResizeEvent>
 #include <QIcon>
 #include <QLabel>
 #include <QMenu>
