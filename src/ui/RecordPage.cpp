@@ -299,7 +299,9 @@ void RecordPage::startRegionSelection()
     selector->setAttribute(Qt::WA_DeleteOnClose);
     connect(selector, &RegionSelector::regionSelected, this,
         [this](const QRect &region) {
-            m_recorder->startRegionRecording(region);
+            QTimer::singleShot(200, this, [this, region] {
+                m_recorder->startRegionRecording(region);
+            });
         });
     selector->show();
 }
