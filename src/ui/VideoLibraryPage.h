@@ -1,6 +1,8 @@
 #pragma once
 
+#include <QPixmap>
 #include <QWidget>
+#include <QMap>
 
 class QLabel;
 class QLineEdit;
@@ -23,10 +25,13 @@ private slots:
     void deleteSelected();
     void renameSelected();
     void showContextMenu(const QPoint &pos);
+    void undoDelete();
 
 private:
     void applyFilter();
     void showToast(const QString &message);
+    void cleanupUndo();
+    QPixmap getVideoThumbnail(const QString &filePath);
 
     VideoLibrary *m_library = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -36,5 +41,9 @@ private:
     QStringList m_allVideos;
     QWidget *m_toastWidget = nullptr;
     QLabel *m_toastLabel = nullptr;
+    QPushButton *m_toastUndoBtn = nullptr;
     QTimer *m_toastTimer = nullptr;
+    QString m_undoOriginalPath;
+    QString m_undoBackupPath;
+    QMap<QString, QPixmap> m_thumbnailCache;
 };

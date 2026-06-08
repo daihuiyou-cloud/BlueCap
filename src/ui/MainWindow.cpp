@@ -221,7 +221,19 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
     if (eventType == kMsgGen || eventType == kMsgDsp) {
         auto *msg = static_cast<MSG *>(message);
         if (msg->message == WM_HOTKEY && msg->wParam == 1) {
+            bool wasRecording = m_recorder->isRecording();
             m_recordPage->toggleRecording();
+            bool nowRecording = m_recorder->isRecording();
+            if (wasRecording != nowRecording) {
+                m_trayIcon->showMessage(QStringLiteral("BlueCap"),
+                    nowRecording ? QStringLiteral("录制已开始")
+                                 : QStringLiteral("录制已停止"),
+                    QSystemTrayIcon::Information, 2500);
+                if (nowRecording && !isVisible()) {
+                    showNormal();
+                    activateWindow();
+                }
+            }
             if (result) {
                 *result = 0;
             }

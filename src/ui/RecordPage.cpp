@@ -47,6 +47,9 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
         m_countdownLabel->setText(QString::number(m_countdownValue));
     });
 
+    m_stopProgressTimer = new QTimer(this);
+    connect(m_stopProgressTimer, &QTimer::timeout, this, &RecordPage::updateStopProgress);
+
     auto *root = new QVBoxLayout(this);
     root->setContentsMargins(40, 40, 40, 0);
     root->setSpacing(0);
@@ -245,9 +248,11 @@ void RecordPage::toggleRecording()
         }
         m_recordingTimer->stop();
         m_lastSavedPath.clear();
-        m_statusLabel->setVisible(false);
+        m_stopOutputPath = m_recorder->currentOutputPath();
+        m_stopStatusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
         m_stopStatusLabel->setVisible(true);
         m_stopProgress->setVisible(true);
+        m_stopProgressTimer->start(500);
         m_recorder->stopRecording();
         return;
     }
@@ -331,6 +336,8 @@ void RecordPage::handleRecordingChanged(bool recording)
         m_statusLabel->setText(QStringLiteral("正在录制，点击按钮停止"));
     } else {
         m_recordingTimer->stop();
+        m_stopProgressTimer->stop();
+        m_stopStatusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
         m_stopStatusLabel->setVisible(false);
         m_stopProgress->setVisible(false);
         m_statusLabel->setVisible(true);
@@ -360,6 +367,8 @@ void RecordPage::handleError(const QString &message)
     m_recordButton->setRecording(false);
     m_recordButton->setEnabled(true);
     m_recordingTimer->stop();
+    m_stopProgressTimer->stop();
+    m_stopStatusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
     m_stopStatusLabel->setVisible(false);
     m_stopProgress->setVisible(false);
     m_countdownTimer->stop();
@@ -414,6 +423,21 @@ void RecordPage::updateElapsedTime()
         m_statusLabel->setText(QStringLiteral("正在录制 %1:%2")
             .arg(m, 2, 10, QChar('0'))
             .arg(s, 2, 10, QChar('0')));
+    }
+}
+
+void RecordPage::updateStopProgress()
+{
+    QFileInfo fi(m_stopOutputPath);
+    if (fi.exists()) {
+        qint64 size = fi.size();
+        QString sizeStr;
+        if (size < 1024 * 1024)
+            sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
+        else
+            sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
+        m_stopStatusLabel->setText(
+            QStringLiteral("正在结束录制并写入视频文件... 已写入 %1").arg(sizeStr));
     }
 }
 

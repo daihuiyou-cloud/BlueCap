@@ -39,6 +39,7 @@ private slots:
     void handleError(const QString &message);
     void updateRecentVideos(const QStringList &videos);
     void updateElapsedTime();
+    void updateStopProgress();
     void doStartRecording();
 
 private:
@@ -62,7 +63,9 @@ private:
     QTimer *m_recordingTimer = nullptr;
     QElapsedTimer *m_elapsed = nullptr;
     QTimer *m_countdownTimer = nullptr;
+    QTimer *m_stopProgressTimer = nullptr;
     int m_countdownValue = 0;
     bool m_confirmStop = false;
     QString m_lastSavedPath;
+    QString m_stopOutputPath;
 };
