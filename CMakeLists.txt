@@ -24,6 +24,7 @@ add_executable(BlueCap WIN32
     src/recorder/RecorderController.cpp
     src/storage/VideoLibrary.cpp
     resources/resources.qrc
+    resources/app-icon.rc
 )
 
 target_include_directories(BlueCap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

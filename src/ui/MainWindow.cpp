@@ -34,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
     setWindowTitle(QStringLiteral("BlueCap"));
+    setWindowIcon(QIcon(QStringLiteral(":/icons/app-logo.svg")));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
     resize(960, 600);
