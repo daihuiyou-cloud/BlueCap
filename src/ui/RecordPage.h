@@ -68,6 +68,7 @@ private:
     QTimer *m_stopProgressTimer = nullptr;
     int m_countdownValue = 0;
     bool m_confirmStop = false;
+    bool m_hiddenForRecording = false;
     QString m_lastSavedPath;
     QString m_stopOutputPath;
 };

@@ -266,6 +266,7 @@ void RecordPage::toggleRecording()
         m_countdownTimer->stop();
         m_countdownLabel->setVisible(false);
         m_titleLabel->setVisible(true);
+        m_hiddenForRecording = false;
         updateStatusForMode(m_modeSwitch->currentMode());
         return;
     }
@@ -273,6 +274,7 @@ void RecordPage::toggleRecording()
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
         window()->hide();
+        m_hiddenForRecording = true;
         m_countdownValue = 3;
         m_titleLabel->setVisible(false);
         m_countdownLabel->setText(QStringLiteral("3"));
@@ -349,6 +351,12 @@ void RecordPage::handleRecordingChanged(bool recording)
         m_statusLabel->setVisible(true);
         m_titleLabel->setText(QStringLiteral("开始录制"));
         updateStatusForMode(m_modeSwitch->currentMode());
+
+        if (m_hiddenForRecording) {
+            m_hiddenForRecording = false;
+            window()->showNormal();
+            window()->activateWindow();
+        }
     }
 
     m_hotkeyLabel->setText(QStringLiteral("Ctrl + Shift + R"));
@@ -378,6 +386,13 @@ void RecordPage::handleError(const QString &message)
     m_statusLabel->setText(QStringLiteral("录制失败"));
     m_modeSwitch->setModeEnabled(true);
     updateStatusForMode(m_modeSwitch->currentMode());
+
+    if (m_hiddenForRecording) {
+        m_hiddenForRecording = false;
+        window()->showNormal();
+        window()->activateWindow();
+    }
+
     QMessageBox::warning(this, QStringLiteral("录制失败"), message);
 }
 
