@@ -48,17 +48,8 @@ MainWindow::MainWindow(QWidget *parent)
         move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
     }
 
-    m_normalWidth = width();
-    m_normalHeight = height();
-
     m_recorder = new RecorderController(this);
     m_library = new VideoLibrary(this);
-
-    QSettings saved;
-    m_recorder->setFrameRate(saved.value(QStringLiteral("settings/frameRate"), 30).toInt());
-    m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("fast")).toString());
-    m_recorder->setSavePath(saved.value(QStringLiteral("settings/savePath"), QString()).toString());
-    m_recorder->setShowCursor(saved.value(QStringLiteral("settings/showCursor"), true).toBool());
 
     setupUI();
     setupTray();
@@ -431,15 +422,6 @@ void MainWindow::changeEvent(QEvent *event)
         updateMaximizeButton();
     }
     QWidget::changeEvent(event);
-}
-
-void MainWindow::resizeEvent(QResizeEvent *event)
-{
-    if (!isMaximized() && !isMinimized()) {
-        m_normalWidth = event->size().width();
-        m_normalHeight = event->size().height();
-    }
-    QWidget::resizeEvent(event);
 }
 
 bool MainWindow::inTitleDragArea(const QPoint &position) const

@@ -29,7 +29,6 @@ protected:
     void paintEvent(QPaintEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
-    void resizeEvent(QResizeEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -65,6 +64,4 @@ private:
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;
     QWidget *m_titleBar = nullptr;
-    int m_normalWidth = 960;
-    int m_normalHeight = 600;
 };
