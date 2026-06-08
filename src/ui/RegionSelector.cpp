@@ -57,7 +57,6 @@ void RegionSelector::mouseReleaseEvent(QMouseEvent *event)
         } else {
             m_currentPos = event->pos();
             update();
-            QTimer::singleShot(1200, this, &QWidget::close);
         }
     }
 }

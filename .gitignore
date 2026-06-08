@@ -7,3 +7,26 @@ out/
 *.pdb
 *.ilk
 *.log
+
+# Visual Studio
+*.sln.ide/
+*.VC.db
+*.VC.opendb
+Debug/
+Release/
+x64/
+x86/
+*.lib
+*.exp
+*.idb
+*.ipdb
+*.iobj
+
+# Qt
+*.moc
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.pro.user
+*.pro.user.*

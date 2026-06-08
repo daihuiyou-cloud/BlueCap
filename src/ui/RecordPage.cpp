@@ -122,7 +122,23 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     });
 
     root->addStretch();
+    setupBottomBar(root);
 
+    connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
+    connect(m_recorder, &RecorderController::recordingChanged,
+            this, &RecordPage::handleRecordingChanged);
+    connect(m_recorder, &RecorderController::videoSaved,
+            this, &RecordPage::handleVideoSaved);
+    connect(m_recorder, &RecorderController::errorOccurred,
+            this, &RecordPage::handleError);
+    connect(m_library, &VideoLibrary::recentVideosChanged,
+            this, &RecordPage::updateRecentVideos);
+
+    updateRecentVideos(m_library->recentVideos());
+}
+
+void RecordPage::setupBottomBar(QVBoxLayout *root)
+{
     auto *bottomBar = new QFrame(this);
     bottomBar->setObjectName(QStringLiteral("bottomBar"));
     bottomBar->setMinimumHeight(68);
@@ -196,18 +212,6 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     m_bottomNavSection->installEventFilter(this);
     m_openFolderIcon->installEventFilter(this);
-
-    connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
-    connect(m_recorder, &RecorderController::recordingChanged,
-            this, &RecordPage::handleRecordingChanged);
-    connect(m_recorder, &RecorderController::videoSaved,
-            this, &RecordPage::handleVideoSaved);
-    connect(m_recorder, &RecorderController::errorOccurred,
-            this, &RecordPage::handleError);
-    connect(m_library, &VideoLibrary::recentVideosChanged,
-            this, &RecordPage::updateRecentVideos);
-
-    updateRecentVideos(m_library->recentVideos());
 }
 
 void RecordPage::paintEvent(QPaintEvent *)

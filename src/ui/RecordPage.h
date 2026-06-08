@@ -9,6 +9,7 @@ class QFrame;
 class QLabel;
 class QProgressBar;
 class QTimer;
+class QVBoxLayout;
 class ModeSwitch;
 class RecordButton;
 class RecorderController;
@@ -46,6 +47,7 @@ private:
     void startRegionSelection();
     void pickWindow();
     void updateStatusForMode(RecordMode mode);
+    void setupBottomBar(QVBoxLayout *root);
 
     ModeSwitch *m_modeSwitch = nullptr;
     RecordButton *m_recordButton = nullptr;
