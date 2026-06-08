@@ -6,6 +6,7 @@
 #include "WindowPicker.h"
 #include "recorder/RecorderController.h"
 #include "storage/VideoLibrary.h"
+#include "utils/Format.h"
 
 #include <QDesktopServices>
 #include <QElapsedTimer>
@@ -271,6 +272,7 @@ void RecordPage::toggleRecording()
 
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
+        window()->hide();
         m_countdownValue = 3;
         m_titleLabel->setVisible(false);
         m_countdownLabel->setText(QStringLiteral("3"));
@@ -357,13 +359,7 @@ void RecordPage::handleVideoSaved(const QString &path)
     m_library->addRecentVideo(path);
     m_lastSavedPath = path;
     QFileInfo fi(path);
-    qint64 size = fi.size();
-    QString sizeStr;
-    if (size < 1024 * 1024)
-        sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
-    else
-        sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
-    m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)").arg(fi.fileName(), sizeStr));
+    m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)").arg(fi.fileName(), format::fileSize(fi.size())));
 }
 
 void RecordPage::handleError(const QString &message)
@@ -434,14 +430,8 @@ void RecordPage::updateStopProgress()
 {
     QFileInfo fi(m_stopOutputPath);
     if (fi.exists()) {
-        qint64 size = fi.size();
-        QString sizeStr;
-        if (size < 1024 * 1024)
-            sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
-        else
-            sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
         m_stopStatusLabel->setText(
-            QStringLiteral("正在结束录制并写入视频文件... 已写入 %1").arg(sizeStr));
+            QStringLiteral("正在结束录制并写入视频文件... 已写入 %1").arg(format::fileSize(fi.size())));
     }
 }
 

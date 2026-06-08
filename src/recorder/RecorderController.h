@@ -66,4 +66,5 @@ private:
     QString m_preset = QStringLiteral("ultrafast");
     QString m_savePath;
     QString m_ffmpegPath;
+    bool m_forceKilled = false;
 };

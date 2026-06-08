@@ -1,5 +1,6 @@
 #include "VideoLibraryPage.h"
 #include "storage/VideoLibrary.h"
+#include "utils/Format.h"
 
 #include <QDateTime>
 #include <QDesktopServices>
@@ -148,16 +149,10 @@ void VideoLibraryPage::applyFilter()
 
     for (const auto &path : matched) {
         QFileInfo fi(path);
-        qint64 size = fi.size();
-        QString sizeStr;
-        if (size < 1024 * 1024)
-            sizeStr = QStringLiteral("%1 KB").arg(size / 1024);
-        else
-            sizeStr = QStringLiteral("%1 MB").arg(size / (1024.0 * 1024.0), 0, 'f', 1);
 
         QString text = fi.fileName() + QStringLiteral("\n")
             + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
-            + QStringLiteral("  |  ") + sizeStr;
+            + QStringLiteral("  |  ") + format::fileSize(fi.size());
 
         QPixmap thumb = getVideoThumbnail(path);
         QIcon icon = thumb.isNull()
@@ -195,7 +190,8 @@ void VideoLibraryPage::deleteSelected()
         m_toastWidget->setVisible(false);
         m_toastTimer->stop();
 
-        if (!moveToTrash(path)) {
+        bool movedToTrash = moveToTrash(path);
+        if (!movedToTrash) {
             QFile::remove(path);
         }
 
@@ -210,7 +206,9 @@ void VideoLibraryPage::deleteSelected()
         }
         m_library->clearAndReplace(videos);
 
-        showToast(QStringLiteral("已删除「%1」，可从回收站恢复").arg(fi.fileName()));
+        showToast(movedToTrash
+            ? QStringLiteral("已删除「%1」，可从回收站恢复").arg(fi.fileName())
+            : QStringLiteral("已永久删除「%1」").arg(fi.fileName()));
     }
 }
 

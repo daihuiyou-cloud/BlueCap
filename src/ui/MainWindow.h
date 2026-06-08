@@ -33,6 +33,7 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
 private:
     QWidget *createTitleBar();
@@ -64,4 +65,6 @@ private:
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;
     QWidget *m_titleBar = nullptr;
+    QPixmap m_shadowCache;
+    void renderShadowCache();
 };

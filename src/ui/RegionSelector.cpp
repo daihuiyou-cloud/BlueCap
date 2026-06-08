@@ -91,11 +91,15 @@ void RegionSelector::paintEvent(QPaintEvent *)
     font.setBold(true);
     painter.setFont(font);
 
+    QScreen *primaryScreen = QGuiApplication::primaryScreen();
+    QRect primaryGeo = primaryScreen->geometry();
+    QPoint topLeft = mapFromGlobal(primaryGeo.topLeft());
+
     QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
     QFontMetrics fm(font);
     int textWidth = fm.horizontalAdvance(hint);
-    int x = (width() - textWidth) / 2;
-    int y = height() - 60;
+    int x = topLeft.x() + (primaryGeo.width() - textWidth) / 2;
+    int y = topLeft.y() + primaryGeo.height() - 60;
 
     painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
     painter.drawText(x, y, hint);
@@ -112,8 +116,8 @@ void RegionSelector::paintEvent(QPaintEvent *)
             painter.setFont(hintFont);
             QFontMetrics hintFm(hintFont);
             int tw = hintFm.horizontalAdvance(tooSmallHint);
-            int sx = (width() - tw) / 2;
-            int sy = 60;
+            int sx = topLeft.x() + (primaryGeo.width() - tw) / 2;
+            int sy = topLeft.y() + 60;
             painter.fillRect(sx - 24, sy - 40, tw + 48, 52, QColor(180, 40, 40, 200));
             painter.setPen(Qt::white);
             painter.drawText(sx, sy, tooSmallHint);
@@ -127,8 +131,8 @@ void RegionSelector::paintEvent(QPaintEvent *)
 
             QFontMetrics sizeFm(sizeFont);
             int sw = sizeFm.horizontalAdvance(sizeText);
-            int sx = (width() - sw) / 2;
-            int sy = 60;
+            int sx = topLeft.x() + (primaryGeo.width() - sw) / 2;
+            int sy = topLeft.y() + 60;
 
             painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
             painter.setPen(Qt::white);

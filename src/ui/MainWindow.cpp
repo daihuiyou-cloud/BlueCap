@@ -26,6 +26,7 @@
 #include <QVBoxLayout>
 
 #include <QGuiApplication>
+#include <QResizeEvent>
 #include <QScreen>
 #include <windows.h>
 
@@ -51,6 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_library = new VideoLibrary(this);
 
     setupUI();
+    renderShadowCache();
     setupTray();
     setupConnections();
     setupHotkey();
@@ -317,15 +319,32 @@ void MainWindow::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.setPen(Qt::NoPen);
+    painter.drawPixmap(0, 0, m_shadowCache);
+
+    QWidget::paintEvent(event);
+}
+
+void MainWindow::resizeEvent(QResizeEvent *event)
+{
+    renderShadowCache();
+    QWidget::resizeEvent(event);
+}
+
+void MainWindow::renderShadowCache()
+{
+    if (size().isEmpty()) return;
+    m_shadowCache = QPixmap(size());
+    m_shadowCache.fill(Qt::transparent);
+
+    QPainter p(&m_shadowCache);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
 
     const QRectF shadowRect = rect().adjusted(12, 12, -12, -12);
     for (int i = 10; i >= 1; --i) {
-        painter.setBrush(QColor(38, 80, 150, 2 + i));
-        painter.drawRoundedRect(shadowRect.adjusted(-i, -i + 6, i, i + 6), 34 + i, 34 + i);
+        p.setBrush(QColor(38, 80, 150, 2 + i));
+        p.drawRoundedRect(shadowRect.adjusted(-i, -i + 6, i, i + 6), 34 + i, 34 + i);
     }
-
-    QWidget::paintEvent(event);
 }
 
 QWidget *MainWindow::createTitleBar()

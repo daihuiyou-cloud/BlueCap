@@ -3,6 +3,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QMap>
 #include <QSet>
@@ -55,6 +56,9 @@ RecorderController::RecorderController(QObject *parent)
             this, &RecorderController::handleFinished);
     connect(m_process, &QProcess::errorOccurred,
             this, &RecorderController::handleProcessError);
+    connect(m_process, &QProcess::readyReadStandardError, this, [this] {
+        m_process->readAllStandardError();
+    });
 
     m_startTimer = new QTimer(this);
     m_startTimer->setSingleShot(true);
@@ -161,6 +165,15 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
 
     m_currentOutputPath = createOutputPath();
     m_stopRequested = false;
+    m_forceKilled = false;
+
+    QString saveDir = QFileInfo(m_currentOutputPath).absolutePath();
+    ULARGE_INTEGER freeBytes;
+    if (GetDiskFreeSpaceExW(saveDir.toStdWString().c_str(), &freeBytes, nullptr, nullptr)
+        && freeBytes.QuadPart < 200LL * 1024 * 1024) {
+        emit errorOccurred(QStringLiteral("磁盘空间不足（剩余不足 200 MB），请释放空间后重试。"));
+        return;
+    }
 
     QStringList args = {
         QStringLiteral("-y"),
@@ -229,6 +242,14 @@ void RecorderController::handleFinished(int, QProcess::ExitStatus)
     const bool fileExists = QFileInfo::exists(m_currentOutputPath);
     const bool fileNonEmpty = fileExists && QFileInfo(m_currentOutputPath).size() > 0;
 
+    if (m_forceKilled) {
+        if (fileExists) {
+            QFile::remove(m_currentOutputPath);
+        }
+        emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整，已自动删除。"));
+        return;
+    }
+
     if (fileNonEmpty) {
         emit videoSaved(m_currentOutputPath);
         return;
@@ -257,6 +278,7 @@ void RecorderController::handleStartTimeout()
 
 void RecorderController::handleStopTimeout()
 {
+    m_forceKilled = true;
     m_process->terminate();
     QTimer::singleShot(1500, this, [this] {
         if (m_process->state() != QProcess::NotRunning) {
