@@ -64,7 +64,9 @@ private:
     QString resolveFfmpegPath();
     QString createOutputPath() const;
     void start(const QStringList &args);
-    void startCapture(const QString &inputSpec, const QStringList &extraArgs = {});
+    void startCapture(const QString &inputSpec,
+                      const QStringList &extraArgs = {},
+                      const QStringList &inputArgs = {});
 
     QProcess *m_process = nullptr;
     QTimer *m_startTimer = nullptr;

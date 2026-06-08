@@ -180,7 +180,9 @@ QList<RecorderController::WindowEntry> RecorderController::enumerateWindows()
     return result;
 }
 
-void RecorderController::startCapture(const QString &inputSpec, const QStringList &extraArgs)
+void RecorderController::startCapture(const QString &inputSpec,
+                                      const QStringList &extraArgs,
+                                      const QStringList &inputArgs)
 {
     if (isRecording()) return;
 
@@ -213,10 +215,12 @@ void RecorderController::startCapture(const QString &inputSpec, const QStringLis
     QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
-        QStringLiteral("-framerate"), QString::number(m_frameRate),
-        QStringLiteral("-i"), inputSpec,
-        QStringLiteral("-c:v"), m_encoder,
     };
+    // inputArgs (offset_x, offset_y, video_size, etc.) must go BEFORE -i
+    args << inputArgs;
+    args << QStringLiteral("-framerate") << QString::number(m_frameRate);
+    args << QStringLiteral("-i") << inputSpec;
+    args << QStringLiteral("-c:v") << m_encoder;
     if (m_encoder == QStringLiteral("libx264"))
         args << QStringLiteral("-preset") << m_preset;
     args << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
@@ -237,10 +241,40 @@ void RecorderController::startFullScreenRecording()
 void RecorderController::startRegionRecording(const QRect &region)
 {
     emit recordingAreaChanged(region, RecordMode::Region);
-    const QString cropFilter = QStringLiteral("crop=%1:%2:%3:%4")
-        .arg(region.width()).arg(region.height())
-        .arg(region.x()).arg(region.y());
-    startCapture(QStringLiteral("desktop"), { QStringLiteral("-vf"), cropFilter });
+
+    // Find the screen containing the region for DPI scaling
+    QScreen *screen = QGuiApplication::primaryScreen();
+    const auto screens = QGuiApplication::screens();
+    for (auto *s : screens) {
+        if (s->geometry().intersects(region)) {
+            screen = s;
+            break;
+        }
+    }
+
+    // Convert from Qt logical pixels to gdigrab physical pixels
+    QRect screenGeo = screen->geometry();
+    qreal dpr = screen->devicePixelRatio();
+    int localX = region.x() - screenGeo.x();
+    int localY = region.y() - screenGeo.y();
+    int physX = qRound(localX * dpr);
+    int physY = qRound(localY * dpr);
+    int physW = qRound(region.width() * dpr);
+    int physH = qRound(region.height() * dpr);
+
+    // yuv420p requires even width/height
+    if (physW < 2) physW = 2;
+    if (physH < 2) physH = 2;
+    physW &= ~1;
+    physH &= ~1;
+
+    // Use gdigrab's native offset/video_size options instead of -vf crop
+    // This captures only the needed region and avoids the crop filter entirely
+    startCapture(QStringLiteral("desktop"), {}, {
+        QStringLiteral("-offset_x"), QString::number(physX),
+        QStringLiteral("-offset_y"), QString::number(physY),
+        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(physW).arg(physH),
+    });
 }
 
 void RecorderController::startWindowRecording(const QString &windowTitle)
