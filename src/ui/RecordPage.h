@@ -5,6 +5,7 @@
 #include <QWidget>
 
 class QElapsedTimer;
+class QFrame;
 class QLabel;
 class QTimer;
 class ModeSwitch;
@@ -51,6 +52,7 @@ private:
     QLabel *m_statusLabel = nullptr;
     QLabel *m_recentDetailLabel = nullptr;
     QLabel *m_openFolderIcon = nullptr;
+    QFrame *m_bottomNavSection = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     QTimer *m_recordingTimer = nullptr;

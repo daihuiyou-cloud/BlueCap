@@ -77,6 +77,11 @@ void RecorderController::setPreset(const QString &preset)
     m_preset = preset;
 }
 
+void RecorderController::setShowCursor(bool show)
+{
+    m_showCursor = show;
+}
+
 void RecorderController::setStartTimeout(int ms)
 {
     m_startTimeoutMs = ms;
@@ -138,7 +143,7 @@ void RecorderController::startFullScreenRecording()
     m_currentOutputPath = createOutputPath();
     m_stopRequested = false;
 
-    const QStringList args = {
+    QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
         QStringLiteral("-framerate"), QString::number(m_frameRate),
@@ -146,8 +151,11 @@ void RecorderController::startFullScreenRecording()
         QStringLiteral("-c:v"), QStringLiteral("libx264"),
         QStringLiteral("-preset"), m_preset,
         QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
-        m_currentOutputPath
     };
+    if (!m_showCursor) {
+        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
+    }
+    args << m_currentOutputPath;
 
     start(args);
 }
@@ -170,7 +178,7 @@ void RecorderController::startRegionRecording(const QRect &region)
     const QString offset = QStringLiteral("%1,%2")
         .arg(region.x()).arg(region.y());
 
-    const QStringList args = {
+    QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
         QStringLiteral("-framerate"), QString::number(m_frameRate),
@@ -181,8 +189,11 @@ void RecorderController::startRegionRecording(const QRect &region)
         QStringLiteral("-c:v"), QStringLiteral("libx264"),
         QStringLiteral("-preset"), m_preset,
         QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
-        m_currentOutputPath
     };
+    if (!m_showCursor) {
+        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
+    }
+    args << m_currentOutputPath;
 
     start(args);
 }
@@ -200,7 +211,7 @@ void RecorderController::startWindowRecording(const QString &windowTitle)
     m_currentOutputPath = createOutputPath();
     m_stopRequested = false;
 
-    const QStringList args = {
+    QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
         QStringLiteral("-framerate"), QString::number(m_frameRate),
@@ -208,8 +219,11 @@ void RecorderController::startWindowRecording(const QString &windowTitle)
         QStringLiteral("-c:v"), QStringLiteral("libx264"),
         QStringLiteral("-preset"), m_preset,
         QStringLiteral("-pix_fmt"), QStringLiteral("yuv420p"),
-        m_currentOutputPath
     };
+    if (!m_showCursor) {
+        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
+    }
+    args << m_currentOutputPath;
 
     start(args);
 }

@@ -70,6 +70,10 @@ SettingsPage::SettingsPage(QWidget *parent)
     m_confirmStopCheck->setChecked(defaults.value(QStringLiteral("settings/confirmStop"), false).toBool());
     layout->addRow(QStringLiteral(""), m_confirmStopCheck);
 
+    m_showCursorCheck = new QCheckBox(QStringLiteral("录制中显示鼠标"), form);
+    m_showCursorCheck->setChecked(defaults.value(QStringLiteral("settings/showCursor"), true).toBool());
+    layout->addRow(QStringLiteral(""), m_showCursorCheck);
+
     m_startTimeoutSpin = new QSpinBox(form);
     m_startTimeoutSpin->setRange(1, 30);
     m_startTimeoutSpin->setValue(defaults.value(QStringLiteral("settings/startTimeout"), 5).toInt());
@@ -104,6 +108,7 @@ SettingsPage::SettingsPage(QWidget *parent)
         applySettings();
     });
     connect(m_confirmStopCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
+    connect(m_showCursorCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
     connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
     connect(m_stopTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
 }
@@ -124,6 +129,7 @@ void SettingsPage::applySettings()
     settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
     settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
     settings.setValue(QStringLiteral("settings/confirmStop"), m_confirmStopCheck->isChecked());
+    settings.setValue(QStringLiteral("settings/showCursor"), m_showCursorCheck->isChecked());
     settings.setValue(QStringLiteral("settings/startTimeout"), m_startTimeoutSpin->value());
     settings.setValue(QStringLiteral("settings/stopTimeout"), m_stopTimeoutSpin->value());
 
@@ -131,6 +137,7 @@ void SettingsPage::applySettings()
     emit presetChanged(m_qualityCombo->currentData().toString());
     emit savePathChanged(m_pathEdit->text());
     emit confirmStopChanged(m_confirmStopCheck->isChecked());
+    emit showCursorChanged(m_showCursorCheck->isChecked());
     emit startTimeoutChanged(m_startTimeoutSpin->value() * 1000);
     emit stopTimeoutChanged(m_stopTimeoutSpin->value() * 1000);
 

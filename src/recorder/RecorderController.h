@@ -22,6 +22,7 @@ public:
     void setFrameRate(int fps);
     void setPreset(const QString &preset);
     void setSavePath(const QString &path);
+    void setShowCursor(bool show);
     void setStartTimeout(int ms);
     void setStopTimeout(int ms);
 
@@ -57,6 +58,7 @@ private:
     QString m_currentOutputPath;
     bool m_stopRequested = false;
     int m_frameRate = 30;
+    bool m_showCursor = true;
     int m_startTimeoutMs = 5000;
     int m_stopTimeoutMs = 5000;
     QString m_preset = QStringLiteral("ultrafast");

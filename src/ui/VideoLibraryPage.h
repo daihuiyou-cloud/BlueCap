@@ -3,6 +3,7 @@
 #include <QWidget>
 
 class QLabel;
+class QLineEdit;
 class QListWidget;
 class QStackedWidget;
 class VideoLibrary;
@@ -21,8 +22,12 @@ private slots:
     void showContextMenu(const QPoint &pos);
 
 private:
+    void applyFilter();
+
     VideoLibrary *m_library = nullptr;
     QStackedWidget *m_stack = nullptr;
     QListWidget *m_list = nullptr;
     QWidget *m_emptyWidget = nullptr;
+    QLineEdit *m_filterEdit = nullptr;
+    QStringList m_allVideos;
 };

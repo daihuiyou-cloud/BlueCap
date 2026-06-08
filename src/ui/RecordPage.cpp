@@ -92,27 +92,49 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     bottomBar->setMinimumHeight(68);
 
     auto *bottomLayout = new QHBoxLayout(bottomBar);
-    bottomLayout->setContentsMargins(28, 0, 24, 0);
-    bottomLayout->setSpacing(14);
+    bottomLayout->setContentsMargins(0, 0, 0, 0);
+    bottomLayout->setSpacing(0);
 
-    auto *recentIcon = new QLabel(bottomBar);
+    m_bottomNavSection = new QFrame(bottomBar);
+    m_bottomNavSection->setObjectName(QStringLiteral("bottomNavSection"));
+    m_bottomNavSection->setCursor(Qt::PointingHandCursor);
+    auto *navLayout = new QHBoxLayout(m_bottomNavSection);
+    navLayout->setContentsMargins(28, 0, 18, 0);
+    navLayout->setSpacing(14);
+
+    auto *recentIcon = new QLabel(m_bottomNavSection);
     recentIcon->setObjectName(QStringLiteral("bottomIcon"));
     recentIcon->setPixmap(QIcon(QStringLiteral(":/icons/clock.svg")).pixmap(24, 24));
 
-    auto *recentTitle = new QLabel(QStringLiteral("最近视频"), bottomBar);
+    auto *recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
     recentTitle->setObjectName(QStringLiteral("bottomTitle"));
 
-    m_recentDetailLabel = new QLabel(bottomBar);
+    m_recentDetailLabel = new QLabel(m_bottomNavSection);
     m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
 
-    auto *keyboardIcon = new QLabel(bottomBar);
+    navLayout->addWidget(recentIcon);
+    navLayout->addWidget(recentTitle);
+    navLayout->addWidget(m_recentDetailLabel, 1);
+    navLayout->addSpacing(4);
+
+    auto *separator = new QFrame(bottomBar);
+    separator->setObjectName(QStringLiteral("bottomSeparator"));
+    separator->setFixedWidth(1);
+    separator->setFixedHeight(36);
+
+    auto *rightSection = new QWidget(bottomBar);
+    auto *rightLayout = new QHBoxLayout(rightSection);
+    rightLayout->setContentsMargins(14, 0, 24, 0);
+    rightLayout->setSpacing(14);
+
+    auto *keyboardIcon = new QLabel(rightSection);
     keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
     keyboardIcon->setPixmap(QIcon(QStringLiteral(":/icons/keyboard.svg")).pixmap(24, 24));
 
-    auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), bottomBar);
+    auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
 
-    m_openFolderIcon = new QLabel(bottomBar);
+    m_openFolderIcon = new QLabel(rightSection);
     m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_openFolderIcon->setPixmap(QIcon(QStringLiteral(":/icons/folder.svg")).pixmap(20, 20));
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
@@ -123,19 +145,19 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
     chevronIcon->setPixmap(QIcon(QStringLiteral(":/icons/chevron-right.svg")).pixmap(20, 20));
 
-    bottomLayout->addWidget(recentIcon);
-    bottomLayout->addWidget(recentTitle);
-    bottomLayout->addWidget(m_recentDetailLabel, 1);
-    bottomLayout->addWidget(keyboardIcon);
-    bottomLayout->addWidget(shortcutLabel);
-    bottomLayout->addWidget(m_openFolderIcon);
-    bottomLayout->addSpacing(4);
-    bottomLayout->addWidget(chevronIcon);
+    rightLayout->addWidget(keyboardIcon);
+    rightLayout->addWidget(shortcutLabel);
+    rightLayout->addWidget(m_openFolderIcon);
+    rightLayout->addSpacing(4);
+    rightLayout->addWidget(chevronIcon);
+
+    bottomLayout->addWidget(m_bottomNavSection, 1);
+    bottomLayout->addWidget(separator);
+    bottomLayout->addWidget(rightSection);
 
     root->addWidget(bottomBar);
 
-    bottomBar->setCursor(Qt::PointingHandCursor);
-    bottomBar->installEventFilter(this);
+    m_bottomNavSection->installEventFilter(this);
     m_openFolderIcon->installEventFilter(this);
 
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
@@ -337,8 +359,10 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
                 }
                 return true;
             }
-            emit recentVideosClicked();
-            return true;
+            if (obj == m_bottomNavSection) {
+                emit recentVideosClicked();
+                return true;
+            }
         }
     }
     return QWidget::eventFilter(obj, event);

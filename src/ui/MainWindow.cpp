@@ -50,6 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_recorder->setFrameRate(saved.value(QStringLiteral("settings/frameRate"), 30).toInt());
     m_recorder->setPreset(saved.value(QStringLiteral("settings/preset"), QStringLiteral("ultrafast")).toString());
     m_recorder->setSavePath(saved.value(QStringLiteral("settings/savePath"), QString()).toString());
+    m_recorder->setShowCursor(saved.value(QStringLiteral("settings/showCursor"), true).toBool());
 
     auto *shell = new QVBoxLayout(this);
     shell->setContentsMargins(12, 12, 12, 12);
@@ -97,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent)
             m_recorder, &RecorderController::setSavePath);
     connect(settingsPage, &SettingsPage::confirmStopChanged,
             m_recordPage, &RecordPage::setConfirmStop);
+    connect(settingsPage, &SettingsPage::showCursorChanged,
+            m_recorder, &RecorderController::setShowCursor);
 
     connect(m_recordPage, &RecordPage::recentVideosClicked, this, [this] {
         m_sidebar->selectPage(1);

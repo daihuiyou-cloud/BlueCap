@@ -5,6 +5,7 @@
 #include <QDesktopServices>
 #include <QFileInfo>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
@@ -24,6 +25,11 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     auto *header = new QLabel(QStringLiteral("视频库"));
     header->setObjectName(QStringLiteral("pageHeader"));
     root->addWidget(header);
+
+    m_filterEdit = new QLineEdit(this);
+    m_filterEdit->setPlaceholderText(QStringLiteral("搜索视频..."));
+    m_filterEdit->setClearButtonEnabled(true);
+    root->addWidget(m_filterEdit);
 
     m_stack = new QStackedWidget(this);
 
@@ -53,6 +59,7 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 
     root->addWidget(m_stack, 1);
 
+    connect(m_filterEdit, &QLineEdit::textChanged, this, &VideoLibraryPage::applyFilter);
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
     connect(m_library, &VideoLibrary::recentVideosChanged, this, &VideoLibraryPage::refreshList);
@@ -62,13 +69,29 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
 
 void VideoLibraryPage::refreshList(const QStringList &videos)
 {
+    m_allVideos = videos;
+    applyFilter();
+}
+
+void VideoLibraryPage::applyFilter()
+{
     m_list->clear();
-    if (videos.isEmpty()) {
+    QString filter = m_filterEdit->text().trimmed();
+
+    QStringList matched;
+    for (const auto &path : m_allVideos) {
+        if (filter.isEmpty() || QFileInfo(path).fileName().contains(filter, Qt::CaseInsensitive)) {
+            matched.append(path);
+        }
+    }
+
+    if (matched.isEmpty()) {
         m_stack->setCurrentWidget(m_emptyWidget);
         return;
     }
     m_stack->setCurrentWidget(m_list);
-    for (const auto &path : videos) {
+
+    for (const auto &path : matched) {
         QFileInfo fi(path);
         qint64 size = fi.size();
         QString sizeStr;

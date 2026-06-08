@@ -21,6 +21,7 @@ signals:
     void presetChanged(const QString &preset);
     void savePathChanged(const QString &path);
     void confirmStopChanged(bool confirm);
+    void showCursorChanged(bool show);
     void startTimeoutChanged(int ms);
     void stopTimeoutChanged(int ms);
 
@@ -33,6 +34,7 @@ private:
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;
     QCheckBox *m_confirmStopCheck = nullptr;
+    QCheckBox *m_showCursorCheck = nullptr;
     QSpinBox *m_startTimeoutSpin = nullptr;
     QSpinBox *m_stopTimeoutSpin = nullptr;
     QLabel *m_saveFeedback = nullptr;
