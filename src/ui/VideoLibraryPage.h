@@ -34,6 +34,8 @@ private:
     void applyFilter();
     void showToast(const QString &message);
     void processNextThumbnail();
+    QWidget *createVideoItemWidget(const QString &path, const QPixmap &thumbnail);
+    void updateItemSelectionStyles();
 
     VideoLibrary *m_library = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -51,6 +53,7 @@ private:
     QStringList m_thumbnailLRU;
     QStringList m_pendingThumbnails;
     QHash<QString, QListWidgetItem *> m_itemMap;
+    QHash<QString, QLabel *> m_thumbnailLabels;
     QIcon m_placeholderIcon;
     static constexpr int kMaxThumbnails = 50;
 };

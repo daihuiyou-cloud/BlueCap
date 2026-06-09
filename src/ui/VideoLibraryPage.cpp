@@ -15,6 +15,7 @@
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QImage>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QInputDialog>
 #include <QLabel>
@@ -22,16 +23,19 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
+#include <QPainter>
+#include <QPainterPath>
 #include <QProcess>
 #include <QPushButton>
 #include <QStackedWidget>
+#include <QStandardPaths>
+#include <QStyle>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
 
 #include <windows.h>
 #include <shellapi.h>
-#include <shobjidl.h>
 
 namespace {
 
@@ -41,58 +45,89 @@ QString findBundledFfmpeg()
         + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
     if (QFileInfo::exists(bundlePath))
         return bundlePath;
-    return QStringLiteral("ffmpeg.exe");
+
+    const QString sourceBundlePath = QStringLiteral(BLUECAP_SOURCE_DIR)
+        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
+    if (QFileInfo::exists(sourceBundlePath))
+        return sourceBundlePath;
+
+    return QStandardPaths::findExecutable(QStringLiteral("ffmpeg.exe"));
 }
 
-QPixmap thumbnailViaFfmpeg(const QString &filePath)
+QImage thumbnailViaFfmpeg(const QString &filePath)
 {
     const QString ffmpeg = findBundledFfmpeg();
-    if (!QFileInfo::exists(ffmpeg))
+    if (ffmpeg.isEmpty())
         return {};
 
-    const QString tmpFile = QDir::temp().absoluteFilePath(
-        QStringLiteral("bluecap_thumb_%1.bmp").arg(
-            QDateTime::currentMSecsSinceEpoch()));
-
     QProcess proc;
-    proc.setProcessChannelMode(QProcess::MergedChannels);
+    proc.setProcessChannelMode(QProcess::SeparateChannels);
     proc.start(ffmpeg, {
-        QStringLiteral("-ss"), QStringLiteral("00:00:01"),
+        QStringLiteral("-hide_banner"),
+        QStringLiteral("-loglevel"), QStringLiteral("error"),
+        QStringLiteral("-ss"), QStringLiteral("00:00:00"),
         QStringLiteral("-i"), filePath,
-        QStringLiteral("-vframes"), QStringLiteral("1"),
+        QStringLiteral("-frames:v"), QStringLiteral("1"),
+        QStringLiteral("-vf"), QStringLiteral("scale=320:180:force_original_aspect_ratio=increase,crop=320:180"),
         QStringLiteral("-f"), QStringLiteral("image2pipe"),
-        QStringLiteral("-vcodec"), QStringLiteral("bmp"),
-        QStringLiteral("-")
+        QStringLiteral("-vcodec"), QStringLiteral("png"),
+        QStringLiteral("pipe:1")
     });
     if (!proc.waitForFinished(15000) || proc.exitCode() != 0)
         return {};
 
-    QPixmap px;
-    px.loadFromData(proc.readAllStandardOutput(), "BMP");
-    return px;
+    QImage image;
+    image.loadFromData(proc.readAllStandardOutput(), "PNG");
+    return image;
 }
 
-QPixmap fetchThumbnailRaw(const QString &filePath)
+QImage fetchThumbnailRaw(const QString &filePath)
 {
-    QPixmap result;
-    IShellItemImageFactory *factory = nullptr;
-    HRESULT hr = SHCreateItemFromParsingName(
-        reinterpret_cast<const wchar_t *>(filePath.utf16()),
-        nullptr,
-        IID_PPV_ARGS(&factory));
+    return thumbnailViaFfmpeg(filePath);
+}
 
-    if (SUCCEEDED(hr) && factory) {
-        HBITMAP hBitmap = nullptr;
-        hr = factory->GetImage({ 320, 180 }, 0, &hBitmap);
-        if (SUCCEEDED(hr) && hBitmap) {
-            result = win32::hBitmapToPixmap(hBitmap);
-            DeleteObject(hBitmap);
-        }
-        factory->Release();
+QPixmap roundedThumbnail(const QPixmap &source, const QSize &size, bool dark)
+{
+    QPixmap result(size);
+    result.fill(Qt::transparent);
+
+    QPainter painter(&result);
+    painter.setRenderHint(QPainter::Antialiasing);
+
+    const QRectF bounds(QPointF(0, 0), QSizeF(size));
+    const QColor base = dark ? QColor(22, 29, 40) : QColor(232, 239, 249);
+    const QColor stroke = dark ? QColor(66, 80, 104) : QColor(198, 211, 230);
+    painter.setPen(QPen(stroke, 1));
+    painter.setBrush(base);
+    painter.drawRoundedRect(bounds.adjusted(0.5, 0.5, -0.5, -0.5), 8, 8);
+
+    if (!source.isNull()) {
+        QPainterPath clip;
+        clip.addRoundedRect(bounds.adjusted(1, 1, -1, -1), 7, 7);
+        painter.setClipPath(clip);
+
+        QPixmap scaled = source.scaled(size, Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+        const QPoint topLeft((size.width() - scaled.width()) / 2, (size.height() - scaled.height()) / 2);
+        painter.drawPixmap(topLeft, scaled);
+        painter.setClipping(false);
+    } else {
+        const QColor icon = dark ? QColor(132, 154, 184) : QColor(116, 136, 166);
+        const QColor fill = dark ? QColor(31, 41, 58) : QColor(218, 228, 242);
+        const QRectF markRect = bounds.adjusted(38, 19, -38, -19);
+
+        painter.setPen(QPen(icon, 1.2));
+        painter.setBrush(fill);
+        painter.drawEllipse(markRect);
+
+        QPainterPath play;
+        play.moveTo(markRect.center().x() - 4, markRect.center().y() - 7);
+        play.lineTo(markRect.center().x() - 4, markRect.center().y() + 7);
+        play.lineTo(markRect.center().x() + 8, markRect.center().y());
+        play.closeSubpath();
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(icon);
+        painter.drawPath(play);
     }
-
-    if (result.isNull())
-        result = thumbnailViaFfmpeg(filePath);
 
     return result;
 }
@@ -144,7 +179,7 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     m_list->setContextMenuPolicy(Qt::CustomContextMenu);
     m_list->setSelectionMode(QAbstractItemView::SingleSelection);
     m_list->setVerticalScrollMode(QAbstractItemView::ScrollPerPixel);
-    m_list->setSpacing(6);
+    m_list->setSpacing(8);
     m_stack->addWidget(m_list);
 
     m_emptyWidget = new QWidget(this);
@@ -197,6 +232,9 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &) {
         m_filterDebounce->start();
     });
+    connect(m_list, &QListWidget::currentItemChanged, this, [this] {
+        updateItemSelectionStyles();
+    });
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
     connect(m_library, &VideoLibrary::recentVideosChanged, this, &VideoLibraryPage::refreshList);
@@ -225,6 +263,7 @@ void VideoLibraryPage::applyFilter()
 {
     m_list->clear();
     m_pendingThumbnails.clear();
+    m_thumbnailLabels.clear();
     QString filter = m_filterEdit->text().trimmed();
 
     QStringList matched;
@@ -240,23 +279,18 @@ void VideoLibraryPage::applyFilter()
     }
     m_stack->setCurrentWidget(m_list);
 
-    m_list->setIconSize(QSize(104, 58));
-
     for (const auto &path : matched) {
-        QFileInfo fi(path);
-
-        QString text = fi.fileName() + QStringLiteral("\n")
-            + fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
-            + QStringLiteral("  |  ") + format::fileSize(fi.size());
-
-        auto *item = new QListWidgetItem(m_placeholderIcon, text, m_list);
+        auto *item = new QListWidgetItem(m_list);
         item->setData(Qt::UserRole, path);
         item->setToolTip(path);
-        item->setSizeHint(QSize(0, 82));
+        item->setSizeHint(QSize(0, 92));
         m_itemMap.insert(path, item);
 
+        const QPixmap cachedThumb = m_thumbnailCache.value(path);
+        auto *widget = createVideoItemWidget(path, cachedThumb);
+        m_list->setItemWidget(item, widget);
+
         if (m_thumbnailCache.contains(path)) {
-            item->setIcon(QIcon(m_thumbnailCache[path]));
             int idx = m_thumbnailLRU.indexOf(path);
             if (idx > 0)
                 m_thumbnailLRU.move(idx, 0);
@@ -265,8 +299,77 @@ void VideoLibraryPage::applyFilter()
         }
     }
 
+    updateItemSelectionStyles();
+
     if (!m_pendingThumbnails.isEmpty())
         QTimer::singleShot(30, this, &VideoLibraryPage::processNextThumbnail);
+}
+
+QWidget *VideoLibraryPage::createVideoItemWidget(const QString &path, const QPixmap &thumbnail)
+{
+    QFileInfo fi(path);
+
+    auto *row = new QFrame(m_list);
+    row->setObjectName(QStringLiteral("videoLibraryItem"));
+    row->setProperty("selected", false);
+    row->setAttribute(Qt::WA_StyledBackground, true);
+
+    auto *layout = new QHBoxLayout(row);
+    layout->setContentsMargins(14, 10, 14, 10);
+    layout->setSpacing(14);
+
+    auto *thumb = new QLabel(row);
+    thumb->setObjectName(QStringLiteral("videoItemThumb"));
+    thumb->setFixedSize(116, 66);
+    thumb->setAlignment(Qt::AlignCenter);
+    thumb->setPixmap(roundedThumbnail(thumbnail, thumb->size(), m_darkMode));
+    layout->addWidget(thumb);
+    m_thumbnailLabels.insert(path, thumb);
+
+    auto *textColumn = new QVBoxLayout();
+    textColumn->setContentsMargins(0, 1, 0, 1);
+    textColumn->setSpacing(7);
+
+    auto *title = new QLabel(fi.fileName(), row);
+    title->setObjectName(QStringLiteral("videoItemTitle"));
+    title->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    title->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+
+    auto *meta = new QLabel(
+        fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm"))
+            + QStringLiteral("  |  ") + format::fileSize(fi.size()),
+        row);
+    meta->setObjectName(QStringLiteral("videoItemMeta"));
+
+    textColumn->addWidget(title);
+    textColumn->addWidget(meta);
+    layout->addLayout(textColumn, 1);
+
+    auto *badge = new QLabel(fi.suffix().isEmpty() ? QStringLiteral("MP4") : fi.suffix().toUpper(), row);
+    badge->setObjectName(QStringLiteral("videoItemBadge"));
+    badge->setAlignment(Qt::AlignCenter);
+    layout->addWidget(badge, 0, Qt::AlignTop);
+
+    return row;
+}
+
+void VideoLibraryPage::updateItemSelectionStyles()
+{
+    for (int i = 0; i < m_list->count(); ++i) {
+        auto *item = m_list->item(i);
+        auto *widget = m_list->itemWidget(item);
+        if (!widget)
+            continue;
+
+        widget->setProperty("selected", item == m_list->currentItem());
+        widget->style()->unpolish(widget);
+        widget->style()->polish(widget);
+        for (auto *child : widget->findChildren<QWidget *>()) {
+            child->style()->unpolish(child);
+            child->style()->polish(child);
+        }
+        widget->update();
+    }
 }
 
 void VideoLibraryPage::processNextThumbnail()
@@ -276,10 +379,11 @@ void VideoLibraryPage::processNextThumbnail()
 
     QString path = m_pendingThumbnails.takeFirst();
 
-    auto *watcher = new QFutureWatcher<QPixmap>(this);
-    connect(watcher, &QFutureWatcher<QPixmap>::finished, this, [this, watcher, path]() {
-        QPixmap thumb = watcher->result();
-        if (!thumb.isNull()) {
+    auto *watcher = new QFutureWatcher<QImage>(this);
+    connect(watcher, &QFutureWatcher<QImage>::finished, this, [this, watcher, path]() {
+        const QImage image = watcher->result();
+        if (!image.isNull()) {
+            const QPixmap thumb = QPixmap::fromImage(image);
             if (m_thumbnailCache.size() >= kMaxThumbnails) {
                 QString oldest = m_thumbnailLRU.takeLast();
                 m_thumbnailCache.remove(oldest);
@@ -288,8 +392,11 @@ void VideoLibraryPage::processNextThumbnail()
             m_thumbnailLRU.prepend(path);
 
             auto *item = m_itemMap.value(path);
-            if (item)
-                item->setIcon(QIcon(thumb));
+            if (item) {
+                auto *thumbLabel = m_thumbnailLabels.value(path);
+                if (thumbLabel)
+                    thumbLabel->setPixmap(roundedThumbnail(thumb, thumbLabel->size(), m_darkMode));
+            }
         }
         watcher->deleteLater();
         if (!m_pendingThumbnails.isEmpty())
@@ -354,6 +461,12 @@ void VideoLibraryPage::setDarkMode(bool dark)
         QStringLiteral(":/icons/nav-record.svg"), pc.normal, 48));
     m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
         pc.normal, pc.active, pc.disabled);
+
+    for (auto it = m_thumbnailLabels.begin(); it != m_thumbnailLabels.end(); ++it) {
+        const QPixmap thumb = m_thumbnailCache.value(it.key());
+        it.value()->setPixmap(roundedThumbnail(thumb, it.value()->size(), m_darkMode));
+    }
+
     applyFilter();
 }
 
