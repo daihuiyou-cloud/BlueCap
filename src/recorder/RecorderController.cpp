@@ -73,7 +73,6 @@ RecorderController::RecorderController(QObject *parent)
 {
     m_process = new QProcess(this);
     m_process->setProcessChannelMode(QProcess::SeparateChannels);
-    m_stderrBuffer.reserve(kMaxStderrBuffer);
 
     connect(m_process, &QProcess::started, this, &RecorderController::handleStarted);
     connect(m_process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
@@ -81,9 +80,13 @@ RecorderController::RecorderController(QObject *parent)
     connect(m_process, &QProcess::errorOccurred,
             this, &RecorderController::handleProcessError);
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
-        m_stderrBuffer.append(m_process->readAllStandardError());
-        if (m_stderrBuffer.size() > kMaxStderrBuffer)
-            m_stderrBuffer.remove(0, m_stderrBuffer.size() - kMaxStderrBuffer);
+        QByteArray chunk = m_process->readAllStandardError();
+        m_stderrSize += chunk.size();
+        m_stderrChunks.append(chunk);
+        while (m_stderrSize > kMaxStderrBuffer && !m_stderrChunks.isEmpty()) {
+            m_stderrSize -= m_stderrChunks.first().size();
+            m_stderrChunks.removeFirst();
+        }
     });
 
     m_startTimer = new QTimer(this);
@@ -340,8 +343,13 @@ void RecorderController::handleFinishedCheck()
 
     if (m_exitCode != 0 && !m_stopRequested) {
         if (fileExists) QFile::remove(m_currentOutputPath);
-        const QString ffmpegOutput = QString::fromLocal8Bit(m_stderrBuffer).trimmed();
-        m_stderrBuffer.clear();
+        QByteArray fullStderr;
+        fullStderr.reserve(m_stderrSize);
+        for (const auto &chunk : std::as_const(m_stderrChunks))
+            fullStderr.append(chunk);
+        const QString ffmpegOutput = QString::fromUtf8(fullStderr).trimmed();
+        m_stderrChunks.clear();
+        m_stderrSize = 0;
         emit errorOccurred(ffmpegOutput.isEmpty()
             ? QStringLiteral("录制异常退出（错误码 %1），请重试。").arg(m_exitCode)
             : friendlyError(ffmpegOutput));
@@ -353,8 +361,13 @@ void RecorderController::handleFinishedCheck()
         return;
     }
 
-    const QString ffmpegOutput = QString::fromLocal8Bit(m_stderrBuffer).trimmed();
-    m_stderrBuffer.clear();
+    QByteArray fullStderr;
+    fullStderr.reserve(m_stderrSize);
+    for (const auto &chunk : std::as_const(m_stderrChunks))
+        fullStderr.append(chunk);
+    const QString ffmpegOutput = QString::fromUtf8(fullStderr).trimmed();
+    m_stderrChunks.clear();
+    m_stderrSize = 0;
     emit errorOccurred(ffmpegOutput.isEmpty()
         ? QStringLiteral("录制意外中断，请重试。")
         : friendlyError(ffmpegOutput));
@@ -413,7 +426,7 @@ void RecorderController::detectHardwareEncoderAsync()
     probe->setProcessChannelMode(QProcess::MergedChannels);
     connect(probe, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
         this, [this, probe](int, QProcess::ExitStatus) {
-        const QString output = QString::fromLocal8Bit(probe->readAllStandardOutput());
+        const QString output = QString::fromUtf8(probe->readAllStandardOutput());
         if (output.contains(QStringLiteral("h264_mf")))
             m_encoder = QStringLiteral("h264_mf");
         else if (output.contains(QStringLiteral("h264_nvenc")))

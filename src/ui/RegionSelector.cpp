@@ -17,6 +17,7 @@ RegionSelector::RegionSelector(QWidget *parent)
     setCursor(Qt::CrossCursor);
 
     cacheScreenLayout();
+    renderBackgroundCache();
 
     m_rubberBand = new QRubberBand(QRubberBand::Rectangle, this);
 }
@@ -29,6 +30,40 @@ void RegionSelector::cacheScreenLayout()
         virtualGeometry = virtualGeometry.united(screen->geometry());
     }
     setGeometry(virtualGeometry);
+}
+
+void RegionSelector::renderBackgroundCache()
+{
+    m_bgCache = QPixmap(size());
+    m_bgCache.fill(Qt::transparent);
+
+    QPainter p(&m_bgCache);
+
+    for (const auto *s : m_screens) {
+        QRect sg = s->geometry();
+        QRect local = QRect(mapFromGlobal(sg.topLeft()), sg.size());
+        p.fillRect(local, QColor(0, 0, 0, 80));
+    }
+
+    static const QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
+    p.setPen(Qt::white);
+    QFont font = p.font();
+    font.setPointSize(14);
+    font.setBold(true);
+    p.setFont(font);
+
+    QFontMetrics fm(font);
+    int textWidth = fm.horizontalAdvance(hint);
+
+    QScreen *primary = QGuiApplication::primaryScreen();
+    QRect primaryGeo = primary->geometry();
+    QPoint screenTopLeft = mapFromGlobal(primaryGeo.topLeft());
+
+    int x = screenTopLeft.x() + (primaryGeo.width() - textWidth) / 2;
+    int y = screenTopLeft.y() + primaryGeo.height() - 60;
+
+    p.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
+    p.drawText(x, y, hint);
 }
 
 ScreenLayout RegionSelector::screenForPoint(const QPoint &pt) const
@@ -102,69 +137,48 @@ void RegionSelector::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    painter.drawPixmap(0, 0, m_bgCache);
 
-    // Cache the screen containing the reference point so we don't iterate every frame
-    QPoint refPoint = m_selecting ? QRect(m_origin, m_currentPos).center() : m_currentPos;
-    if (refPoint.isNull())
-        refPoint = m_origin;
-    if (refPoint.isNull())
-        refPoint = QGuiApplication::primaryScreen()->geometry().center();
-
-    ScreenLayout screen = screenForPoint(mapToGlobal(refPoint));
-    QPoint screenTopLeft = mapFromGlobal(screen.topLeft);
-
-    // Draw dark overlay — only fill visible screen area (not the full virtual desktop)
-    for (const auto *s : m_screens) {
-        QRect sg = s->geometry();
-        QRect local = QRect(mapFromGlobal(sg.topLeft()), sg.size());
-        painter.fillRect(local, QColor(0, 0, 0, 80));
-    }
-
-    // Pre-compute font metrics once
-    static const QString hint = QStringLiteral("拖动鼠标选择录制区域 ｜ Enter 确认 ｜ Esc 取消");
-    painter.setPen(Qt::white);
-    QFont font = painter.font();
-    font.setPointSize(14);
-    font.setBold(true);
-    painter.setFont(font);
-
-    QFontMetrics fm(font);
-    int textWidth = fm.horizontalAdvance(hint);
-    int x = screenTopLeft.x() + (screen.width - textWidth) / 2;
-    int y = screenTopLeft.y() + screen.height - 60;
-
-    painter.fillRect(x - 20, y - 34, textWidth + 40, 44, QColor(0, 0, 0, 140));
-    painter.drawText(x, y, hint);
-
-    if (m_selecting || (!m_selecting && !m_currentPos.isNull())) {
+    if (m_selecting || !m_currentPos.isNull()) {
         QRect normalized = QRect(m_origin, m_currentPos).normalized();
         int w = normalized.width();
         int h = normalized.height();
+
+        QPoint refPoint = m_selecting ? normalized.center() : m_currentPos;
+        if (refPoint.isNull())
+            refPoint = m_origin;
+        if (refPoint.isNull())
+            return;
+
+        ScreenLayout screen = screenForPoint(mapToGlobal(refPoint));
+        QPoint screenTopLeft = mapFromGlobal(screen.topLeft);
+
         if (w < 10 || h < 10) {
-            QString tooSmallHint = QStringLiteral("选择的区域太小（至少 10×10 像素）");
-            QFont hintFont = painter.font();
-            hintFont.setPointSize(14);
-            hintFont.setBold(true);
-            painter.setFont(hintFont);
-            QFontMetrics hintFm(hintFont);
-            int tw = hintFm.horizontalAdvance(tooSmallHint);
+            painter.fillRect(normalized, QColor(180, 40, 40, 160));
+            QString tooSmall = QStringLiteral("选择的区域太小（至少 10×10 像素）");
+            painter.setPen(Qt::white);
+            QFont f = painter.font();
+            f.setPointSize(14);
+            f.setBold(true);
+            painter.setFont(f);
+            QFontMetrics fm(f);
+            int tw = fm.horizontalAdvance(tooSmall);
             int sx = screenTopLeft.x() + (screen.width - tw) / 2;
             int sy = screenTopLeft.y() + 60;
             painter.fillRect(sx - 24, sy - 40, tw + 48, 52, QColor(180, 40, 40, 200));
-            painter.setPen(Qt::white);
-            painter.drawText(sx, sy, tooSmallHint);
+            painter.drawText(sx, sy, tooSmall);
         } else {
             QString sizeText = QStringLiteral("%1 × %2").arg(w).arg(h);
-            QFont sizeFont = painter.font();
-            sizeFont.setPointSize(18);
-            sizeFont.setBold(true);
-            painter.setFont(sizeFont);
-            QFontMetrics sizeFm(sizeFont);
-            int sw = sizeFm.horizontalAdvance(sizeText);
+            painter.setPen(Qt::white);
+            QFont f = painter.font();
+            f.setPointSize(18);
+            f.setBold(true);
+            painter.setFont(f);
+            QFontMetrics fm(f);
+            int sw = fm.horizontalAdvance(sizeText);
             int sx = screenTopLeft.x() + (screen.width - sw) / 2;
             int sy = screenTopLeft.y() + 60;
             painter.fillRect(sx - 24, sy - 40, sw + 48, 52, QColor(0, 0, 0, 150));
-            painter.setPen(Qt::white);
             painter.drawText(sx, sy, sizeText);
         }
     }

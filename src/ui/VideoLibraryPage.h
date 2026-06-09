@@ -47,6 +47,7 @@ private:
     QWidget *m_toastWidget = nullptr;
     QLabel *m_toastLabel = nullptr;
     QTimer *m_toastTimer = nullptr;
+    QTimer *m_filterDebounce = nullptr;
     QMap<QString, QPixmap> m_thumbnailCache;
     QStringList m_thumbnailLRU;
     QStringList m_pendingThumbnails;

@@ -234,8 +234,14 @@ void WindowPicker::populateList(const QString &filter)
             item->setIcon(QIcon(iconIt.value()));
         } else {
             HWND hwnd = reinterpret_cast<HWND>(entry.hwnd);
-            HICON hIcon = reinterpret_cast<HICON>(
-                SendMessageW(hwnd, WM_GETICON, ICON_SMALL2, 0));
+            HICON hIcon = nullptr;
+            DWORD_PTR result = 0;
+            if (SendMessageTimeoutW(hwnd, WM_GETICON, ICON_SMALL2, 0,
+                                    SMTO_ABORTIFHUNG, 200, &result))
+                hIcon = reinterpret_cast<HICON>(result);
+            if (!hIcon && SendMessageTimeoutW(hwnd, WM_GETICON, ICON_BIG, 0,
+                                              SMTO_ABORTIFHUNG, 200, &result))
+                hIcon = reinterpret_cast<HICON>(result);
             if (!hIcon)
                 hIcon = reinterpret_cast<HICON>(
                     GetClassLongPtrW(hwnd, GCLP_HICONSM));

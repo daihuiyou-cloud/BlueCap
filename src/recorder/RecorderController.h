@@ -86,7 +86,8 @@ private:
     QString m_encoder;
     bool m_forceKilled = false;
     bool m_encoderDetected = false;
-    QByteArray m_stderrBuffer;
+    QList<QByteArray> m_stderrChunks;
+    int m_stderrSize = 0;
 
     void detectHardwareEncoderAsync();
 };

@@ -115,10 +115,19 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     m_toastTimer->setSingleShot(true);
     connect(m_toastTimer, &QTimer::timeout, m_toastWidget, &QWidget::hide);
 
+    m_filterDebounce = new QTimer(this);
+    m_filterDebounce->setSingleShot(true);
+    m_filterDebounce->setInterval(150);
+    connect(m_filterDebounce, &QTimer::timeout, this, [this] {
+        applyFilter();
+    });
+
     m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
         QColor(0x7a, 0x85, 0x99), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8));
 
-    connect(m_filterEdit, &QLineEdit::textChanged, this, &VideoLibraryPage::applyFilter);
+    connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &) {
+        m_filterDebounce->start();
+    });
     connect(m_list, &QListWidget::itemDoubleClicked, this, &VideoLibraryPage::openSelected);
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
     connect(m_library, &VideoLibrary::recentVideosChanged, this, &VideoLibraryPage::refreshList);

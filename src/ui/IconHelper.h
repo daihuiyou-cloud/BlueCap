@@ -3,6 +3,7 @@
 #include <QCache>
 #include <QColor>
 #include <QFile>
+#include <QHash>
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
@@ -33,20 +34,35 @@ inline QCache<SvgCacheKey, QPixmap> &svgCache()
     return cache;
 }
 
+inline QHash<QString, QString> &svgContentCache()
+{
+    static QHash<QString, QString> cache;
+    return cache;
+}
+
 inline QPixmap renderSvg(const QString &svgPath, const QColor &color, int size)
 {
     const SvgCacheKey key{ svgPath, color, size };
     if (auto *cached = svgCache().object(key))
         return *cached;
 
-    QFile file(svgPath);
-    if (!file.open(QIODevice::ReadOnly))
-        return QPixmap(size, size);
+    auto &contentCache = svgContentCache();
+    auto it = contentCache.constFind(svgPath);
+    QString svg;
+    if (it != contentCache.constEnd()) {
+        svg = it.value();
+    } else {
+        QFile file(svgPath);
+        if (!file.open(QIODevice::ReadOnly))
+            return QPixmap(size, size);
+        svg = QString::fromUtf8(file.readAll());
+        contentCache.insert(svgPath, svg);
+    }
 
-    QString svg = QString::fromUtf8(file.readAll());
-    svg.replace(QStringLiteral("currentColor"), color.name());
+    QString coloredSvg = svg;
+    coloredSvg.replace(QStringLiteral("currentColor"), color.name());
 
-    QSvgRenderer renderer(svg.toUtf8());
+    QSvgRenderer renderer(coloredSvg.toUtf8());
     QPixmap pixmap(size, size);
     pixmap.fill(Qt::transparent);
     QPainter painter(&pixmap);

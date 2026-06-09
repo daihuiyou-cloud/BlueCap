@@ -31,10 +31,12 @@ protected:
 private:
     ScreenLayout screenForPoint(const QPoint &pt) const;
     void cacheScreenLayout();
+    void renderBackgroundCache();
 
     QPoint m_origin;
     QPoint m_currentPos;
     QRubberBand *m_rubberBand = nullptr;
     bool m_selecting = false;
     QList<QScreen *> m_screens;
+    QPixmap m_bgCache;
 };
