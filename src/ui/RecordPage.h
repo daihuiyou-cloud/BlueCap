@@ -77,6 +77,7 @@ private:
     bool m_darkMode = false;
     bool m_hiddenForRecording = false;
     bool m_statusOpensSavedVideo = false;
+    bool m_regionCommitted = false;
     QString m_lastSavedPath;
     QString m_stopOutputPath;
 };

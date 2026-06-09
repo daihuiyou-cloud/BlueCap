@@ -79,11 +79,15 @@ RecorderController::RecorderController(QObject *parent)
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
         QByteArray chunk = m_process->readAllStandardError();
         m_stderrSize += chunk.size();
-        m_stderrChunks.push_back(std::move(chunk));
+        m_stderrChunks.push_back(chunk);
         while (m_stderrSize > kMaxStderrBuffer && !m_stderrChunks.empty()) {
             m_stderrSize -= m_stderrChunks.front().size();
             m_stderrChunks.pop_front();
         }
+
+        m_stderrPending.append(chunk);
+        if (m_stderrPending.size() > 4096)
+            m_stderrPending = m_stderrPending.right(2048);
     });
 
     m_startTimer = new QTimer(this);
@@ -94,12 +98,21 @@ RecorderController::RecorderController(QObject *parent)
     m_stopTimer->setSingleShot(true);
     connect(m_stopTimer, &QTimer::timeout, this, &RecorderController::handleStopTimeout);
 
-    QTimer::singleShot(0, this, &RecorderController::detectHardwareEncoderAsync);
+    m_stderrMonitor = new QTimer(this);
+    m_stderrMonitor->setInterval(5000);
+    connect(m_stderrMonitor, &QTimer::timeout, this, &RecorderController::monitorStderr);
+
+    QTimer::singleShot(0, this, &RecorderController::detectHardwareEncoder);
+}
+
+RecorderController::State RecorderController::state() const
+{
+    return m_state;
 }
 
 bool RecorderController::isRecording() const
 {
-    return m_recording;
+    return m_state == State::Recording;
 }
 
 QString RecorderController::currentOutputPath() const
@@ -185,7 +198,7 @@ void RecorderController::startCapture(const QString &inputSpec,
                                       const QStringList &extraArgs,
                                       const QStringList &inputArgs)
 {
-    if (isRecording()) return;
+    if (m_state != State::Idle) return;
 
     const QString ffmpegPath = resolveFfmpegPath();
     if (!QFileInfo::exists(ffmpegPath)) {
@@ -201,17 +214,21 @@ void RecorderController::startCapture(const QString &inputSpec,
     m_stopRequested = false;
     m_forceKilled = false;
     m_errorReported = false;
+    m_state = State::Starting;
 
     QString saveDir = QFileInfo(m_currentOutputPath).absolutePath();
     ULARGE_INTEGER freeBytes;
     if (GetDiskFreeSpaceExW(saveDir.toStdWString().c_str(), &freeBytes, nullptr, nullptr)
         && freeBytes.QuadPart < 200LL * 1024 * 1024) {
+        m_state = State::Idle;
         emit errorOccurred(QStringLiteral("磁盘空间不足（剩余不足 200 MB），请释放空间后重试。"));
         return;
     }
 
-    if (!m_encoderDetected)
+    if (!m_encoderDetected) {
         m_encoder = QStringLiteral("libx264");
+        m_encoderDetected = true;
+    }
 
     QStringList args = {
         QStringLiteral("-y"),
@@ -292,10 +309,13 @@ void RecorderController::start(const QStringList &args)
 
 void RecorderController::stopRecording()
 {
-    if (!isRecording()) return;
+    if (m_state != State::Recording) return;
 
+    m_state = State::Stopping;
     m_stopRequested = true;
-    if (m_process->write("q\n") == -1) {
+
+    m_process->write("q\n");
+    if (!m_process->waitForBytesWritten(1000)) {
         m_process->kill();
         return;
     }
@@ -305,7 +325,10 @@ void RecorderController::stopRecording()
 void RecorderController::handleStarted()
 {
     m_startTimer->stop();
-    m_recording = true;
+    m_state = State::Recording;
+    m_stderrPending.clear();
+    m_reportedWarnings.clear();
+    m_stderrMonitor->start();
     emit recordingChanged(true);
 }
 
@@ -313,7 +336,8 @@ void RecorderController::handleFinished(int exitCode, QProcess::ExitStatus)
 {
     m_startTimer->stop();
     m_stopTimer->stop();
-    m_recording = false;
+    m_stderrMonitor->stop();
+    m_state = State::Idle;
     m_exitCode = exitCode;
 
     emit recordingChanged(false);
@@ -381,7 +405,9 @@ void RecorderController::handleProcessError(QProcess::ProcessError error)
 
 void RecorderController::handleStartTimeout()
 {
-    m_recording = false;
+    if (m_state != State::Starting) return;
+    m_state = State::Idle;
+    m_stderrMonitor->stop();
     m_process->kill();
     emit errorOccurred(QStringLiteral("录制程序启动超时，请检查系统资源后重试。"));
     emit recordingChanged(false);
@@ -389,28 +415,54 @@ void RecorderController::handleStartTimeout()
 
 void RecorderController::handleStopTimeout()
 {
-    m_forceKilled = true;
+    if (m_process->state() == QProcess::NotRunning)
+        return;
+
     m_process->terminate();
-    // Safety net: force-report failure after kill attempt
-    QPointer<RecorderController> guard(this);
-    QTimer::singleShot(2000, this, [this, guard] {
-        if (!guard) return;
-        if (m_process->state() != QProcess::NotRunning) {
-            m_process->kill();
-        }
-        // If the process is still alive after kill, force-report (handleFinished won't fire)
-        QTimer::singleShot(500, this, [this, guard] {
-            if (!guard) return;
-            if (m_process->state() != QProcess::NotRunning) {
-                emit recordingChanged(false);
-                emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
-            }
-            // If process is NotRunning, handleFinished already handled it — skip
-        });
-    });
+    if (m_process->waitForFinished(3000))
+        return;
+
+    m_forceKilled = true;
+    m_process->kill();
+    if (m_process->waitForFinished(2000))
+        return;
+
+    if (m_process->state() != QProcess::NotRunning) {
+        m_state = State::Idle;
+        emit recordingChanged(false);
+        emit errorOccurred(QStringLiteral("录制停止超时，已强制终止。输出文件可能不完整。"));
+    }
 }
 
-void RecorderController::detectHardwareEncoderAsync()
+void RecorderController::monitorStderr()
+{
+    if (m_stderrPending.isEmpty())
+        return;
+
+    const QString text = QString::fromUtf8(m_stderrPending);
+    m_stderrPending.clear();
+
+    struct WarningPattern {
+        QLatin1String pattern;
+        QString message;
+    };
+    static const WarningPattern patterns[] = {
+        { QLatin1String("dup="),   QStringLiteral("检测到重复/丢帧，系统负载可能过高") },
+        { QLatin1String("drop="),  QStringLiteral("检测到丢帧，系统负载可能过高") },
+        { QLatin1String("speed="), QStringLiteral("编码速度低于实时，建议降低帧率或画质") },
+        { QLatin1String("too many packets buffered"), QStringLiteral("编码器缓冲积压，系统负载过高") },
+        { QLatin1String("Invalid data found"),        QStringLiteral("屏幕数据异常，请检查是否有其他录屏程序") },
+    };
+
+    for (const auto &wp : patterns) {
+        if (text.contains(wp.pattern) && !m_reportedWarnings.contains(wp.message)) {
+            m_reportedWarnings.append(wp.message);
+            emit recordingWarning(wp.message);
+        }
+    }
+}
+
+void RecorderController::detectHardwareEncoder()
 {
     const QString ffmpeg = resolveFfmpegPath();
     if (!QFileInfo::exists(ffmpeg)) {
@@ -419,11 +471,11 @@ void RecorderController::detectHardwareEncoderAsync()
         return;
     }
 
-    auto *probe = new QProcess(this);
-    probe->setProcessChannelMode(QProcess::MergedChannels);
-    connect(probe, static_cast<void(QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
-        this, [this, probe](int, QProcess::ExitStatus) {
-        const QString output = QString::fromUtf8(probe->readAllStandardOutput());
+    QProcess probe;
+    probe.setProcessChannelMode(QProcess::MergedChannels);
+    probe.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+    if (probe.waitForFinished(5000)) {
+        const QString output = QString::fromUtf8(probe.readAllStandardOutput());
         if (output.contains(QStringLiteral("h264_mf")))
             m_encoder = QStringLiteral("h264_mf");
         else if (output.contains(QStringLiteral("h264_nvenc")))
@@ -434,20 +486,10 @@ void RecorderController::detectHardwareEncoderAsync()
             m_encoder = QStringLiteral("h264_qsv");
         else
             m_encoder = QStringLiteral("libx264");
-        m_encoderDetected = true;
-        probe->deleteLater();
-    });
-    connect(probe, &QProcess::errorOccurred, this, [this, probe] {
+    } else {
         m_encoder = QStringLiteral("libx264");
-        m_encoderDetected = true;
-        probe->deleteLater();
-    });
-    probe->start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
-    QTimer::singleShot(5000, probe, [probe] {
-        if (probe->state() != QProcess::NotRunning) {
-            probe->kill();
-        }
-    });
+    }
+    m_encoderDetected = true;
 }
 
 QString RecorderController::resolveFfmpegPath()

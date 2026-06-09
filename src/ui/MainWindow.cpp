@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "IconHelper.h"
 #include "utils/Theme.h"
+#include "utils/ThemeColors.h"
 
 #include "RecordPage.h"
 #include "RecordingOverlay.h"
@@ -136,10 +137,7 @@ void MainWindow::setupConnections()
             if (m_recorder->isRecording())
                 m_recordingIndicator->setStyleSheet(m_pulseStyleBright);
 
-            QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
-            QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
-            QColor titleDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
-
+            const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
             const QStringList titlePaths = {
                 QStringLiteral(":/icons/title-settings.svg"),
                 QStringLiteral(":/icons/title-minimize.svg"),
@@ -147,11 +145,11 @@ void MainWindow::setupConnections()
             };
             QList<QPushButton *> titleBtns = { m_settingsButton, m_minimizeButton, m_closeButton };
             for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
-                titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, titleNormal, titleActive, titleDisabled));
+                titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, tc.normal, tc.active, tc.disabled));
             }
             m_maximizeButton->setIcon(icon::coloredIcon(
                 m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
-                20, titleNormal, titleActive, titleDisabled));
+                20, tc.normal, tc.active, tc.disabled));
         });
 
         settingsPage->loadSettings();
@@ -190,6 +188,12 @@ void MainWindow::setupConnections()
 
     connect(m_recorder, &RecorderController::errorOccurred, this, [this] {
         m_overlay->hideOverlay();
+    });
+
+    connect(m_recorder, &RecorderController::recordingWarning, this, [this](const QString &msg) {
+        if (m_trayIcon)
+            m_trayIcon->showMessage(QStringLiteral("BlueCap"), msg,
+                QSystemTrayIcon::Warning, 4000);
     });
 
     connect(m_recordPage, &RecordPage::elapsedUpdated, this, [this](int seconds) {
@@ -484,25 +488,22 @@ QWidget *MainWindow::createTitleBar()
     auto *title = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
 
+    const auto &tc = ThemeColors::forMode(false).titleBar;
     m_settingsButton = createWindowButton(QString(), QStringLiteral("设置"));
     m_settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
     m_settingsButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-settings.svg"), 20,
-        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+        QStringLiteral(":/icons/title-settings.svg"), 20, tc.normal, tc.active, tc.disabled));
     m_minimizeButton = createWindowButton(QString(), QStringLiteral("最小化"));
     m_minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
     m_minimizeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-minimize.svg"), 20,
-        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+        QStringLiteral(":/icons/title-minimize.svg"), 20, tc.normal, tc.active, tc.disabled));
     m_maximizeButton = createWindowButton(QString(), QStringLiteral("最大化"));
     m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
     m_maximizeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-maximize.svg"), 20,
-        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+        QStringLiteral(":/icons/title-maximize.svg"), 20, tc.normal, tc.active, tc.disabled));
     m_closeButton = createWindowButton(QString(), QStringLiteral("关闭"), QStringLiteral("closeButton"));
     m_closeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-close.svg"), 20,
-        QColor(0x26, 0x33, 0x4b), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+        QStringLiteral(":/icons/title-close.svg"), 20, tc.normal, tc.active, tc.disabled));
     m_closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
 
     layout->addWidget(logo);
@@ -560,12 +561,10 @@ QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QStri
 void MainWindow::updateMaximizeButton()
 {
     m_maximized = isMaximized();
-    QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
-    QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
-    QColor titleDisabled = m_darkMode ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
+    const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
     m_maximizeButton->setIcon(icon::coloredIcon(
         m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
-        20, titleNormal, titleActive, titleDisabled));
+        20, tc.normal, tc.active, tc.disabled));
     m_maximizeButton->setToolTip(m_maximized ? QStringLiteral("还原") : QStringLiteral("最大化"));
 }
 

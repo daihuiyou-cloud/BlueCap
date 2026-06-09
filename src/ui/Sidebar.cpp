@@ -1,5 +1,6 @@
 #include "Sidebar.h"
 #include "IconHelper.h"
+#include "utils/ThemeColors.h"
 
 #include <QButtonGroup>
 #include <QPushButton>
@@ -84,25 +85,13 @@ void Sidebar::setDarkMode(bool dark)
 
 void Sidebar::updateIcons()
 {
-    const int size = 24;
-    QColor normal, active, disabled;
-    if (m_darkMode) {
-        normal = QColor(0xc8, 0xd0, 0xdc);
-        active = QColor(0x4d, 0xa3, 0xff);
-        disabled = QColor(0x50, 0x58, 0x68);
-    } else {
-        normal = QColor(0x17, 0x20, 0x33);
-        active = QColor(0x09, 0x67, 0xf2);
-        disabled = QColor(0xa0, 0xaa, 0xb8);
-    }
-
+    const auto &sc = ThemeColors::forMode(m_darkMode).sidebar;
     const QStringList paths = {
         QStringLiteral(":/icons/nav-record.svg"),
         QStringLiteral(":/icons/nav-library.svg"),
         QStringLiteral(":/icons/nav-settings.svg")
     };
-
     for (int i = 0; i < m_buttons.size() && i < paths.size(); ++i) {
-        m_buttons[i]->setIcon(icon::coloredIcon(paths[i], size, normal, active, disabled));
+        m_buttons[i]->setIcon(icon::coloredIcon(paths[i], 24, sc.normal, sc.active, sc.disabled));
     }
 }

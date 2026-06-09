@@ -2,8 +2,10 @@
 #include "IconHelper.h"
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
+#include "utils/ThemeColors.h"
 
 #include <QAbstractItemView>
+#include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
@@ -17,6 +19,7 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
+#include <QProcess>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTimer>
@@ -28,6 +31,43 @@
 #include <shobjidl.h>
 
 namespace {
+
+QString findBundledFfmpeg()
+{
+    const QString bundlePath = QCoreApplication::applicationDirPath()
+        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
+    if (QFileInfo::exists(bundlePath))
+        return bundlePath;
+    return QStringLiteral("ffmpeg.exe");
+}
+
+QPixmap thumbnailViaFfmpeg(const QString &filePath)
+{
+    const QString ffmpeg = findBundledFfmpeg();
+    if (!QFileInfo::exists(ffmpeg))
+        return {};
+
+    const QString tmpFile = QDir::temp().absoluteFilePath(
+        QStringLiteral("bluecap_thumb_%1.bmp").arg(
+            QDateTime::currentMSecsSinceEpoch()));
+
+    QProcess proc;
+    proc.setProcessChannelMode(QProcess::MergedChannels);
+    proc.start(ffmpeg, {
+        QStringLiteral("-ss"), QStringLiteral("00:00:01"),
+        QStringLiteral("-i"), filePath,
+        QStringLiteral("-vframes"), QStringLiteral("1"),
+        QStringLiteral("-f"), QStringLiteral("image2pipe"),
+        QStringLiteral("-vcodec"), QStringLiteral("bmp"),
+        QStringLiteral("-")
+    });
+    if (!proc.waitForFinished(15000) || proc.exitCode() != 0)
+        return {};
+
+    QPixmap px;
+    px.loadFromData(proc.readAllStandardOutput(), "BMP");
+    return px;
+}
 
 bool moveToTrash(const QString &filePath)
 {
@@ -84,7 +124,7 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     emptyLayout->setSpacing(16);
     m_emptyIcon = new QLabel(m_emptyWidget);
     m_emptyIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/nav-record.svg"), QColor(0x64, 0x70, 0x8a), 48));
+        QStringLiteral(":/icons/nav-record.svg"), ThemeColors::forMode(false).placeholder.normal, 48));
     m_emptyIcon->setAlignment(Qt::AlignCenter);
     auto *emptyTitle = new QLabel(QStringLiteral("还没有录制文件"), m_emptyWidget);
     emptyTitle->setObjectName(QStringLiteral("placeholderTitle"));
@@ -122,8 +162,9 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
         applyFilter();
     });
 
+    const auto &pc = ThemeColors::forMode(false).placeholder;
     m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
-        QColor(0x7a, 0x85, 0x99), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8));
+        pc.normal, pc.active, pc.disabled);
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &) {
         m_filterDebounce->start();
@@ -266,13 +307,11 @@ void VideoLibraryPage::deleteSelected()
 void VideoLibraryPage::setDarkMode(bool dark)
 {
     m_darkMode = dark;
-    QColor emptyColor = dark ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x64, 0x70, 0x8a);
+    const auto &pc = ThemeColors::forMode(dark).placeholder;
     m_emptyIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/nav-record.svg"), emptyColor, 48));
+        QStringLiteral(":/icons/nav-record.svg"), pc.normal, 48));
     m_placeholderIcon = icon::coloredIcon(QStringLiteral(":/icons/nav-record.svg"), 24,
-        dark ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x7a, 0x85, 0x99),
-        dark ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2),
-        dark ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8));
+        pc.normal, pc.active, pc.disabled);
     applyFilter();
 }
 
@@ -334,6 +373,9 @@ QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
         }
         factory->Release();
     }
+
+    if (fallback.isNull())
+        fallback = thumbnailViaFfmpeg(filePath);
 
     if (!fallback.isNull()) {
         if (m_thumbnailCache.size() >= kMaxThumbnails) {

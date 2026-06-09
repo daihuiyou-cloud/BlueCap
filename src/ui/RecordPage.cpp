@@ -1,5 +1,6 @@
 #include "RecordPage.h"
 #include "IconHelper.h"
+#include "utils/ThemeColors.h"
 
 #include "ModeSwitch.h"
 #include "RecordButton.h"
@@ -164,7 +165,7 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     m_recentIcon = new QLabel(m_bottomNavSection);
     m_recentIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_recentIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/clock.svg"), QColor(0x53, 0x61, 0x7a), 24));
+        QStringLiteral(":/icons/clock.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
 
     auto *recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
     recentTitle->setObjectName(QStringLiteral("bottomTitle"));
@@ -196,16 +197,16 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     m_keyboardIcon = new QLabel(rightSection);
     m_keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_keyboardIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/keyboard.svg"), QColor(0x53, 0x61, 0x7a), 24));
+        QStringLiteral(":/icons/keyboard.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
 
     auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
     shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
 
+    const auto &bc = ThemeColors::forMode(false).bottomBar;
     m_openFolderIcon = new QPushButton(rightSection);
     m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_openFolderIcon->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/folder.svg"), 20,
-        QColor(0x53, 0x61, 0x7a), QColor(0x09, 0x67, 0xf2), QColor(0xa0, 0xaa, 0xb8)));
+        QStringLiteral(":/icons/folder.svg"), 20, bc.normal, bc.active, bc.disabled));
     m_openFolderIcon->setIconSize(QSize(20, 20));
     m_openFolderIcon->setFixedSize(48, 34);
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
@@ -216,7 +217,7 @@ void RecordPage::setupBottomBar(QVBoxLayout *root)
     m_chevronIcon = new QLabel(bottomBar);
     m_chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_chevronIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/chevron-right.svg"), QColor(0x53, 0x61, 0x7a), 20));
+        QStringLiteral(":/icons/chevron-right.svg"), ThemeColors::forMode(false).bottomBar.normal, 20));
 
     rightLayout->addWidget(m_keyboardIcon);
     rightLayout->addWidget(shortcutLabel);
@@ -273,16 +274,13 @@ void RecordPage::setDarkMode(bool dark)
     m_modeSwitch->setDarkMode(dark);
     m_recordButton->setDarkMode(dark);
 
-    QColor bottomColor = dark ? QColor(0x7a, 0x8a, 0xa0) : QColor(0x53, 0x61, 0x7a);
-    m_recentIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/clock.svg"), bottomColor, 24));
-    m_keyboardIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/keyboard.svg"), bottomColor, 24));
-    m_chevronIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/chevron-right.svg"), bottomColor, 20));
+    const auto &bc = ThemeColors::forMode(dark).bottomBar;
+    m_recentIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/clock.svg"), bc.normal, 24));
+    m_keyboardIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/keyboard.svg"), bc.normal, 24));
+    m_chevronIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/chevron-right.svg"), bc.normal, 20));
 
-    QColor folderNormal = bottomColor;
-    QColor folderActive = dark ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
-    QColor folderDisabled = dark ? QColor(0x50, 0x58, 0x68) : QColor(0xa0, 0xaa, 0xb8);
     m_openFolderIcon->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/folder.svg"), 20, folderNormal, folderActive, folderDisabled));
+        QStringLiteral(":/icons/folder.svg"), 20, bc.normal, bc.active, bc.disabled));
 
     update();
 }
@@ -376,21 +374,20 @@ void RecordPage::openSaveFolder()
 
 void RecordPage::startRegionSelection()
 {
-    bool *committed = new bool(false);
     auto *selector = new RegionSelector;
     selector->setAttribute(Qt::WA_DeleteOnClose);
+    m_regionCommitted = false;
     connect(selector, &RegionSelector::regionSelected, this,
-        [this, committed](const QRect &region) {
-            *committed = true;
+        [this](const QRect &region) {
+            m_regionCommitted = true;
             m_recorder->startRegionRecording(region);
         });
-    connect(selector, &QObject::destroyed, this, [this, committed] {
-        if (!*committed && m_hiddenForRecording) {
+    connect(selector, &QObject::destroyed, this, [this] {
+        if (!m_regionCommitted && m_hiddenForRecording) {
             m_hiddenForRecording = false;
             window()->showNormal();
             window()->activateWindow();
         }
-        delete committed;
     });
     selector->show();
 }

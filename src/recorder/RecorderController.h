@@ -23,6 +23,8 @@ class RecorderController : public QObject
 public:
     explicit RecorderController(QObject *parent = nullptr);
 
+    enum class State { Idle, Starting, Recording, Stopping };
+    State state() const;
     bool isRecording() const;
     QString currentOutputPath() const;
     QString currentSavePath() const;
@@ -53,6 +55,7 @@ signals:
     void videoSaved(const QString &path);
     void errorOccurred(const QString &message);
     void recordingAreaChanged(const QRect &area, RecordMode mode);
+    void recordingWarning(const QString &message);
 
 private slots:
     void handleStarted();
@@ -61,6 +64,7 @@ private slots:
     void handleStartTimeout();
     void handleStopTimeout();
     void handleFinishedCheck();
+    void monitorStderr();
 
 private:
     QString resolveFfmpegPath();
@@ -73,9 +77,10 @@ private:
     QProcess *m_process = nullptr;
     QTimer *m_startTimer = nullptr;
     QTimer *m_stopTimer = nullptr;
+    QTimer *m_stderrMonitor = nullptr;
     QString m_currentOutputPath;
     bool m_stopRequested = false;
-    bool m_recording = false;
+    State m_state = State::Idle;
     bool m_errorReported = false;
     int m_frameRate = 30;
     int m_exitCode = 0;
@@ -90,6 +95,8 @@ private:
     bool m_encoderDetected = false;
     std::deque<QByteArray> m_stderrChunks;
     int m_stderrSize = 0;
+    QByteArray m_stderrPending;
+    QStringList m_reportedWarnings;
 
-    void detectHardwareEncoderAsync();
+    void detectHardwareEncoder();
 };

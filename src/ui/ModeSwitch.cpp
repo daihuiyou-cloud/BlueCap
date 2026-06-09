@@ -1,5 +1,6 @@
 #include "ModeSwitch.h"
 #include "IconHelper.h"
+#include "utils/ThemeColors.h"
 
 #include <QAbstractButton>
 #include <QButtonGroup>
@@ -108,26 +109,14 @@ void ModeSwitch::setModeEnabled(bool enabled)
 
 void ModeSwitch::updateIcons()
 {
-    const int size = 24;
-    QColor normal, active, disabled;
-    if (m_darkMode) {
-        normal = QColor(0xb0, 0xbc, 0xc8);
-        active = QColor(0x4d, 0xa3, 0xff);
-        disabled = QColor(0x50, 0x58, 0x68);
-    } else {
-        normal = QColor(0x1f, 0x29, 0x40);
-        active = QColor(0x09, 0x67, 0xf2);
-        disabled = QColor(0xa0, 0xaa, 0xb8);
-    }
-
+    const auto &mc = ThemeColors::forMode(m_darkMode).modeSwitch;
     const QStringList paths = {
         QStringLiteral(":/icons/mode-fullscreen.svg"),
         QStringLiteral(":/icons/mode-region.svg"),
         QStringLiteral(":/icons/mode-window.svg")
     };
-
     for (int i = 0; i < m_buttons.size() && i < paths.size(); ++i) {
-        m_buttons[i]->setIcon(icon::coloredIcon(paths[i], size, normal, active, disabled));
+        m_buttons[i]->setIcon(icon::coloredIcon(paths[i], 24, mc.normal, mc.active, mc.disabled));
     }
 }
 

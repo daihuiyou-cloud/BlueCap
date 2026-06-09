@@ -2,6 +2,7 @@
 
 #include <QGuiApplication>
 #include <QFontMetrics>
+#include <QOperatingSystemVersion>
 #include <QPainter>
 #include <QScreen>
 #include <QShowEvent>
@@ -12,6 +13,16 @@
 #ifndef WDA_EXCLUDEFROMCAPTURE
 #define WDA_EXCLUDEFROMCAPTURE 0x11
 #endif
+
+namespace {
+
+bool supportsExcludeFromCapture()
+{
+    return QOperatingSystemVersion::current() >=
+        QOperatingSystemVersion(QOperatingSystemVersion::Windows, 10, 0, 19041);
+}
+
+}
 
 RecordingOverlay::RecordingOverlay(QWidget *parent)
     : QWidget(parent)
@@ -67,8 +78,10 @@ void RecordingOverlay::setStatusText(const QString &text)
 
 void RecordingOverlay::showEvent(QShowEvent *event)
 {
-    HWND hwnd = (HWND)winId();
-    SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+    if (supportsExcludeFromCapture()) {
+        HWND hwnd = (HWND)winId();
+        SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+    }
     QWidget::showEvent(event);
 }
 
