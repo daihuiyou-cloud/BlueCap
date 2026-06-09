@@ -1,5 +1,4 @@
 #include "TrayManager.h"
-#include "recorder/RecorderController.h"
 
 #include <QAction>
 #include <QApplication>
@@ -10,9 +9,8 @@
 #include <QSvgRenderer>
 #include <QSystemTrayIcon>
 
-TrayManager::TrayManager(RecorderController *recorder, QObject *parent)
+TrayManager::TrayManager(QObject *parent)
     : QObject(parent)
-    , m_recorder(recorder)
 {
     m_trayIconIdle = makeTrayIcon(false);
     m_trayIconRecording = makeTrayIcon(true);

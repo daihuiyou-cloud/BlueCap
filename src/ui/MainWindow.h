@@ -10,6 +10,7 @@ class QPushButton;
 class QStackedWidget;
 class QTimer;
 class HotkeyManager;
+class ISettingsRepository;
 class RecordPage;
 class RecorderController;
 class RecordingOverlay;
@@ -46,13 +47,18 @@ private:
     bool inTitleDragArea(const QPoint &position) const;
 
     void setupUI();
-    void setupConnections();
+    void setupPageConnections();
+    void setupSettingsConnections();
+    void setupRecordConnections();
+    void setupToggleRecord();
+    void setupTrayConnections();
     void setupPulseTimer();
     void renderShadowCache();
     void rebuildPulseStyles();
 
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
+    ISettingsRepository *m_settings = nullptr;
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;

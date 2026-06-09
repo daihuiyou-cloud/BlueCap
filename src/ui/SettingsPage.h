@@ -14,13 +14,14 @@ class QLineEdit;
 class QPushButton;
 class QSpinBox;
 class QTimer;
+class ISettingsRepository;
 
 class SettingsPage : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit SettingsPage(QWidget *parent = nullptr);
+    explicit SettingsPage(ISettingsRepository *settings, QWidget *parent = nullptr);
     void loadSettings();
 
 signals:
@@ -56,6 +57,7 @@ private:
     QTimer *m_feedbackTimer = nullptr;
     QTimer *m_applyDebounce = nullptr;
     QPushButton *m_resetBtn = nullptr;
+    ISettingsRepository *m_settings = nullptr;
     bool m_resetting = false;
     QString m_lastValidPath;
 };

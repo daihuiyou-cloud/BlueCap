@@ -3,12 +3,14 @@
 #include <QObject>
 #include <QStringList>
 
+class ISettingsRepository;
+
 class VideoLibrary : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit VideoLibrary(QObject *parent = nullptr);
+    explicit VideoLibrary(ISettingsRepository *settings, QObject *parent = nullptr);
 
     QStringList recentVideos() const;
 
@@ -26,5 +28,6 @@ private:
     QStringList load() const;
     void save(const QStringList &videos) const;
 
+    ISettingsRepository *m_settings;
     QStringList m_cache;
 };

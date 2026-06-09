@@ -1,4 +1,5 @@
 #include "SettingsPage.h"
+#include "storage/ISettingsRepository.h"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -13,7 +14,6 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QScrollArea>
-#include <QSettings>
 #include <QSpinBox>
 #include <QStandardPaths>
 #include <QTimer>
@@ -23,8 +23,9 @@ namespace {
 const QLatin1String kSettingsPrefix("settings/");
 }
 
-SettingsPage::SettingsPage(QWidget *parent)
+SettingsPage::SettingsPage(ISettingsRepository *settings, QWidget *parent)
     : QWidget(parent)
+    , m_settings(settings)
 {
     setObjectName(QStringLiteral("settingsPage"));
 
@@ -284,28 +285,26 @@ void SettingsPage::blockSignalsAll(bool block)
 
 void SettingsPage::loadSettings()
 {
-    QSettings s;
-
     blockSignalsAll(true);
 
-    m_lastValidPath = s.value(kSettingsPrefix + QLatin1String("savePath"),
+    m_lastValidPath = m_settings->value(kSettingsPrefix + QLatin1String("savePath"),
         QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap")).toString();
     m_pathEdit->setText(m_lastValidPath);
 
-    m_fpsSpin->setValue(s.value(kSettingsPrefix + QLatin1String("frameRate"), 30).toInt());
+    m_fpsSpin->setValue(m_settings->value(kSettingsPrefix + QLatin1String("frameRate"), 30).toInt());
 
-    const QString savedPreset = s.value(
+    const QString savedPreset = m_settings->value(
         kSettingsPrefix + QLatin1String("preset"), QStringLiteral("fast")).toString();
     int idx = m_qualityCombo->findData(savedPreset);
     if (idx >= 0) m_qualityCombo->setCurrentIndex(idx);
 
-    int themeIdx = m_themeCombo->findData(s.value(kSettingsPrefix + QLatin1String("theme"), ThemeSystem).toInt());
+    int themeIdx = m_themeCombo->findData(m_settings->value(kSettingsPrefix + QLatin1String("theme"), ThemeSystem).toInt());
     if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
 
-    m_confirmStopCheck->setChecked(s.value(kSettingsPrefix + QLatin1String("confirmStop"), false).toBool());
-    m_showCursorCheck->setChecked(s.value(kSettingsPrefix + QLatin1String("showCursor"), true).toBool());
-    m_startTimeoutSpin->setValue(s.value(kSettingsPrefix + QLatin1String("startTimeout"), 5).toInt());
-    m_stopTimeoutSpin->setValue(s.value(kSettingsPrefix + QLatin1String("stopTimeout"), 5).toInt());
+    m_confirmStopCheck->setChecked(m_settings->value(kSettingsPrefix + QLatin1String("confirmStop"), false).toBool());
+    m_showCursorCheck->setChecked(m_settings->value(kSettingsPrefix + QLatin1String("showCursor"), true).toBool());
+    m_startTimeoutSpin->setValue(m_settings->value(kSettingsPrefix + QLatin1String("startTimeout"), 5).toInt());
+    m_stopTimeoutSpin->setValue(m_settings->value(kSettingsPrefix + QLatin1String("stopTimeout"), 5).toInt());
 
     blockSignalsAll(false);
 
@@ -351,15 +350,13 @@ void SettingsPage::resetDefaults()
 
 void SettingsPage::applySettings(bool showFeedback)
 {
-    QSettings settings;
-
-    settings.setValue(kSettingsPrefix + QLatin1String("frameRate"), m_fpsSpin->value());
-    settings.setValue(kSettingsPrefix + QLatin1String("preset"), m_qualityCombo->currentData().toString());
-    settings.setValue(kSettingsPrefix + QLatin1String("confirmStop"), m_confirmStopCheck->isChecked());
-    settings.setValue(kSettingsPrefix + QLatin1String("showCursor"), m_showCursorCheck->isChecked());
-    settings.setValue(kSettingsPrefix + QLatin1String("startTimeout"), m_startTimeoutSpin->value());
-    settings.setValue(kSettingsPrefix + QLatin1String("stopTimeout"), m_stopTimeoutSpin->value());
-    settings.setValue(kSettingsPrefix + QLatin1String("theme"), m_themeCombo->currentData().toInt());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("frameRate"), m_fpsSpin->value());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("preset"), m_qualityCombo->currentData().toString());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("confirmStop"), m_confirmStopCheck->isChecked());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("showCursor"), m_showCursorCheck->isChecked());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("startTimeout"), m_startTimeoutSpin->value());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("stopTimeout"), m_stopTimeoutSpin->value());
+    m_settings->setValue(kSettingsPrefix + QLatin1String("theme"), m_themeCombo->currentData().toInt());
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
@@ -390,7 +387,7 @@ void SettingsPage::applySettings(bool showFeedback)
 
     if (pathValid) {
         m_lastValidPath = path;
-        settings.setValue(kSettingsPrefix + QLatin1String("savePath"), path);
+        m_settings->setValue(kSettingsPrefix + QLatin1String("savePath"), path);
         emit savePathChanged(path);
     } else {
         m_pathEdit->setText(m_lastValidPath);

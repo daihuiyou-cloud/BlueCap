@@ -5,16 +5,15 @@
 #include <QElapsedTimer>
 #include <QWidget>
 class QComboBox;
-class QFrame;
 class QLabel;
 class QProgressBar;
-class QPushButton;
 class QScreen;
 class QTimer;
 class QVBoxLayout;
+class IRecorderService;
 class ModeSwitch;
 class RecordButton;
-class RecorderController;
+class RecordPageBottomBar;
 class VideoLibrary;
 
 class RecordPage : public QWidget
@@ -22,7 +21,7 @@ class RecordPage : public QWidget
     Q_OBJECT
 
 public:
-    explicit RecordPage(RecorderController *recorder, VideoLibrary *library, QWidget *parent = nullptr);
+    explicit RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidget *parent = nullptr);
 
 signals:
     void recentVideosClicked();
@@ -34,14 +33,16 @@ public:
     void setConfirmStop(bool confirm);
     void setDarkMode(bool dark);
 
+public slots:
+    void handleRecordingChanged(bool recording);
+    void handleVideoSaved(const QString &path);
+    void handleError(const QString &message);
+
 protected:
     void paintEvent(QPaintEvent *event) override;
     bool eventFilter(QObject *obj, QEvent *event) override;
 
 private slots:
-    void handleRecordingChanged(bool recording);
-    void handleVideoSaved(const QString &path);
-    void handleError(const QString &message);
     void updateRecentVideos(const QStringList &videos);
     void updateElapsedTime();
     void updateStopProgress();
@@ -53,7 +54,6 @@ private:
     void pickWindow();
     void updateStatusForMode(RecordMode mode);
     void updateScreenCombo();
-    void setupBottomBar(QVBoxLayout *root);
     QScreen *selectedScreen() const;
 
     ModeSwitch *m_modeSwitch = nullptr;
@@ -65,13 +65,8 @@ private:
     QLabel *m_stopStatusLabel = nullptr;
     QLabel *m_statusLabel = nullptr;
     QProgressBar *m_stopProgress = nullptr;
-    QLabel *m_recentDetailLabel = nullptr;
-    QLabel *m_recentIcon = nullptr;
-    QLabel *m_keyboardIcon = nullptr;
-    QLabel *m_chevronIcon = nullptr;
-    QPushButton *m_openFolderIcon = nullptr;
-    QFrame *m_bottomNavSection = nullptr;
-    RecorderController *m_recorder = nullptr;
+    RecordPageBottomBar *m_bottomBar = nullptr;
+    IRecorderService *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     QTimer *m_recordingTimer = nullptr;
     QElapsedTimer m_elapsed;

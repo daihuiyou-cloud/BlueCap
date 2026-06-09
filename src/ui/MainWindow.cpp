@@ -11,6 +11,7 @@
 #include "Sidebar.h"
 #include "VideoLibraryPage.h"
 #include "recorder/RecorderController.h"
+#include "storage/QSettingsRepository.h"
 #include "storage/VideoLibrary.h"
 
 #include <QAction>
@@ -65,17 +66,23 @@ MainWindow::MainWindow(QWidget *parent)
         move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
     }
 
+    m_settings = new QSettingsRepository(
+        QStringLiteral("BlueCap"), QStringLiteral("BlueCap"));
     m_recorder = new RecorderController(this);
-    m_library = new VideoLibrary(this);
+    m_library = new VideoLibrary(m_settings, this);
     m_overlay = new RecordingOverlay(this);
 
-    m_tray = new TrayManager(m_recorder, this);
+    m_tray = new TrayManager(this);
     m_hotkey = new HotkeyManager(this);
     qApp->installNativeEventFilter(this);
 
     setupUI();
     setupPulseTimer();
-    setupConnections();
+    setupPageConnections();
+    setupSettingsConnections();
+    setupRecordConnections();
+    setupToggleRecord();
+    setupTrayConnections();
     m_tray->show();
 
     if (!m_hotkey->isRegistered()) {
@@ -126,68 +133,74 @@ void MainWindow::setupUI()
     m_stack->addWidget(m_recordPage);
     m_videoLibraryPage = new VideoLibraryPage(m_library, m_stack);
     m_stack->addWidget(m_videoLibraryPage);
-    m_stack->addWidget(new SettingsPage(m_stack));
+    m_stack->addWidget(new SettingsPage(m_settings, m_stack));
     bodyLayout->addWidget(m_stack, 1);
 
     surfaceLayout->addWidget(body, 1);
     shell->addWidget(surface);
 }
 
-void MainWindow::setupConnections()
+void MainWindow::setupPageConnections()
 {
     connect(m_sidebar, &Sidebar::pageSelected, m_stack, &QStackedWidget::setCurrentIndex);
-
-    auto *settingsPage = qobject_cast<SettingsPage *>(m_stack->widget(2));
-    if (settingsPage) {
-        connect(settingsPage, &SettingsPage::frameRateChanged,
-                m_recorder, &RecorderController::setFrameRate);
-        connect(settingsPage, &SettingsPage::presetChanged,
-                m_recorder, &RecorderController::setPreset);
-        connect(settingsPage, &SettingsPage::startTimeoutChanged,
-                m_recorder, &RecorderController::setStartTimeout);
-        connect(settingsPage, &SettingsPage::stopTimeoutChanged,
-                m_recorder, &RecorderController::setStopTimeout);
-        connect(settingsPage, &SettingsPage::savePathChanged,
-                m_recorder, &RecorderController::setSavePath);
-        connect(settingsPage, &SettingsPage::confirmStopChanged,
-                m_recordPage, &RecordPage::setConfirmStop);
-        connect(settingsPage, &SettingsPage::showCursorChanged,
-                m_recorder, &RecorderController::setShowCursor);
-
-        connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
-            theme::apply(preference);
-            const int resolved = theme::resolve(preference);
-            m_darkMode = (resolved == ThemeDark);
-            m_recordPage->setDarkMode(m_darkMode);
-            m_sidebar->setDarkMode(m_darkMode);
-            m_videoLibraryPage->setDarkMode(m_darkMode);
-            rebuildPulseStyles();
-            if (m_recorder->isRecording())
-                m_recordingIndicator->setStyleSheet(m_pulseStyleBright);
-
-            const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
-            const QStringList titlePaths = {
-                QStringLiteral(":/icons/title-settings.svg"),
-                QStringLiteral(":/icons/title-minimize.svg"),
-                QStringLiteral(":/icons/title-close.svg")
-            };
-            QList<QPushButton *> titleBtns = { m_settingsButton, m_minimizeButton, m_closeButton };
-            for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
-                titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, tc.normal, tc.active, tc.disabled));
-            }
-            m_maximizeButton->setIcon(icon::coloredIcon(
-                m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
-                20, tc.normal, tc.active, tc.disabled));
-        });
-
-        settingsPage->loadSettings();
-    }
-
     connect(m_recordPage, &RecordPage::recentVideosClicked, this, [this] {
         m_sidebar->selectPage(1);
         m_stack->setCurrentIndex(1);
     });
+}
 
+void MainWindow::setupSettingsConnections()
+{
+    auto *settingsPage = qobject_cast<SettingsPage *>(m_stack->widget(2));
+    if (!settingsPage)
+        return;
+
+    connect(settingsPage, &SettingsPage::frameRateChanged,
+            m_recorder, &RecorderController::setFrameRate);
+    connect(settingsPage, &SettingsPage::presetChanged,
+            m_recorder, &RecorderController::setPreset);
+    connect(settingsPage, &SettingsPage::startTimeoutChanged,
+            m_recorder, &RecorderController::setStartTimeout);
+    connect(settingsPage, &SettingsPage::stopTimeoutChanged,
+            m_recorder, &RecorderController::setStopTimeout);
+    connect(settingsPage, &SettingsPage::savePathChanged,
+            m_recorder, &RecorderController::setSavePath);
+    connect(settingsPage, &SettingsPage::confirmStopChanged,
+            m_recordPage, &RecordPage::setConfirmStop);
+    connect(settingsPage, &SettingsPage::showCursorChanged,
+            m_recorder, &RecorderController::setShowCursor);
+
+    connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
+        theme::apply(preference);
+        const int resolved = theme::resolve(preference);
+        m_darkMode = (resolved == ThemeDark);
+        m_recordPage->setDarkMode(m_darkMode);
+        m_sidebar->setDarkMode(m_darkMode);
+        m_videoLibraryPage->setDarkMode(m_darkMode);
+        rebuildPulseStyles();
+        if (m_recorder->isRecording())
+            m_recordingIndicator->setStyleSheet(m_pulseStyleBright);
+
+        const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
+        const QStringList titlePaths = {
+            QStringLiteral(":/icons/title-settings.svg"),
+            QStringLiteral(":/icons/title-minimize.svg"),
+            QStringLiteral(":/icons/title-close.svg")
+        };
+        QList<QPushButton *> titleBtns = { m_settingsButton, m_minimizeButton, m_closeButton };
+        for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
+            titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, tc.normal, tc.active, tc.disabled));
+        }
+        m_maximizeButton->setIcon(icon::coloredIcon(
+            m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
+            20, tc.normal, tc.active, tc.disabled));
+    });
+
+    settingsPage->loadSettings();
+}
+
+void MainWindow::setupRecordConnections()
+{
     connect(m_recorder, &RecorderController::recordingAreaChanged, this,
         [this](const QRect &area, RecordMode mode) {
             Q_UNUSED(mode);
@@ -230,7 +243,10 @@ void MainWindow::setupConnections()
             text = QStringLiteral("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
         m_overlay->setStatusText(text);
     });
+}
 
+void MainWindow::setupToggleRecord()
+{
     auto toggleRecord = [this] {
         bool wasRecording = m_recorder->isRecording();
         m_recordPage->toggleRecording();
@@ -252,7 +268,10 @@ void MainWindow::setupConnections()
         if (m_recorder->isRecording())
             m_recordPage->toggleRecording();
     });
+}
 
+void MainWindow::setupTrayConnections()
+{
     connect(m_tray, &TrayManager::showWindowRequested, this, [this] {
         if (isVisible() && !isMinimized())
             hide();

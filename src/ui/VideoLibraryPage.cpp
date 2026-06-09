@@ -1,8 +1,9 @@
 #include "VideoLibraryPage.h"
 #include "IconHelper.h"
 #include "storage/VideoLibrary.h"
-#include "utils/FfmpegLocator.h"
+#include "utils/FileUtils.h"
 #include "utils/Format.h"
+#include "utils/ThumbnailGenerator.h"
 #include "utils/ThemeColors.h"
 #include "utils/Win32Icon.h"
 
@@ -24,7 +25,6 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QPainterPath>
-#include <QProcess>
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
@@ -34,42 +34,7 @@
 #include <QUrl>
 #include <QVBoxLayout>
 
-#include <windows.h>
-#include <shellapi.h>
-
 namespace {
-
-QImage thumbnailViaFfmpeg(const QString &filePath)
-{
-    const QString ffmpeg = ffmpeg_locator::findFfmpegPath();
-    if (ffmpeg.isEmpty())
-        return {};
-
-    QProcess proc;
-    proc.setProcessChannelMode(QProcess::SeparateChannels);
-    proc.start(ffmpeg, {
-        QStringLiteral("-hide_banner"),
-        QStringLiteral("-loglevel"), QStringLiteral("error"),
-        QStringLiteral("-ss"), QStringLiteral("00:00:00"),
-        QStringLiteral("-i"), filePath,
-        QStringLiteral("-frames:v"), QStringLiteral("1"),
-        QStringLiteral("-vf"), QStringLiteral("scale=320:180:force_original_aspect_ratio=increase,crop=320:180"),
-        QStringLiteral("-f"), QStringLiteral("image2pipe"),
-        QStringLiteral("-vcodec"), QStringLiteral("png"),
-        QStringLiteral("pipe:1")
-    });
-    if (!proc.waitForFinished(15000) || proc.exitCode() != 0)
-        return {};
-
-    QImage image;
-    image.loadFromData(proc.readAllStandardOutput(), "PNG");
-    return image;
-}
-
-QImage fetchThumbnailRaw(const QString &filePath)
-{
-    return thumbnailViaFfmpeg(filePath);
-}
 
 QPixmap roundedThumbnail(const QPixmap &source, const QSize &size, bool dark)
 {
@@ -115,21 +80,6 @@ QPixmap roundedThumbnail(const QPixmap &source, const QSize &size, bool dark)
     }
 
     return result;
-}
-
-bool moveToTrash(const QString &filePath)
-{
-    // Double-null-terminated wide string for SHFileOperationW
-    auto *wPath = reinterpret_cast<const wchar_t *>(filePath.utf16());
-    // The QString is already null-terminated; we need double null
-    std::wstring doubleNull(wPath, filePath.size() + 1);
-
-    SHFILEOPSTRUCTW fos = {};
-    fos.wFunc = FO_DELETE;
-    fos.pFrom = doubleNull.c_str();
-    fos.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_NOERRORUI | FOF_SILENT;
-
-    return SHFileOperationW(&fos) == 0;
 }
 
 }
@@ -399,7 +349,7 @@ void VideoLibraryPage::processNextThumbnail()
         if (!m_pendingThumbnails.isEmpty())
             QTimer::singleShot(0, this, &VideoLibraryPage::processNextThumbnail);
     });
-    watcher->setFuture(QtConcurrent::run(fetchThumbnailRaw, path));
+    watcher->setFuture(QtConcurrent::run(thumbnail::fromVideo, path));
 }
 
 void VideoLibraryPage::openSelected()
@@ -428,7 +378,7 @@ void VideoLibraryPage::deleteSelected()
         m_toastTimer->stop();
         m_itemMap.remove(path);
 
-        bool movedToTrash = moveToTrash(path);
+        bool movedToTrash = file_utils::moveToTrash(path);
         if (!movedToTrash) {
             QFile::remove(path);
         }

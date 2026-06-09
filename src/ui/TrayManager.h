@@ -6,14 +6,13 @@
 
 class QAction;
 class QMenu;
-class RecorderController;
 
 class TrayManager : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit TrayManager(RecorderController *recorder, QObject *parent = nullptr);
+    explicit TrayManager(QObject *parent = nullptr);
     ~TrayManager() override;
 
     void show();
@@ -31,7 +30,6 @@ signals:
 private:
     QIcon makeTrayIcon(bool recording);
 
-    RecorderController *m_recorder;
     QSystemTrayIcon *m_trayIcon;
     QMenu *m_trayMenu;
     QIcon m_trayIconIdle;

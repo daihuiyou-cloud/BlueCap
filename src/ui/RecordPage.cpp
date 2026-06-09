@@ -1,12 +1,12 @@
 #include "RecordPage.h"
-#include "IconHelper.h"
+#include "RecordPageBottomBar.h"
 #include "utils/ThemeColors.h"
 
 #include "ModeSwitch.h"
 #include "RecordButton.h"
 #include "RegionSelector.h"
 #include "WindowPicker.h"
-#include "recorder/RecorderController.h"
+#include "recorder/IRecorderService.h"
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
 
@@ -33,7 +33,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWidget *parent)
+RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidget *parent)
     : QWidget(parent)
     , m_recorder(recorder)
     , m_library(library)
@@ -142,110 +142,24 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     });
 
     root->addStretch();
-    setupBottomBar(root);
+
+    m_bottomBar = new RecordPageBottomBar(this);
+    root->addWidget(m_bottomBar);
+    connect(m_bottomBar, &RecordPageBottomBar::recentVideosClicked,
+            this, &RecordPage::recentVideosClicked);
+    connect(m_bottomBar, &RecordPageBottomBar::openSaveFolderRequested,
+            this, &RecordPage::openSaveFolder);
 
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
-    connect(m_recorder, &RecorderController::recordingChanged,
-            this, &RecordPage::handleRecordingChanged);
-    connect(m_recorder, &RecorderController::videoSaved,
-            this, &RecordPage::handleVideoSaved);
-    connect(m_recorder, &RecorderController::errorOccurred,
-            this, &RecordPage::handleError);
+    auto *src = m_recorder->signalSource();
+    connect(src, SIGNAL(recordingChanged(bool)), this, SLOT(handleRecordingChanged(bool)));
+    connect(src, SIGNAL(videoSaved(const QString &)), this, SLOT(handleVideoSaved(const QString &)));
+    connect(src, SIGNAL(errorOccurred(const QString &)), this, SLOT(handleError(const QString &)));
     connect(m_library, &VideoLibrary::recentVideosChanged,
             this, &RecordPage::updateRecentVideos);
 
     updateRecentVideos(m_library->recentVideos());
     updateStatusForMode(m_modeSwitch->currentMode());
-}
-
-void RecordPage::setupBottomBar(QVBoxLayout *root)
-{
-    auto *bottomBar = new QFrame(this);
-    bottomBar->setObjectName(QStringLiteral("bottomBar"));
-    bottomBar->setMinimumHeight(74);
-
-    auto *bottomLayout = new QHBoxLayout(bottomBar);
-    bottomLayout->setContentsMargins(0, 0, 0, 0);
-    bottomLayout->setSpacing(0);
-
-    m_bottomNavSection = new QFrame(bottomBar);
-    m_bottomNavSection->setObjectName(QStringLiteral("bottomNavSection"));
-    m_bottomNavSection->setCursor(Qt::PointingHandCursor);
-    m_bottomNavSection->setToolTip(QStringLiteral("点击查看全部录制视频"));
-    auto *navLayout = new QHBoxLayout(m_bottomNavSection);
-    navLayout->setContentsMargins(30, 0, 20, 0);
-    navLayout->setSpacing(15);
-
-    m_recentIcon = new QLabel(m_bottomNavSection);
-    m_recentIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_recentIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/clock.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
-
-    auto *recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
-    recentTitle->setObjectName(QStringLiteral("bottomTitle"));
-
-    m_recentDetailLabel = new QLabel(m_bottomNavSection);
-    m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
-    m_recentDetailLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
-
-    auto *recentTextLayout = new QVBoxLayout;
-    recentTextLayout->setContentsMargins(0, 0, 0, 0);
-    recentTextLayout->setSpacing(2);
-    recentTextLayout->addWidget(recentTitle);
-    recentTextLayout->addWidget(m_recentDetailLabel);
-
-    navLayout->addWidget(m_recentIcon);
-    navLayout->addLayout(recentTextLayout, 1);
-    navLayout->addSpacing(4);
-
-    auto *separator = new QFrame(bottomBar);
-    separator->setObjectName(QStringLiteral("bottomSeparator"));
-    separator->setFixedWidth(1);
-    separator->setFixedHeight(36);
-
-    auto *rightSection = new QWidget(bottomBar);
-    auto *rightLayout = new QHBoxLayout(rightSection);
-    rightLayout->setContentsMargins(18, 0, 26, 0);
-    rightLayout->setSpacing(15);
-
-    m_keyboardIcon = new QLabel(rightSection);
-    m_keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_keyboardIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/keyboard.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
-
-    auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
-    shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
-
-    const auto &bc = ThemeColors::forMode(false).bottomBar;
-    m_openFolderIcon = new QPushButton(rightSection);
-    m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_openFolderIcon->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/folder.svg"), 20, bc.normal, bc.active, bc.disabled));
-    m_openFolderIcon->setIconSize(QSize(20, 20));
-    m_openFolderIcon->setFixedSize(48, 34);
-    m_openFolderIcon->setCursor(Qt::PointingHandCursor);
-    m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
-    m_openFolderIcon->setFlat(true);
-    connect(m_openFolderIcon, &QPushButton::clicked, this, &RecordPage::openSaveFolder);
-
-    m_chevronIcon = new QLabel(bottomBar);
-    m_chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
-    m_chevronIcon->setPixmap(icon::renderSvg(
-        QStringLiteral(":/icons/chevron-right.svg"), ThemeColors::forMode(false).bottomBar.normal, 20));
-
-    rightLayout->addWidget(m_keyboardIcon);
-    rightLayout->addWidget(shortcutLabel);
-    rightLayout->addWidget(m_openFolderIcon);
-    rightLayout->addSpacing(4);
-    rightLayout->addWidget(m_chevronIcon);
-
-    bottomLayout->addWidget(m_bottomNavSection, 1);
-    bottomLayout->addWidget(separator);
-    bottomLayout->addWidget(rightSection);
-
-    root->addWidget(bottomBar);
-
-    m_bottomNavSection->installEventFilter(this);
 }
 
 void RecordPage::paintEvent(QPaintEvent *)
@@ -287,15 +201,7 @@ void RecordPage::setDarkMode(bool dark)
     m_darkMode = dark;
     m_modeSwitch->setDarkMode(dark);
     m_recordButton->setDarkMode(dark);
-
-    const auto &bc = ThemeColors::forMode(dark).bottomBar;
-    m_recentIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/clock.svg"), bc.normal, 24));
-    m_keyboardIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/keyboard.svg"), bc.normal, 24));
-    m_chevronIcon->setPixmap(icon::renderSvg(QStringLiteral(":/icons/chevron-right.svg"), bc.normal, 20));
-
-    m_openFolderIcon->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/folder.svg"), 20, bc.normal, bc.active, bc.disabled));
-
+    m_bottomBar->setDarkMode(dark);
     update();
 }
 
@@ -537,11 +443,11 @@ void RecordPage::handleError(const QString &message)
 void RecordPage::updateRecentVideos(const QStringList &videos)
 {
     if (videos.isEmpty()) {
-        m_recentDetailLabel->setText(QStringLiteral("还没有录制文件"));
+        m_bottomBar->setRecentVideoDetail(QStringLiteral("还没有录制文件"));
         return;
     }
 
-    m_recentDetailLabel->setText(QFileInfo(videos.first()).fileName());
+    m_bottomBar->setRecentVideoDetail(QFileInfo(videos.first()).fileName());
 }
 
 void RecordPage::updateStatusForMode(RecordMode mode)
@@ -601,10 +507,6 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
                 } else {
                     openSaveFolder();
                 }
-                return true;
-            }
-            if (obj == m_bottomNavSection) {
-                emit recentVideosClicked();
                 return true;
             }
         }

@@ -1,10 +1,10 @@
 #pragma once
 
+#include "IRecorderService.h"
 #include "RecordMode.h"
 
 #include <deque>
 
-#include <QObject>
 #include <QByteArray>
 #include <QProcess>
 #include <QRect>
@@ -14,7 +14,7 @@
 class QScreen;
 class QTimer;
 
-class RecorderController : public QObject
+class RecorderController : public QObject, public IRecorderService
 {
     Q_OBJECT
 
@@ -90,4 +90,6 @@ private:
     QStringList m_reportedWarnings;
 
     void detectHardwareEncoder();
+
+    QObject *signalSource() const override { return const_cast<QObject *>(static_cast<const QObject *>(this)); }
 };

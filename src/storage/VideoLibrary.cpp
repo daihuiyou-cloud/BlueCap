@@ -1,16 +1,17 @@
 #include "VideoLibrary.h"
+#include "ISettingsRepository.h"
 
 #include <QDir>
 #include <QFileInfo>
-#include <QSettings>
 
 namespace {
 constexpr int kMaxRecentVideos = 500;
 const QLatin1String kLibraryPrefix("library/");
 }
 
-VideoLibrary::VideoLibrary(QObject *parent)
+VideoLibrary::VideoLibrary(ISettingsRepository *settings, QObject *parent)
     : QObject(parent)
+    , m_settings(settings)
 {
     m_cache = load();
 }
@@ -85,12 +86,10 @@ void VideoLibrary::clearAndReplace(const QStringList &videos)
 
 QStringList VideoLibrary::load() const
 {
-    QSettings settings;
-    return settings.value(kLibraryPrefix + QLatin1String("recentVideos")).toStringList();
+    return m_settings->value(kLibraryPrefix + QLatin1String("recentVideos")).toStringList();
 }
 
 void VideoLibrary::save(const QStringList &videos) const
 {
-    QSettings settings;
-    settings.setValue(kLibraryPrefix + QLatin1String("recentVideos"), videos);
+    m_settings->setValue(kLibraryPrefix + QLatin1String("recentVideos"), videos);
 }
