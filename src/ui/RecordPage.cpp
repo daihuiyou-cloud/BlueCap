@@ -1,16 +1,23 @@
 #include "RecordPage.h"
-#include "RecordPageBottomBar.h"
-#include "utils/ThemeColors.h"
+#include "paint/PaintMetrics.h"
+#include "paint/PaintPrimitives.h"
+#include "theme/ThemeColors.h"
 
 #include "ModeSwitch.h"
 #include "RecordButton.h"
 #include "RegionSelector.h"
 #include "WindowPicker.h"
 #include "recorder/IRecorderService.h"
-#include "storage/VideoLibrary.h"
+#include "storage/IVideoLibrary.h"
 #include "utils/Format.h"
+#include "widgets/AudioToggleCard.h"
+#include "widgets/PaintedComboBox.h"
+#include "widgets/PaintedDialog.h"
+
 
 #include <QComboBox>
+#include <QDateTime>
+#include <QPalette>
 #include <QCursor>
 #include <QDesktopServices>
 #include <QDir>
@@ -21,10 +28,10 @@
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
-#include <QMessageBox>
 #include <QMouseEvent>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QScreen>
 #include <QShortcut>
 #include <QSizePolicy>
@@ -33,10 +40,11 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidget *parent)
+RecordPage::RecordPage(IRecorderService *recorder, IVideoLibrary *library, QWidget *parent)
     : QWidget(parent)
     , m_recorder(recorder)
     , m_library(library)
+    , m_palette(paint::theme(false))
 {
     setAttribute(Qt::WA_StyledBackground, false);
 
@@ -60,12 +68,12 @@ RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidge
     connect(m_stopProgressTimer, &QTimer::timeout, this, &RecordPage::updateStopProgress);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(48, 38, 48, 16);
+    root->setContentsMargins(34, 24, 34, 24);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
-    root->addWidget(m_modeSwitch, 0, Qt::AlignHCenter);
-    root->addSpacing(42);
+    root->addWidget(m_modeSwitch);
+    root->addSpacing(18);
 
     connect(m_modeSwitch, &ModeSwitch::modeChanged, this, [this](RecordMode mode) {
         if (!m_recorder->isRecording()) {
@@ -74,59 +82,67 @@ RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidge
         }
     });
 
-    m_screenCombo = new QComboBox(this);
-    m_screenCombo->setObjectName(QStringLiteral("screenCombo"));
+    m_screenCombo = new PaintedComboBox(this);
     m_screenCombo->setVisible(false);
     m_screenCombo->setFixedHeight(32);
     m_screenCombo->setMinimumWidth(280);
     root->addWidget(m_screenCombo, 0, Qt::AlignHCenter);
     root->addSpacing(10);
 
-    m_recordButton = new RecordButton(this);
-    root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
-    root->addSpacing(18);
+    m_controlPanel = new QWidget(this);
+    m_controlPanel->setMinimumHeight(220);
+    m_controlPanel->setMaximumHeight(270);
+    m_controlPanel->setMinimumWidth(540);
+
+    setMinimumWidth(620);
+
+    m_micCard = new AudioToggleCard(QStringLiteral("麦克风"), AudioToggleCard::Microphone, m_controlPanel);
+    m_systemAudioCard = new AudioToggleCard(QStringLiteral("系统声音"), AudioToggleCard::SystemAudio, m_controlPanel);
+    m_recordButton = new RecordButton(m_controlPanel);
 
     m_titleLabel = new QLabel(QStringLiteral("开始录制"), this);
-    m_titleLabel->setObjectName(QStringLiteral("recordTitle"));
+    m_titleLabel->setParent(m_controlPanel);
+    m_titleLabel->setText(QStringLiteral("开始录制"));
     m_titleLabel->setAlignment(Qt::AlignCenter);
 
     m_countdownLabel = new QLabel(this);
-    m_countdownLabel->setObjectName(QStringLiteral("recordTitle"));
+    m_countdownLabel->setParent(m_controlPanel);
     m_countdownLabel->setAlignment(Qt::AlignCenter);
     m_countdownLabel->setVisible(false);
 
     m_hotkeyLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), this);
-    m_hotkeyLabel->setObjectName(QStringLiteral("recordHotkey"));
+    m_hotkeyLabel->setParent(m_controlPanel);
     m_hotkeyLabel->setAlignment(Qt::AlignCenter);
 
-    m_statusLabel = new QLabel(QStringLiteral("全屏录制将保存到系统视频目录的 BlueCap 文件夹"), this);
-    m_statusLabel->setObjectName(QStringLiteral("recordStatus"));
+    m_statusLabel = new QLabel(QStringLiteral("点击开始后录制整个屏幕，视频会保存到 BlueCap 文件夹"), this);
+    m_statusLabel->setParent(m_controlPanel);
+    m_statusLabel->setText(QStringLiteral("点击开始后录制整个屏幕，视频会保存到 BlueCap 文件夹"));
     m_statusLabel->setAlignment(Qt::AlignCenter);
     m_statusLabel->setCursor(Qt::PointingHandCursor);
     m_statusLabel->setToolTip(QStringLiteral("点击打开保存位置"));
     m_statusLabel->installEventFilter(this);
+    m_statusLabel->setWordWrap(true);
+    m_statusLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Fixed);
 
-    root->addWidget(m_titleLabel);
-    root->addWidget(m_countdownLabel);
-    root->addWidget(m_hotkeyLabel);
-    root->addSpacing(8);
-    root->addWidget(m_statusLabel);
-    root->addSpacing(6);
 
     m_stopStatusLabel = new QLabel(QStringLiteral("正在结束录制并写入视频文件..."), this);
-    m_stopStatusLabel->setObjectName(QStringLiteral("stopStatusLabel"));
+    m_stopStatusLabel->setParent(m_controlPanel);
+    m_stopStatusLabel->setText(QStringLiteral("正在结束录制并写入视频文件..."));
     m_stopStatusLabel->setAlignment(Qt::AlignCenter);
+    QFont stopFont = m_stopStatusLabel->font();
+    stopFont.setPixelSize(14);
+    stopFont.setBold(true);
+    m_stopStatusLabel->setFont(stopFont);
     m_stopStatusLabel->setVisible(false);
-    root->addWidget(m_stopStatusLabel);
-    root->addSpacing(4);
 
     m_stopProgress = new QProgressBar(this);
+    m_stopProgress->setParent(m_controlPanel);
     m_stopProgress->setRange(0, 0);
     m_stopProgress->setFixedWidth(320);
     m_stopProgress->setFixedHeight(6);
     m_stopProgress->setTextVisible(false);
     m_stopProgress->setVisible(false);
-    root->addWidget(m_stopProgress, 0, Qt::AlignCenter);
+    root->addWidget(m_controlPanel);
 
     auto *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
     escapeShortcut->setContext(Qt::ApplicationShortcut);
@@ -141,24 +157,15 @@ RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidge
         }
     });
 
-    root->addStretch();
-
-    m_bottomBar = new RecordPageBottomBar(this);
-    root->addWidget(m_bottomBar);
-    connect(m_bottomBar, &RecordPageBottomBar::recentVideosClicked,
-            this, &RecordPage::recentVideosClicked);
-    connect(m_bottomBar, &RecordPageBottomBar::openSaveFolderRequested,
-            this, &RecordPage::openSaveFolder);
+    updateSectionHeights();
+    layoutControlPanel();
 
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
     connect(m_recorder, &IRecorderService::recordingChanged, this, &RecordPage::handleRecordingChanged);
     connect(m_recorder, &IRecorderService::videoSaved, this, &RecordPage::handleVideoSaved);
     connect(m_recorder, &IRecorderService::errorOccurred, this, &RecordPage::handleError);
-    connect(m_library, &VideoLibrary::recentVideosChanged,
-            this, &RecordPage::updateRecentVideos);
-
-    updateRecentVideos(m_library->recentVideos());
     updateStatusForMode(m_modeSwitch->currentMode());
+    updateLabelColors();
 }
 
 void RecordPage::paintEvent(QPaintEvent *)
@@ -166,28 +173,77 @@ void RecordPage::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QRectF panel = rect().adjusted(0.5, 0.5, -0.5, -0.5);
+    QRectF panel = QRectF(rect());
+    paint::drawCard(painter, panel, m_palette.panelBg, m_palette.panelBorder, paint::Metrics::pagePanelRadius);
+    paint::drawVerticalSheen(painter, panel, paint::Metrics::pagePanelRadius, m_darkMode);
 
-    QLinearGradient fill(panel.topLeft(), panel.bottomRight());
-    if (m_darkMode) {
-        painter.setPen(QColor(56, 66, 84));
-        fill.setColorAt(0.0, QColor(35, 42, 55, 238));
-        fill.setColorAt(0.55, QColor(31, 38, 50, 236));
-        fill.setColorAt(1.0, QColor(28, 34, 45, 234));
-    } else {
-        painter.setPen(QColor(220, 229, 244));
-        fill.setColorAt(0.0, QColor(255, 255, 255, 235));
-        fill.setColorAt(1.0, QColor(242, 247, 255, 224));
+    if (m_controlPanel) {
+        QRectF control = QRectF(m_controlPanel->geometry());
+        paint::drawCard(painter, control, m_palette.cardBg, m_palette.cardBorder, paint::Metrics::cardRadius);
+        paint::drawVerticalSheen(painter, control, paint::Metrics::cardRadius, m_darkMode);
     }
-    painter.setBrush(fill);
-    painter.drawRoundedRect(panel, 34, 34);
 
-    QLinearGradient sheen(panel.topLeft(), panel.bottomLeft());
-    sheen.setColorAt(0.0, m_darkMode ? QColor(255, 255, 255, 16) : QColor(255, 255, 255, 70));
-    sheen.setColorAt(0.34, QColor(255, 255, 255, 0));
-    painter.setPen(Qt::NoPen);
-    painter.setBrush(sheen);
-    painter.drawRoundedRect(panel.adjusted(1, 1, -1, -1), 33, 33);
+}
+
+void RecordPage::resizeEvent(QResizeEvent *event)
+{
+    updateSectionHeights();
+    layoutControlPanel();
+    QWidget::resizeEvent(event);
+}
+
+void RecordPage::updateSectionHeights()
+{
+    if (!m_controlPanel)
+        return;
+
+    const int margins = 24 + 24;
+    const int modeHeight = m_modeSwitch ? m_modeSwitch->height() : paint::Metrics::modeCardHeight;
+    const int screenHeight = m_screenCombo && m_screenCombo->isVisible() ? m_screenCombo->height() + 10 : 0;
+    const int fixedGaps = 18;
+    int available = height() - margins - modeHeight - screenHeight - fixedGaps;
+    if (available <= 0)
+        available = 430;
+
+    int controlHeight = qBound(220, available, 400);
+    m_controlPanel->setFixedHeight(controlHeight);
+}
+
+void RecordPage::layoutControlPanel()
+{
+    if (!m_controlPanel || !m_recordButton)
+        return;
+
+    const QRect r = m_controlPanel->rect().adjusted(26, 14, -26, -14);
+    const int centerX = r.center().x();
+    const int top = r.top();
+    const int buttonSize = paint::Metrics::recordButtonSize;
+    const int minCardGap = 8;
+
+    m_recordButton->setGeometry(centerX - buttonSize / 2, top + 26, buttonSize, buttonSize);
+
+    const int cardY = top + 94;
+    int sideInset = qMax(42, r.width() / 10);
+    if (m_micCard && m_systemAudioCard) {
+        const int maxInset = qMax(0, r.width() / 2 - buttonSize / 2 - minCardGap - m_micCard->width());
+        sideInset = qMin(sideInset, maxInset);
+    }
+    if (m_micCard)
+        m_micCard->move(r.left() + sideInset, cardY);
+    if (m_systemAudioCard)
+        m_systemAudioCard->move(r.right() - sideInset - m_systemAudioCard->width(), cardY);
+
+    const int titleY = top + 146;
+    const int titleW = qBound(160, r.width() - 200, 300);
+    m_titleLabel->setGeometry(centerX - titleW / 2, titleY, titleW, 34);
+    m_countdownLabel->setGeometry(m_titleLabel->geometry());
+    const int hotkeyW = qMin(340, r.width() - 40);
+    m_hotkeyLabel->setGeometry(centerX - hotkeyW / 2, titleY + 38, hotkeyW, 28);
+
+    const int statusY = qMin(r.bottom() - 24, titleY + 70);
+    m_statusLabel->setGeometry(r.left() + 34, statusY, r.width() - 68, 22);
+    m_stopStatusLabel->setGeometry(r.left() + 34, statusY - 26, r.width() - 68, 22);
+    m_stopProgress->setGeometry(centerX - 160, statusY, 320, 6);
 }
 
 void RecordPage::setConfirmStop(bool confirm)
@@ -195,12 +251,50 @@ void RecordPage::setConfirmStop(bool confirm)
     m_confirmStop = confirm;
 }
 
+void RecordPage::updateLabelColors()
+{
+    const auto &a = ThemeColors::forMode(m_darkMode).app;
+    QFont titleFont = m_titleLabel->font();
+    titleFont.setPixelSize(21);
+    titleFont.setBold(true);
+    m_titleLabel->setFont(titleFont);
+    QPalette tp = m_titleLabel->palette();
+    tp.setColor(QPalette::WindowText, a.recordTitleText);
+    m_titleLabel->setPalette(tp);
+
+    QFont hotkeyFont = m_hotkeyLabel->font();
+    hotkeyFont.setPixelSize(16);
+    hotkeyFont.setBold(true);
+    m_hotkeyLabel->setFont(hotkeyFont);
+    QPalette hp = m_hotkeyLabel->palette();
+    hp.setColor(QPalette::WindowText, a.recordHotkeyText);
+    m_hotkeyLabel->setPalette(hp);
+
+    QFont statusFont = m_statusLabel->font();
+    statusFont.setPixelSize(13);
+    m_statusLabel->setFont(statusFont);
+    QPalette sp = m_statusLabel->palette();
+    sp.setColor(QPalette::WindowText, a.recordStatusText);
+    m_statusLabel->setPalette(sp);
+
+    QPalette ssp = m_stopStatusLabel->palette();
+    ssp.setColor(QPalette::WindowText, a.stopStatusText);
+    m_stopStatusLabel->setPalette(ssp);
+}
+
 void RecordPage::setDarkMode(bool dark)
 {
     m_darkMode = dark;
     m_modeSwitch->setDarkMode(dark);
     m_recordButton->setDarkMode(dark);
-    m_bottomBar->setDarkMode(dark);
+    if (m_micCard)
+        m_micCard->setDarkMode(dark);
+    if (auto *combo = qobject_cast<PaintedComboBox *>(m_screenCombo))
+        combo->setDarkMode(dark);
+    if (m_systemAudioCard)
+        m_systemAudioCard->setDarkMode(dark);
+    m_palette = paint::theme(dark);
+    updateLabelColors();
     update();
 }
 
@@ -210,6 +304,8 @@ void RecordPage::updateScreenCombo()
     const auto screens = QGuiApplication::screens();
     if (screens.size() < 2 || m_modeSwitch->currentMode() != RecordMode::FullScreen) {
         m_screenCombo->setVisible(false);
+        updateSectionHeights();
+        layoutControlPanel();
         return;
     }
     m_screenCombo->setVisible(true);
@@ -222,6 +318,8 @@ void RecordPage::updateScreenCombo()
             selectedIdx = i;
     }
     m_screenCombo->setCurrentIndex(selectedIdx);
+    updateSectionHeights();
+    layoutControlPanel();
 }
 
 QScreen *RecordPage::selectedScreen() const
@@ -246,10 +344,9 @@ void RecordPage::toggleRecording()
 {
     if (m_recorder->isRecording()) {
         if (m_confirmStop) {
-            auto ret = QMessageBox::question(this, QStringLiteral("停止录制"),
-                QStringLiteral("确定要停止当前录制吗？"),
-                QMessageBox::Yes | QMessageBox::No);
-            if (ret != QMessageBox::Yes) return;
+            if (!PaintedDialog::question(this, QStringLiteral("停止录制"),
+                    QStringLiteral("确定要停止当前录制吗？")))
+                return;
         }
         m_recordingTimer->stop();
         m_lastSavedPath.clear();
@@ -345,6 +442,7 @@ void RecordPage::startRegionSelection()
 void RecordPage::pickWindow()
 {
     auto *picker = new WindowPicker();
+    picker->setDarkMode(m_darkMode);
     picker->setAttribute(Qt::WA_DeleteOnClose);
     picker->setWindowModality(Qt::WindowModal);
     connect(picker, &QDialog::accepted, this, [this, picker] {
@@ -436,17 +534,7 @@ void RecordPage::handleError(const QString &message)
         window()->activateWindow();
     }
 
-    QMessageBox::warning(this, QStringLiteral("录制失败"), message);
-}
-
-void RecordPage::updateRecentVideos(const QStringList &videos)
-{
-    if (videos.isEmpty()) {
-        m_bottomBar->setRecentVideoDetail(QStringLiteral("还没有录制文件"));
-        return;
-    }
-
-    m_bottomBar->setRecentVideoDetail(QFileInfo(videos.first()).fileName());
+    PaintedDialog::warning(this, QStringLiteral("录制失败"), message);
 }
 
 void RecordPage::updateStatusForMode(RecordMode mode)

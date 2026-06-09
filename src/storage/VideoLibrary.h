@@ -1,30 +1,27 @@
 #pragma once
 
-#include <QObject>
+#include "IVideoLibrary.h"
 #include <QStringList>
 
 class ISettingsRepository;
 
-class VideoLibrary : public QObject
+class VideoLibrary : public IVideoLibrary
 {
     Q_OBJECT
 
 public:
     explicit VideoLibrary(ISettingsRepository *settings, QObject *parent = nullptr);
 
-    QStringList recentVideos() const;
+    QStringList recentVideos() const override;
 
-    void scanDirectory(const QString &dir);
-    void removeNonExistent();
+    void scanDirectory(const QString &dir) override;
 
 public slots:
-    void addRecentVideo(const QString &path);
-    void clearAndReplace(const QStringList &videos);
-
-signals:
-    void recentVideosChanged(const QStringList &videos);
+    void addRecentVideo(const QString &path) override;
+    void clearAndReplace(const QStringList &videos) override;
 
 private:
+    void removeNonExistent();
     QStringList load() const;
     void save(const QStringList &videos) const;
 

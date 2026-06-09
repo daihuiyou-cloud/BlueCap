@@ -10,7 +10,7 @@ const QLatin1String kLibraryPrefix("library/");
 }
 
 VideoLibrary::VideoLibrary(ISettingsRepository *settings, QObject *parent)
-    : QObject(parent)
+    : IVideoLibrary(parent)
     , m_settings(settings)
 {
     m_cache = load();

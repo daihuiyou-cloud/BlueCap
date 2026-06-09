@@ -1,9 +1,11 @@
 #pragma once
 
+#include "ThemeColors.h"
 #include "ThemePreference.h"
+#include "style/BlueCapStyle.h"
 
 #include <QApplication>
-#include <QFile>
+#include <QPalette>
 #include <QSettings>
 #include <QString>
 
@@ -22,23 +24,22 @@ inline int resolve(int preference)
     return preference == ThemeSystem ? detectSystem() : preference;
 }
 
-inline QString loadStyleSheet(int theme)
-{
-    const QString path = (theme == ThemeDark)
-        ? QStringLiteral(":/bluecap-dark.qss")
-        : QStringLiteral(":/bluecap.qss");
-    QFile file(path);
-    if (file.open(QFile::ReadOnly | QFile::Text))
-        return QString::fromUtf8(file.readAll());
-    return {};
-}
-
 inline void apply(int preference, QApplication *app = qApp)
 {
-    const int theme = resolve(preference);
-    const QString qss = loadStyleSheet(theme);
-    if (!qss.isEmpty() && app)
-        app->setStyleSheet(qss);
+    const int th = resolve(preference);
+    bool dark = (th == ThemeDark);
+    const auto &a = ThemeColors::forMode(dark).app;
+    QPalette pal = app->palette();
+    pal.setColor(QPalette::WindowText, a.defaultText);
+    app->setPalette(pal);
+
+    auto *style = qobject_cast<BlueCapStyle *>(app->style());
+    if (style) {
+        style->setDarkMode(dark);
+        app->setStyleSheet(QString());
+        app->style()->unpolish(app);
+        app->style()->polish(app);
+    }
 }
 
 }

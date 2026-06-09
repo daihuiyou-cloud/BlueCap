@@ -1,7 +1,9 @@
+#include "style/BlueCapStyle.h"
+#include "theme/Theme.h"
 #include "ui/MainWindow.h"
-#include "utils/Theme.h"
 
 #include <QApplication>
+#include <QFont>
 #include <QSettings>
 
 int main(int argc, char *argv[])
@@ -13,6 +15,12 @@ int main(int argc, char *argv[])
     app.setApplicationName(QStringLiteral("BlueCap"));
     app.setOrganizationName(QStringLiteral("BlueCap"));
     app.setQuitOnLastWindowClosed(false);
+
+    app.setStyle(new BlueCapStyle);
+
+    QFont appFont = app.font();
+    appFont.setFamilies({QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Segoe UI")});
+    app.setFont(appFont);
 
     QSettings settings;
     theme::apply(settings.value(QStringLiteral("settings/theme"), ThemeSystem).toInt());

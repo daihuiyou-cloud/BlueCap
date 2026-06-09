@@ -1,4 +1,5 @@
 #include "RecordingOverlay.h"
+#include "theme/ThemeColors.h"
 
 #include <QGuiApplication>
 #include <QFontMetrics>
@@ -97,18 +98,23 @@ void RecordingOverlay::paintEvent(QPaintEvent *)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
+    const auto &a = ThemeColors::forMode(false).app;
+    const QColor overlayColor = a.inputFocusBorder;
+
     const QRectF inner(4, 4, width() - 8, height() - 8);
     const int radius = 8;
 
     for (int i = 3; i >= 1; --i) {
-        QColor glow(9, 103, 242, 10 + i * 8);
-        QPen pen(glow, i + 1);
+        int alpha = 10 + (4 - i) * 8;
+        int penWidth = i + 1;
+        qreal hw = penWidth / 2.0;
+        QPen pen(QColor(overlayColor.red(), overlayColor.green(), overlayColor.blue(), alpha), penWidth);
         painter.setPen(pen);
         painter.setBrush(Qt::NoBrush);
-        painter.drawRoundedRect(inner.adjusted(-i, -i, i, i), radius + i, radius + i);
+        painter.drawRoundedRect(inner.adjusted(-i + hw, -i + hw, i - hw, i - hw), radius + i - hw, radius + i - hw);
     }
 
-    QPen mainPen(QColor("#0967f2"), 2);
+    QPen mainPen(overlayColor, 2);
     painter.setPen(mainPen);
     painter.setBrush(Qt::NoBrush);
     painter.drawRoundedRect(inner, radius, radius);
@@ -126,8 +132,8 @@ void RecordingOverlay::paintEvent(QPaintEvent *)
         const int bx = 16;
         const int by = 16;
         const int padX = 16;
-        const int padY = 8;
-        const int padYb = 6;
+        const int padY = 7;
+        const int padYb = 7;
         const int gap = 4;
 
         QFont font = painter.font();
@@ -166,7 +172,7 @@ void RecordingOverlay::paintEvent(QPaintEvent *)
         if (!m_hintText.isEmpty()) {
             painter.setFont(hintFont);
             painter.setPen(QColor(200, 200, 200));
-            painter.drawText(bx + padX - 4, by + padY + fm.height() + gap + hfm.ascent(), m_hintText);
+            painter.drawText(bx + padX, by + padY + fm.height() + gap + hfm.ascent(), m_hintText);
         }
     }
 }

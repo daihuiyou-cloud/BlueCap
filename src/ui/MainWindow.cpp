@@ -1,17 +1,23 @@
 #include "MainWindow.h"
 #include "HotkeyManager.h"
-#include "IconHelper.h"
+#include "utils/IconHelper.h"
 #include "TrayManager.h"
 #include "WindowDragHelper.h"
-#include "utils/Theme.h"
-#include "utils/ThemeColors.h"
+#include "paint/PaintMetrics.h"
+#include "theme/Theme.h"
+#include "theme/ThemeColors.h"
+#include "widgets/SurfaceWidget.h"
+#include "widgets/TitleBarButton.h"
+#include "widgets/RecordingIndicator.h"
 
 #include "RecordPage.h"
 #include "RecordingOverlay.h"
 #include "SettingsPage.h"
 #include "Sidebar.h"
 #include "VideoLibraryPage.h"
+#include "recorder/IRecorderService.h"
 #include "recorder/RecorderController.h"
+#include "storage/IVideoLibrary.h"
 #include "storage/QSettingsRepository.h"
 #include "storage/VideoLibrary.h"
 
@@ -44,7 +50,7 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
     resize(960, 600);
-    setMinimumSize(740, 460);
+    setMinimumSize(paint::Metrics::windowMinWidth, paint::Metrics::windowMinHeight);
 
     QSettings geo;
     if (geo.contains(QStringLiteral("window/geometry"))) {
@@ -78,7 +84,6 @@ MainWindow::MainWindow(QWidget *parent)
     qApp->installNativeEventFilter(this);
 
     setupUI();
-    setupPulseTimer();
     setupPageConnections();
     setupSettingsConnections();
     setupRecordConnections();
@@ -109,12 +114,12 @@ MainWindow::~MainWindow()
 void MainWindow::setupUI()
 {
     auto *shell = new QVBoxLayout(this);
-    shell->setContentsMargins(12, 12, 12, 12);
+    shell->setContentsMargins(paint::Metrics::shellMargin, paint::Metrics::shellMargin,
+                               paint::Metrics::shellMargin, paint::Metrics::shellMargin);
     shell->setSpacing(0);
 
-    auto *surface = new QWidget(this);
-    surface->setObjectName(QStringLiteral("surface"));
-    surface->setAttribute(Qt::WA_StyledBackground, true);
+    auto *surface = new SurfaceWidget(this);
+    surface->setDarkMode(m_darkMode);
 
     auto *surfaceLayout = new QVBoxLayout(surface);
     surfaceLayout->setContentsMargins(0, 0, 0, 0);
@@ -123,7 +128,7 @@ void MainWindow::setupUI()
 
     auto *body = new QWidget(surface);
     auto *bodyLayout = new QHBoxLayout(body);
-    bodyLayout->setContentsMargins(0, 0, 20, 20);
+    bodyLayout->setContentsMargins(0, 0, 0, 0);
     bodyLayout->setSpacing(20);
 
     m_sidebar = new Sidebar(body);
@@ -132,7 +137,7 @@ void MainWindow::setupUI()
     m_stack = new QStackedWidget(body);
     m_recordPage = new RecordPage(m_recorder, m_library, m_stack);
     m_stack->addWidget(m_recordPage);
-    m_videoLibraryPage = new VideoLibraryPage(m_library, m_stack);
+    m_videoLibraryPage = new VideoLibraryPage(m_library, m_settings, m_stack);
     m_stack->addWidget(m_videoLibraryPage);
     m_settingsPage = new SettingsPage(m_settings, m_stack);
     m_stack->addWidget(m_settingsPage);
@@ -145,10 +150,6 @@ void MainWindow::setupUI()
 void MainWindow::setupPageConnections()
 {
     connect(m_sidebar, &Sidebar::pageSelected, m_stack, &QStackedWidget::setCurrentIndex);
-    connect(m_recordPage, &RecordPage::recentVideosClicked, this, [this] {
-        m_sidebar->selectPage(1);
-        m_stack->setCurrentIndex(1);
-    });
 }
 
 void MainWindow::setupSettingsConnections()
@@ -158,44 +159,48 @@ void MainWindow::setupSettingsConnections()
 
     SettingsPage *settingsPage = m_settingsPage;
     connect(settingsPage, &SettingsPage::frameRateChanged,
-            m_recorder, &RecorderController::setFrameRate);
+            m_recorder, &IRecorderService::setFrameRate);
     connect(settingsPage, &SettingsPage::presetChanged,
-            m_recorder, &RecorderController::setPreset);
+            m_recorder, &IRecorderService::setPreset);
     connect(settingsPage, &SettingsPage::startTimeoutChanged,
-            m_recorder, &RecorderController::setStartTimeout);
+            m_recorder, &IRecorderService::setStartTimeout);
     connect(settingsPage, &SettingsPage::stopTimeoutChanged,
-            m_recorder, &RecorderController::setStopTimeout);
+            m_recorder, &IRecorderService::setStopTimeout);
     connect(settingsPage, &SettingsPage::savePathChanged,
-            m_recorder, &RecorderController::setSavePath);
+            m_recorder, &IRecorderService::setSavePath);
     connect(settingsPage, &SettingsPage::confirmStopChanged,
             m_recordPage, &RecordPage::setConfirmStop);
     connect(settingsPage, &SettingsPage::showCursorChanged,
-            m_recorder, &RecorderController::setShowCursor);
+            m_recorder, &IRecorderService::setShowCursor);
 
     connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
         theme::apply(preference);
         const int resolved = theme::resolve(preference);
         m_darkMode = (resolved == ThemeDark);
-        m_recordPage->setDarkMode(m_darkMode);
-        m_sidebar->setDarkMode(m_darkMode);
-        m_videoLibraryPage->setDarkMode(m_darkMode);
-        rebuildPulseStyles();
-        if (m_recorder->isRecording())
-            m_recordingIndicator->setStyleSheet(m_pulseStyleBright);
+
+    m_recordPage->setDarkMode(m_darkMode);
+    m_sidebar->setDarkMode(m_darkMode);
+    m_videoLibraryPage->setDarkMode(m_darkMode);
+    m_settingsPage->setDarkMode(m_darkMode);
+
+        auto *surface = findChild<SurfaceWidget *>();
+        if (surface) surface->setDarkMode(m_darkMode);
+
+        m_recordingIndicator->setDarkMode(m_darkMode);
+
+        for (auto *btn : findChildren<TitleBarButton *>())
+            btn->setDarkMode(m_darkMode);
 
         const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
-        const QStringList titlePaths = {
-            QStringLiteral(":/icons/title-settings.svg"),
-            QStringLiteral(":/icons/title-minimize.svg"),
-            QStringLiteral(":/icons/title-close.svg")
-        };
-        QList<QPushButton *> titleBtns = { m_settingsButton, m_minimizeButton, m_closeButton };
-        for (int i = 0; i < titleBtns.size() && i < titlePaths.size(); ++i) {
-            titleBtns[i]->setIcon(icon::coloredIcon(titlePaths[i], 20, tc.normal, tc.active, tc.disabled));
-        }
         m_maximizeButton->setIcon(icon::coloredIcon(
             m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
             20, tc.normal, tc.active, tc.disabled));
+
+        if (m_titleLabel) {
+            QPalette tp = m_titleLabel->palette();
+            tp.setColor(QPalette::WindowText, ThemeColors::forMode(m_darkMode).app.titleText);
+            m_titleLabel->setPalette(tp);
+        }
     });
 
     settingsPage->loadSettings();
@@ -213,13 +218,10 @@ void MainWindow::setupRecordConnections()
         m_recordingIndicator->setVisible(recording);
         m_hotkey->setRecordingHotkeysEnabled(recording);
         if (recording) {
-            m_pulseState = false;
-            m_recordingIndicator->setStyleSheet(QString());
-            m_pulseTimer->start(800);
+            m_recordingIndicator->startPulse();
             m_overlay->setHintText(QStringLiteral("Esc 停止录制"));
         } else {
-            m_pulseTimer->stop();
-            m_recordingIndicator->setStyleSheet(QString());
+            m_recordingIndicator->stopPulse();
             m_overlay->hideOverlay();
         }
         m_tray->updateRecordingState(recording);
@@ -294,17 +296,6 @@ void MainWindow::setupTrayConnections()
     connect(m_tray, &TrayManager::quitRequested, qApp, &QApplication::quit);
 }
 
-void MainWindow::setupPulseTimer()
-{
-    m_pulseTimer = new QTimer(this);
-    rebuildPulseStyles();
-    connect(m_pulseTimer, &QTimer::timeout, this, [this] {
-        m_pulseState = !m_pulseState;
-        m_recordingIndicator->setStyleSheet(m_pulseState
-            ? m_pulseStyleBright : m_pulseStyleDim);
-    });
-}
-
 bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
 {
     static const QByteArray kMsgGen = QByteArrayLiteral("windows_generic_MSG");
@@ -371,19 +362,6 @@ void MainWindow::resizeEvent(QResizeEvent *event)
     QWidget::resizeEvent(event);
 }
 
-void MainWindow::rebuildPulseStyles()
-{
-    static const char *kBase = "color: #e0525e; font-size: 13px; font-weight: 800; "
-        "padding: 4px 12px; border-radius: 12px; ";
-    if (m_darkMode) {
-        m_pulseStyleBright = QStringLiteral("%1background: rgba(224,82,94,180); border: 1px solid rgba(224,82,94,220);").arg(kBase);
-        m_pulseStyleDim = QStringLiteral("%1background: rgba(224,82,94,90); border: 1px solid rgba(224,82,94,150);").arg(kBase);
-    } else {
-        m_pulseStyleBright = QStringLiteral("%1background: rgba(224,82,94,56); border: 1px solid rgba(224,82,94,128);").arg(kBase);
-        m_pulseStyleDim = QStringLiteral("%1background: rgba(224,82,94,30); border: 1px solid rgba(224,82,94,76);").arg(kBase);
-    }
-}
-
 void MainWindow::renderShadowCache()
 {
     if (size().isEmpty()) return;
@@ -405,51 +383,60 @@ void MainWindow::renderShadowCache()
 QWidget *MainWindow::createTitleBar()
 {
     m_titleBar = new QWidget(this);
-    m_titleBar->setObjectName(QStringLiteral("titleBar"));
-    m_titleBar->setFixedHeight(56);
+    m_titleBar->setFixedHeight(paint::Metrics::titleBarHeight);
 
     auto *layout = new QHBoxLayout(m_titleBar);
-    layout->setContentsMargins(24, 0, 20, 0);
+    layout->setContentsMargins(20, 0, 20, 0);
     layout->setSpacing(10);
 
     auto *logo = new QLabel(m_titleBar);
-    logo->setObjectName(QStringLiteral("appLogo"));
     logo->setFixedSize(28, 28);
     logo->setAlignment(Qt::AlignCenter);
     logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(28, 28));
 
-    auto *title = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
-    title->setObjectName(QStringLiteral("windowTitle"));
+    m_titleLabel = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
+    QFont titleFont = m_titleLabel->font();
+    titleFont.setPixelSize(18);
+    titleFont.setBold(true);
+    m_titleLabel->setFont(titleFont);
+    {
+        QPalette tp = m_titleLabel->palette();
+        tp.setColor(QPalette::WindowText, ThemeColors::forMode(false).app.titleText);
+        m_titleLabel->setPalette(tp);
+    }
 
-    const auto &tc = ThemeColors::forMode(false).titleBar;
-    m_settingsButton = createWindowButton(QString(), QStringLiteral("设置"));
+    m_settingsButton = new TitleBarButton(QStringLiteral(":/icons/title-settings.svg"),
+                                          QStringLiteral("设置"), false, m_titleBar);
     m_settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
-    m_settingsButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-settings.svg"), 20, tc.normal, tc.active, tc.disabled));
-    m_minimizeButton = createWindowButton(QString(), QStringLiteral("最小化"));
+
+    m_minimizeButton = new TitleBarButton(QStringLiteral(":/icons/title-minimize.svg"),
+                                          QStringLiteral("最小化"), false, m_titleBar);
     m_minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
-    m_minimizeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-minimize.svg"), 20, tc.normal, tc.active, tc.disabled));
-    m_maximizeButton = createWindowButton(QString(), QStringLiteral("最大化"));
+
+    m_maximizeButton = new QPushButton(m_titleBar);
+    m_maximizeButton->setFixedSize(30, 30);
+    m_maximizeButton->setCursor(Qt::PointingHandCursor);
+    m_maximizeButton->setToolTip(QStringLiteral("最大化"));
     m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
-    m_maximizeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-maximize.svg"), 20, tc.normal, tc.active, tc.disabled));
-    m_closeButton = createWindowButton(QString(), QStringLiteral("关闭"), QStringLiteral("closeButton"));
-    m_closeButton->setIcon(icon::coloredIcon(
-        QStringLiteral(":/icons/title-close.svg"), 20, tc.normal, tc.active, tc.disabled));
+    m_maximizeButton->setFlat(true);
+    {
+        const auto &tc = ThemeColors::forMode(false).titleBar;
+        m_maximizeButton->setIcon(icon::coloredIcon(
+            QStringLiteral(":/icons/title-maximize.svg"), 20, tc.normal, tc.active, tc.disabled));
+    }
+
+    m_closeButton = new TitleBarButton(QStringLiteral(":/icons/title-close.svg"),
+                                       QStringLiteral("关闭"), true, m_titleBar);
     m_closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
 
     layout->addWidget(logo);
-    layout->addWidget(title);
+    layout->addWidget(m_titleLabel);
 
-    m_recordingIndicator = new QLabel(QStringLiteral("● 录制中"), this);
-    m_recordingIndicator->setObjectName(QStringLiteral("recordingIndicator"));
-    m_recordingIndicator->setVisible(false);
+    m_recordingIndicator = new RecordingIndicator(this);
     layout->addWidget(m_recordingIndicator);
     layout->addStretch();
 
     layout->addWidget(m_settingsButton);
-    layout->addSpacing(10);
     layout->addWidget(m_minimizeButton);
     layout->addWidget(m_maximizeButton);
     layout->addWidget(m_closeButton);
@@ -467,26 +454,6 @@ QWidget *MainWindow::createTitleBar()
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
     return m_titleBar;
-}
-
-QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString &tooltip)
-{
-    auto *button = new QPushButton(text, this);
-    button->setObjectName(QStringLiteral("titleButton"));
-    button->setFixedSize(30, 30);
-    button->setCursor(Qt::PointingHandCursor);
-    button->setToolTip(tooltip);
-    return button;
-}
-
-QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName)
-{
-    auto *button = createTitleBarButton(QString(), tooltip);
-    if (!objectName.isEmpty())
-        button->setObjectName(objectName);
-    button->setIcon(QIcon(iconPath));
-    button->setIconSize(QSize(20, 20));
-    return button;
 }
 
 void MainWindow::updateMaximizeButton()
@@ -510,17 +477,26 @@ bool MainWindow::inTitleDragArea(const QPoint &position) const
 {
     if (!m_titleBar || !m_titleBar->isVisible())
         return false;
+    QWidget *parent = m_titleBar->parentWidget();
+    if (!parent) return false;
+    QPoint mapped = parent->mapFromGlobal(mapToGlobal(position));
     QRect titleRect = m_titleBar->geometry();
-    if (!titleRect.contains(position))
+    if (!titleRect.contains(mapped))
         return false;
-    if (m_closeButton && m_closeButton->isVisible())
-        return position.x() < m_closeButton->geometry().x();
+    if (m_closeButton && m_closeButton->isVisible()) {
+        QPoint closeBtnTopLeft = parent->mapFromGlobal(
+            m_closeButton->mapToGlobal(QPoint(0, 0)));
+        return mapped.x() < closeBtnTopLeft.x();
+    }
     return true;
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
-    if (window_drag::handlePress(this, m_titleBar, event->pos(), event, m_dragState))
+    QPoint mappedPos = m_titleBar && m_titleBar->parentWidget()
+        ? m_titleBar->parentWidget()->mapFrom(this, event->pos())
+        : event->pos();
+    if (window_drag::handlePress(this, m_titleBar, mappedPos, event, m_dragState))
         return;
     QWidget::mousePressEvent(event);
 }

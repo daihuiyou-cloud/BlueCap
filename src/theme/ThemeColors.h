@@ -1,0 +1,497 @@
+#pragma once
+
+#include <QColor>
+
+struct ThemeIconColors {
+    QColor normal;
+    QColor active;
+    QColor disabled;
+};
+
+struct ThemeAppearance {
+    QColor defaultText;
+    QColor surfaceBg;
+    QColor surfaceBorder;
+
+    QColor titleBarButton;
+    QColor titleBarButtonHover;
+    QColor titleBarButtonHoverBg;
+    QColor titleBarButtonDisabled;
+    QColor closeButtonHoverBg;
+    QColor closeButtonHoverText;
+
+    QColor titleText;
+    QColor pageHeaderText;
+
+    QColor sidebarButtonText;
+    QColor sidebarButtonHoverText;
+    QColor sidebarButtonHoverBg;
+    QColor sidebarButtonCheckedText;
+    QColor sidebarButtonCheckedBg;
+    QColor sidebarButtonDisabledText;
+
+    QColor modeButtonText;
+    QColor modeButtonCheckedText;
+    QColor modeButtonCheckedBg;
+    QColor modeButtonHoverBg;
+    QColor modeButtonDisabledText;
+
+    QColor recordTitleText;
+    QColor recordHotkeyText;
+    QColor recordStatusText;
+
+    QColor pillBorder;
+    QColor pillFill;
+    QColor pillDivider;
+
+    QColor bottomBarBorder;
+    QColor bottomBarBg;
+    QColor bottomNavHoverBg;
+    QColor bottomSeparator;
+    QColor bottomIconText;
+    QColor bottomDetailText;
+    QColor shortcutText;
+    QColor bottomButtonBorder;
+    QColor bottomButtonBg;
+    QColor bottomButtonHoverBg;
+    QColor bottomButtonHoverBorder;
+    QColor bottomButtonPressedBg;
+
+    QColor placeholderTitle;
+    QColor placeholderSubtitle;
+
+    QColor settingsPanelBorder;
+    QColor settingsPanelBg;
+    QColor settingsSectionTitle;
+    QColor settingsSeparator;
+    QColor settingsFormLabel;
+
+    QColor inputBg;
+    QColor inputBorder;
+    QColor inputText;
+    QColor inputHoverBg;
+    QColor inputHoverBorder;
+    QColor inputFocusBg;
+    QColor inputFocusBorder;
+    QColor inputDisabledBg;
+    QColor inputDisabledText;
+    QColor selectionBg;
+    QColor selectionText;
+
+    QColor saveFeedbackSuccessText;
+    QColor saveFeedbackSuccessBg;
+    QColor saveFeedbackFailText;
+    QColor saveFeedbackFailBg;
+
+    QColor actionButtonBg;
+    QColor actionButtonBorder;
+    QColor actionButtonText;
+    QColor actionButtonHoverBg;
+    QColor actionButtonHoverBorder;
+    QColor actionButtonHoverText;
+    QColor actionButtonPressedBg;
+    QColor actionButtonFocusBorder;
+    QColor actionButtonDisabledBg;
+    QColor actionButtonDisabledText;
+
+    QColor stopStatusText;
+
+    QColor dialogSurfaceBg;
+
+    QColor videoSearchBorder;
+    QColor videoSearchBg;
+    QColor videoSearchText;
+    QColor videoSearchHoverBorder;
+    QColor videoSearchHoverBg;
+    QColor videoSearchFocusBorder;
+    QColor videoSearchFocusBg;
+
+    QColor videoListBorder;
+    QColor videoListBg;
+
+    QColor videoItemBorder;
+    QColor videoItemBg;
+    QColor videoItemHoverBorder;
+    QColor videoItemHoverBg;
+    QColor videoItemSelectedBorder;
+    QColor videoItemSelectedBg;
+    QColor videoItemTitleText;
+    QColor videoItemMetaText;
+    QColor videoItemSelectedTitle;
+    QColor videoItemSelectedMeta;
+
+    QColor videoBadgeBorder;
+    QColor videoBadgeBg;
+    QColor videoBadgeText;
+    QColor videoBadgeSelectedBorder;
+    QColor videoBadgeSelectedBg;
+    QColor videoBadgeSelectedText;
+
+    QColor toastBg;
+    QColor toastText;
+
+    QColor qpushBtnBg;
+    QColor qpushBtnBorder;
+    QColor qpushBtnText;
+    QColor qpushBtnHoverBg;
+    QColor qpushBtnPressedBg;
+    QColor qpushBtnDisabledBg;
+    QColor qpushBtnDisabledText;
+
+    QColor progressBg;
+    QColor progressBorder;
+    QColor progressChunkFrom;
+    QColor progressChunkTo;
+
+    QColor menuBg;
+    QColor menuBorder;
+    QColor menuItemText;
+    QColor menuItemSelectedBg;
+    QColor menuItemSelectedText;
+    QColor menuSeparator;
+
+    QColor scrollbarHandle;
+    QColor scrollbarHandleHover;
+    QColor scrollbarHandlePressed;
+
+    QColor checkboxText;
+    QColor checkboxIndicatorBorder;
+    QColor checkboxIndicatorBg;
+    QColor checkboxIndicatorChecked;
+    QColor checkboxIndicatorHoverBorder;
+    QColor checkboxIndicatorDisabledBorder;
+    QColor checkboxIndicatorDisabledBg;
+    QColor checkboxDisabledText;
+
+    QColor tooltipBg;
+    QColor tooltipBorder;
+    QColor tooltipText;
+
+    QColor comboPopupBg;
+    QColor comboPopupBorder;
+    QColor comboPopupSelectionBg;
+    QColor comboPopupSelectionText;
+    QColor comboPopupText;
+
+    QColor spinButtonHoverBg;
+    QColor spinButtonPressedBg;
+};
+
+struct ThemeColors {
+    ThemeIconColors titleBar;
+    ThemeIconColors sidebar;
+    ThemeIconColors modeSwitch;
+    ThemeIconColors bottomBar;
+    ThemeIconColors placeholder;
+    QColor bottomText;
+    ThemeAppearance app;
+
+    static ThemeColors light()
+    {
+        ThemeColors c;
+        c.titleBar = { QColor(88, 102, 124), QColor(56, 70, 92), QColor(188, 196, 210) };
+        c.sidebar = { QColor(100, 117, 141), QColor(68, 82, 104), QColor(184, 196, 212) };
+        c.modeSwitch = { QColor(83, 100, 120), QColor(55, 70, 88), QColor(172, 186, 202) };
+        c.bottomBar = { QColor(96, 112, 134), QColor(64, 80, 100), QColor(180, 192, 210) };
+        c.placeholder = { QColor(138, 155, 178), QColor(114, 130, 156), QColor(192, 202, 218) };
+        c.bottomText = QColor(100, 115, 136);
+        auto &a = c.app;
+        a.defaultText = QColor(23, 32, 51);
+        a.surfaceBg = QColor(244, 248, 255, 242);
+        a.surfaceBorder = QColor(205, 218, 238, 220);
+        a.titleBarButton = QColor(38, 51, 75);
+        a.titleBarButtonHover = QColor(9, 103, 242);
+        a.titleBarButtonHoverBg = QColor(215, 226, 244, 184);
+        a.titleBarButtonDisabled = QColor(160, 170, 184);
+        a.closeButtonHoverBg = QColor(224, 82, 94);
+        a.closeButtonHoverText = QColor(255, 255, 255);
+        a.titleText = QColor(17, 26, 45);
+        a.pageHeaderText = QColor(22, 32, 57);
+        a.sidebarButtonText = QColor(23, 32, 51);
+        a.sidebarButtonHoverText = QColor(9, 103, 242);
+        a.sidebarButtonHoverBg = QColor(232, 242, 255, 194);
+        a.sidebarButtonCheckedText = QColor(9, 103, 242);
+        a.sidebarButtonCheckedBg = QColor(218, 234, 255, 189);
+        a.sidebarButtonDisabledText = QColor(160, 170, 184);
+        a.modeButtonText = QColor(31, 41, 64);
+        a.modeButtonCheckedText = QColor(9, 103, 242);
+        a.modeButtonCheckedBg = QColor(255, 255, 255, 235);
+        a.modeButtonHoverBg = QColor(255, 255, 255, 173);
+        a.modeButtonDisabledText = QColor(160, 170, 184);
+        a.recordTitleText = QColor(22, 32, 57);
+        a.recordHotkeyText = QColor(71, 86, 115);
+        a.recordStatusText = QColor(90, 106, 128);
+        a.pillBorder = QColor(202, 212, 230);
+        a.pillFill = QColor(249, 252, 255, 232);
+        a.pillDivider = QColor(210, 218, 232);
+        a.bottomBarBorder = QColor(204, 216, 235, 230);
+        a.bottomBarBg = QColor(255, 255, 255, 143);
+        a.bottomNavHoverBg = QColor(222, 237, 255, 219);
+        a.bottomSeparator = QColor(207, 216, 232, 153);
+        a.bottomIconText = QColor(83, 97, 122);
+        a.bottomDetailText = QColor(122, 133, 153);
+        a.shortcutText = QColor(83, 97, 122);
+        a.bottomButtonBorder = QColor(190, 204, 226, 230);
+        a.bottomButtonBg = QColor(255, 255, 255, 138);
+        a.bottomButtonHoverBg = QColor(232, 242, 255, 219);
+        a.bottomButtonHoverBorder = QColor(9, 103, 242, 133);
+        a.bottomButtonPressedBg = QColor(222, 237, 255, 245);
+        a.placeholderTitle = QColor(22, 32, 57);
+        a.placeholderSubtitle = QColor(100, 112, 138);
+        a.settingsPanelBorder = QColor(190, 205, 229, 240);
+        a.settingsPanelBg = QColor(255, 255, 255, 189);
+        a.settingsSectionTitle = QColor(22, 32, 57);
+        a.settingsSeparator = QColor(190, 205, 229, 128);
+        a.settingsFormLabel = QColor(72, 88, 115);
+        a.inputBg = QColor(255, 255, 255, 219);
+        a.inputBorder = QColor(176, 194, 222, 250);
+        a.inputText = QColor(24, 35, 58);
+        a.inputHoverBg = QColor(255, 255, 255, 245);
+        a.inputHoverBorder = QColor(120, 154, 204, 250);
+        a.inputFocusBg = QColor(255, 255, 255);
+        a.inputFocusBorder = QColor(9, 103, 242);
+        a.inputDisabledBg = QColor(220, 225, 235, 77);
+        a.inputDisabledText = QColor(160, 170, 184);
+        a.selectionBg = QColor(205, 224, 255);
+        a.selectionText = QColor(23, 32, 51);
+        a.saveFeedbackSuccessText = QColor(40, 150, 92);
+        a.saveFeedbackSuccessBg = QColor(40, 150, 92, 26);
+        a.saveFeedbackFailText = QColor(224, 82, 94);
+        a.saveFeedbackFailBg = QColor(224, 82, 94, 26);
+        a.actionButtonBg = QColor(255, 255, 255, 219);
+        a.actionButtonBorder = QColor(178, 195, 222, 250);
+        a.actionButtonText = QColor(64, 81, 111);
+        a.actionButtonHoverBg = QColor(232, 242, 255, 235);
+        a.actionButtonHoverBorder = QColor(9, 103, 242, 117);
+        a.actionButtonHoverText = QColor(9, 103, 242);
+        a.actionButtonPressedBg = QColor(222, 237, 255, 219);
+        a.actionButtonFocusBorder = QColor(9, 103, 242);
+        a.actionButtonDisabledBg = QColor(220, 225, 235, 77);
+        a.actionButtonDisabledText = QColor(160, 170, 184);
+        a.stopStatusText = QColor(83, 97, 122);
+        a.dialogSurfaceBg = QColor(245, 249, 255, 250);
+        a.videoSearchBorder = QColor(160, 181, 212, 242);
+        a.videoSearchBg = QColor(255, 255, 255, 214);
+        a.videoSearchText = QColor(23, 32, 51);
+        a.videoSearchHoverBorder = QColor(112, 148, 202, 242);
+        a.videoSearchHoverBg = QColor(255, 255, 255, 245);
+        a.videoSearchFocusBorder = QColor(9, 103, 242);
+        a.videoSearchFocusBg = QColor(255, 255, 255);
+        a.videoListBorder = QColor(190, 204, 226, 242);
+        a.videoListBg = QColor(255, 255, 255, 168);
+        a.videoItemBorder = QColor(203, 215, 234, 230);
+        a.videoItemBg = QColor(255, 255, 255, 168);
+        a.videoItemHoverBorder = QColor(159, 181, 215, 250);
+        a.videoItemHoverBg = QColor(247, 251, 255, 245);
+        a.videoItemSelectedBorder = QColor(9, 103, 242, 148);
+        a.videoItemSelectedBg = QColor(224, 238, 255, 250);
+        a.videoItemTitleText = QColor(21, 32, 58);
+        a.videoItemMetaText = QColor(101, 116, 142);
+        a.videoItemSelectedTitle = QColor(7, 63, 145);
+        a.videoItemSelectedMeta = QColor(36, 99, 173);
+        a.videoBadgeBorder = QColor(186, 201, 224, 240);
+        a.videoBadgeBg = QColor(244, 248, 255, 209);
+        a.videoBadgeText = QColor(82, 99, 124);
+        a.videoBadgeSelectedBorder = QColor(9, 103, 242, 102);
+        a.videoBadgeSelectedBg = QColor(255, 255, 255, 184);
+        a.videoBadgeSelectedText = QColor(9, 84, 189);
+        a.toastBg = QColor(26, 38, 56);
+        a.toastText = QColor(255, 255, 255);
+        a.qpushBtnBg = QColor(255, 255, 255, 128);
+        a.qpushBtnBorder = QColor(207, 216, 232, 242);
+        a.qpushBtnText = QColor(31, 41, 64);
+        a.qpushBtnHoverBg = QColor(232, 242, 255, 168);
+        a.qpushBtnPressedBg = QColor(222, 237, 255, 219);
+        a.qpushBtnDisabledBg = QColor(220, 225, 235, 77);
+        a.qpushBtnDisabledText = QColor(160, 170, 184);
+        a.progressBg = QColor(207, 216, 232, 77);
+        a.progressBorder = QColor(207, 216, 232, 153);
+        a.progressChunkFrom = QColor(120, 189, 255);
+        a.progressChunkTo = QColor(7, 92, 224);
+        a.menuBg = QColor(255, 255, 255);
+        a.menuBorder = QColor(207, 216, 232, 242);
+        a.menuItemText = QColor(23, 32, 51);
+        a.menuItemSelectedBg = QColor(222, 237, 255, 219);
+        a.menuItemSelectedText = QColor(9, 103, 242);
+        a.menuSeparator = QColor(207, 216, 232, 153);
+        a.scrollbarHandle = QColor(207, 216, 232, 153);
+        a.scrollbarHandleHover = QColor(180, 190, 210, 204);
+        a.scrollbarHandlePressed = QColor(160, 170, 190, 230);
+        a.checkboxText = QColor(31, 41, 64);
+        a.checkboxIndicatorBorder = QColor(188, 202, 224, 250);
+        a.checkboxIndicatorBg = QColor(255, 255, 255, 194);
+        a.checkboxIndicatorChecked = QColor(9, 103, 242);
+        a.checkboxIndicatorHoverBorder = QColor(9, 103, 242);
+        a.checkboxIndicatorDisabledBorder = QColor(207, 216, 232, 128);
+        a.checkboxIndicatorDisabledBg = QColor(207, 216, 232, 77);
+        a.checkboxDisabledText = QColor(160, 170, 184);
+        a.tooltipBg = QColor(255, 255, 255);
+        a.tooltipBorder = QColor(207, 216, 232, 242);
+        a.tooltipText = QColor(23, 32, 51);
+        a.comboPopupBg = QColor(255, 255, 255);
+        a.comboPopupBorder = QColor(207, 216, 232, 242);
+        a.comboPopupSelectionBg = QColor(222, 237, 255, 219);
+        a.comboPopupSelectionText = QColor(9, 103, 242);
+        a.comboPopupText = QColor(31, 41, 64);
+        a.spinButtonHoverBg = QColor(222, 237, 255, 153);
+        a.spinButtonPressedBg = QColor(222, 237, 255, 219);
+        return c;
+    }
+
+    static ThemeColors dark()
+    {
+        ThemeColors c;
+        c.titleBar = { QColor(198, 206, 218), QColor(230, 235, 244), QColor(112, 126, 148) };
+        c.sidebar = { QColor(179, 190, 206), QColor(210, 218, 230), QColor(102, 118, 140) };
+        c.modeSwitch = { QColor(160, 174, 190), QColor(200, 210, 224), QColor(90, 106, 130) };
+        c.bottomBar = { QColor(175, 186, 202), QColor(205, 214, 226), QColor(98, 112, 136) };
+        c.placeholder = { QColor(132, 154, 184), QColor(152, 172, 200), QColor(80, 100, 130) };
+        c.bottomText = QColor(184, 194, 210);
+        auto &a = c.app;
+        a.defaultText = QColor(182, 192, 206);
+        a.surfaceBg = QColor(28, 34, 45, 247);
+        a.surfaceBorder = QColor(38, 44, 58, 240);
+        a.titleBarButton = QColor(162, 172, 188);
+        a.titleBarButtonHover = QColor(77, 163, 255);
+        a.titleBarButtonHoverBg = QColor(46, 56, 72, 210);
+        a.titleBarButtonDisabled = QColor(86, 96, 116);
+        a.closeButtonHoverBg = QColor(224, 82, 94);
+        a.closeButtonHoverText = QColor(255, 255, 255);
+        a.titleText = QColor(200, 210, 222);
+        a.pageHeaderText = QColor(200, 208, 220);
+        a.sidebarButtonText = QColor(182, 192, 206);
+        a.sidebarButtonHoverText = QColor(77, 163, 255);
+        a.sidebarButtonHoverBg = QColor(47, 58, 76, 200);
+        a.sidebarButtonCheckedText = QColor(77, 163, 255);
+        a.sidebarButtonCheckedBg = QColor(47, 58, 76, 240);
+        a.sidebarButtonDisabledText = QColor(86, 96, 116);
+        a.modeButtonText = QColor(180, 190, 204);
+        a.modeButtonCheckedText = QColor(77, 163, 255);
+        a.modeButtonCheckedBg = QColor(42, 52, 68, 240);
+        a.modeButtonHoverBg = QColor(42, 52, 68, 180);
+        a.modeButtonDisabledText = QColor(86, 96, 116);
+        a.recordTitleText = QColor(200, 208, 220);
+        a.recordHotkeyText = QColor(148, 160, 178);
+        a.recordStatusText = QColor(132, 144, 162);
+        a.pillBorder = QColor(72, 84, 106);
+        a.pillFill = QColor(31, 38, 50, 222);
+        a.pillDivider = QColor(74, 86, 108);
+        a.bottomBarBorder = QColor(60, 72, 92, 230);
+        a.bottomBarBg = QColor(34, 42, 56, 200);
+        a.bottomNavHoverBg = QColor(50, 62, 84, 220);
+        a.bottomSeparator = QColor(60, 72, 94, 180);
+        a.bottomIconText = QColor(160, 172, 190);
+        a.bottomDetailText = QColor(130, 142, 160);
+        a.shortcutText = QColor(160, 172, 190);
+        a.bottomButtonBorder = QColor(72, 86, 108, 230);
+        a.bottomButtonBg = QColor(46, 56, 72, 180);
+        a.bottomButtonHoverBg = QColor(54, 66, 88, 220);
+        a.bottomButtonHoverBorder = QColor(77, 163, 255, 130);
+        a.bottomButtonPressedBg = QColor(58, 72, 94, 240);
+        a.placeholderTitle = QColor(200, 208, 220);
+        a.placeholderSubtitle = QColor(140, 152, 170);
+        a.settingsPanelBorder = QColor(48, 58, 76, 210);
+        a.settingsPanelBg = QColor(24, 30, 42, 232);
+        a.settingsSectionTitle = QColor(214, 222, 234);
+        a.settingsSeparator = QColor(48, 58, 76, 145);
+        a.settingsFormLabel = QColor(142, 154, 174);
+        a.inputBg = QColor(31, 39, 54, 236);
+        a.inputBorder = QColor(55, 66, 86, 230);
+        a.inputText = QColor(216, 224, 236);
+        a.inputHoverBg = QColor(35, 44, 60, 246);
+        a.inputHoverBorder = QColor(72, 88, 116, 235);
+        a.inputFocusBg = QColor(36, 46, 64);
+        a.inputFocusBorder = QColor(77, 163, 255);
+        a.inputDisabledBg = QColor(36, 42, 56, 100);
+        a.inputDisabledText = QColor(86, 96, 116);
+        a.selectionBg = QColor(45, 96, 170);
+        a.selectionText = QColor(232, 238, 248);
+        a.saveFeedbackSuccessText = QColor(72, 200, 120);
+        a.saveFeedbackSuccessBg = QColor(72, 200, 120, 26);
+        a.saveFeedbackFailText = QColor(232, 100, 110);
+        a.saveFeedbackFailBg = QColor(232, 100, 110, 26);
+        a.actionButtonBg = QColor(32, 40, 56, 232);
+        a.actionButtonBorder = QColor(56, 68, 90, 230);
+        a.actionButtonText = QColor(188, 198, 214);
+        a.actionButtonHoverBg = QColor(39, 50, 68, 244);
+        a.actionButtonHoverBorder = QColor(77, 163, 255, 120);
+        a.actionButtonHoverText = QColor(77, 163, 255);
+        a.actionButtonPressedBg = QColor(45, 58, 78, 245);
+        a.actionButtonFocusBorder = QColor(77, 163, 255);
+        a.actionButtonDisabledBg = QColor(36, 42, 56, 100);
+        a.actionButtonDisabledText = QColor(86, 96, 116);
+        a.stopStatusText = QColor(160, 172, 190);
+        a.dialogSurfaceBg = QColor(30, 38, 54, 250);
+        a.videoSearchBorder = QColor(55, 66, 86, 230);
+        a.videoSearchBg = QColor(31, 39, 54, 236);
+        a.videoSearchText = QColor(216, 224, 236);
+        a.videoSearchHoverBorder = QColor(72, 88, 116, 235);
+        a.videoSearchHoverBg = QColor(35, 44, 60, 246);
+        a.videoSearchFocusBorder = QColor(77, 163, 255);
+        a.videoSearchFocusBg = QColor(36, 46, 64);
+        a.videoListBorder = QColor(62, 76, 100, 242);
+        a.videoListBg = QColor(32, 40, 56, 170);
+        a.videoItemBorder = QColor(60, 74, 96, 230);
+        a.videoItemBg = QColor(36, 44, 60, 180);
+        a.videoItemHoverBorder = QColor(74, 90, 118, 250);
+        a.videoItemHoverBg = QColor(42, 52, 70, 245);
+        a.videoItemSelectedBorder = QColor(77, 163, 255, 150);
+        a.videoItemSelectedBg = QColor(46, 60, 82, 250);
+        a.videoItemTitleText = QColor(200, 208, 220);
+        a.videoItemMetaText = QColor(140, 152, 172);
+        a.videoItemSelectedTitle = QColor(130, 200, 255);
+        a.videoItemSelectedMeta = QColor(110, 170, 230);
+        a.videoBadgeBorder = QColor(66, 80, 106, 240);
+        a.videoBadgeBg = QColor(40, 48, 66, 210);
+        a.videoBadgeText = QColor(152, 164, 182);
+        a.videoBadgeSelectedBorder = QColor(77, 163, 255, 100);
+        a.videoBadgeSelectedBg = QColor(50, 60, 80, 180);
+        a.videoBadgeSelectedText = QColor(100, 180, 240);
+        a.toastBg = QColor(26, 38, 56);
+        a.toastText = QColor(255, 255, 255);
+        a.qpushBtnBg = QColor(38, 46, 62, 150);
+        a.qpushBtnBorder = QColor(62, 74, 96, 242);
+        a.qpushBtnText = QColor(182, 192, 206);
+        a.qpushBtnHoverBg = QColor(50, 62, 84, 170);
+        a.qpushBtnPressedBg = QColor(58, 72, 94, 220);
+        a.qpushBtnDisabledBg = QColor(36, 42, 56, 100);
+        a.qpushBtnDisabledText = QColor(86, 96, 116);
+        a.progressBg = QColor(52, 62, 80, 100);
+        a.progressBorder = QColor(56, 68, 88, 160);
+        a.progressChunkFrom = QColor(60, 140, 220);
+        a.progressChunkTo = QColor(30, 80, 170);
+        a.menuBg = QColor(26, 34, 46);
+        a.menuBorder = QColor(62, 74, 96, 242);
+        a.menuItemText = QColor(182, 192, 206);
+        a.menuItemSelectedBg = QColor(50, 62, 84, 220);
+        a.menuItemSelectedText = QColor(77, 163, 255);
+        a.menuSeparator = QColor(62, 74, 96, 180);
+        a.scrollbarHandle = QColor(58, 70, 92, 145);
+        a.scrollbarHandleHover = QColor(72, 86, 112, 205);
+        a.scrollbarHandlePressed = QColor(86, 104, 136, 235);
+        a.checkboxText = QColor(196, 206, 220);
+        a.checkboxIndicatorBorder = QColor(62, 76, 100, 235);
+        a.checkboxIndicatorBg = QColor(32, 40, 56, 226);
+        a.checkboxIndicatorChecked = QColor(77, 163, 255);
+        a.checkboxIndicatorHoverBorder = QColor(77, 163, 255);
+        a.checkboxIndicatorDisabledBorder = QColor(48, 58, 76, 150);
+        a.checkboxIndicatorDisabledBg = QColor(30, 36, 48, 105);
+        a.checkboxDisabledText = QColor(86, 96, 116);
+        a.tooltipBg = QColor(26, 34, 46);
+        a.tooltipBorder = QColor(62, 74, 96, 242);
+        a.tooltipText = QColor(182, 192, 206);
+        a.comboPopupBg = QColor(24, 31, 43);
+        a.comboPopupBorder = QColor(58, 70, 94, 235);
+        a.comboPopupSelectionBg = QColor(39, 52, 74, 235);
+        a.comboPopupSelectionText = QColor(77, 163, 255);
+        a.comboPopupText = QColor(202, 212, 226);
+        a.spinButtonHoverBg = QColor(39, 52, 74, 180);
+        a.spinButtonPressedBg = QColor(45, 58, 82, 220);
+        return c;
+    }
+
+    static ThemeColors forMode(bool darkMode)
+    {
+        return darkMode ? dark() : light();
+    }
+};

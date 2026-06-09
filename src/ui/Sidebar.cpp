@@ -1,40 +1,51 @@
 #include "Sidebar.h"
-#include "IconHelper.h"
-#include "utils/ThemeColors.h"
+#include "paint/PaintMetrics.h"
+#include "utils/IconHelper.h"
+#include "theme/ThemeColors.h"
+#include "widgets/SidebarButton.h"
 
 #include <QButtonGroup>
-#include <QPushButton>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QVBoxLayout>
-
-namespace {
-
-QPushButton *createNavButton(const QString &text, bool checked = false)
-{
-    auto *button = new QPushButton(text);
-    button->setObjectName(QStringLiteral("sidebarButton"));
-    button->setIconSize(QSize(24, 24));
-    button->setCheckable(true);
-    button->setChecked(checked);
-    button->setCursor(Qt::PointingHandCursor);
-    button->setMinimumHeight(64);
-    button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-    return button;
-}
-
-}
 
 Sidebar::Sidebar(QWidget *parent)
     : QWidget(parent)
 {
-    setObjectName(QStringLiteral("sidebar"));
-    setFixedWidth(180);
+    setFixedWidth(paint::Metrics::sidebarWidth);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(20, 16, 16, 20);
-    layout->setSpacing(20);
+    layout->setContentsMargins(20, 18, 20, 20);
+    layout->setSpacing(18);
+
+    auto *brand = new QWidget(this);
+    auto *brandLayout = new QHBoxLayout(brand);
+    brandLayout->setContentsMargins(0, 0, 0, 0);
+    brandLayout->setSpacing(12);
+    auto *logo = new QLabel(brand);
+    logo->setFixedSize(42, 42);
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(42, 42));
+    auto *brandText = new QWidget(brand);
+    auto *brandTextLayout = new QVBoxLayout(brandText);
+    brandTextLayout->setContentsMargins(0, 0, 0, 0);
+    brandTextLayout->setSpacing(1);
+    auto *name = new QLabel(QStringLiteral("BlueCap"), brandText);
+    QFont nameFont = name->font();
+    nameFont.setPixelSize(20);
+    nameFont.setBold(true);
+    name->setFont(nameFont);
+    auto *tag = new QLabel(QStringLiteral("简单 · 高效 · 专业"), brandText);
+    QFont tagFont = tag->font();
+    tagFont.setPixelSize(11);
+    tag->setFont(tagFont);
+    brandTextLayout->addWidget(name);
+    brandTextLayout->addWidget(tag);
+    brandLayout->addWidget(logo);
+    brandLayout->addWidget(brandText, 1);
+    layout->addWidget(brand);
 
     const QStringList paths = {
         QStringLiteral(":/icons/nav-record.svg"),
@@ -53,7 +64,7 @@ Sidebar::Sidebar(QWidget *parent)
     };
 
     for (int i = 0; i < paths.size(); ++i) {
-        auto *button = createNavButton(texts[i], i == 0);
+        auto *button = new SidebarButton(texts[i], i == 0);
         button->setToolTip(tooltips[i]);
         button->setAccessibleName(tooltips[i]);
         m_group->addButton(button, i);
@@ -80,6 +91,18 @@ void Sidebar::selectPage(int index)
 void Sidebar::setDarkMode(bool dark)
 {
     m_darkMode = dark;
+    const auto &a = ThemeColors::forMode(dark).app;
+    const auto labels = findChildren<QLabel *>();
+    for (auto *label : labels) {
+        QPalette p = label->palette();
+        p.setColor(QPalette::WindowText,
+                   label->font().bold() ? a.titleText : a.recordStatusText);
+        label->setPalette(p);
+    }
+    for (auto *btn : m_buttons) {
+        if (auto *sb = qobject_cast<SidebarButton *>(btn))
+            sb->setDarkMode(dark);
+    }
     updateIcons();
 }
 

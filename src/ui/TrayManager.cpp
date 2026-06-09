@@ -41,6 +41,7 @@ TrayManager::~TrayManager()
 {
     if (m_trayIcon)
         m_trayIcon->hide();
+    delete m_trayMenu;
 }
 
 void TrayManager::show()

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "utils/ThemePreference.h"
+#include "theme/ThemePreference.h"
 
+#include <QList>
 #include <QWidget>
 #include <functional>
 
@@ -15,6 +16,8 @@ class QPushButton;
 class QSpinBox;
 class QTimer;
 class ISettingsRepository;
+class SaveFeedbackLabel;
+class ActionButton;
 
 class SettingsPage : public QWidget
 {
@@ -23,6 +26,7 @@ class SettingsPage : public QWidget
 public:
     explicit SettingsPage(ISettingsRepository *settings, QWidget *parent = nullptr);
     void loadSettings();
+    void setDarkMode(bool dark);
 
 signals:
     void frameRateChanged(int fps);
@@ -53,11 +57,13 @@ private:
     QCheckBox *m_showCursorCheck = nullptr;
     QSpinBox *m_startTimeoutSpin = nullptr;
     QSpinBox *m_stopTimeoutSpin = nullptr;
-    QLabel *m_saveFeedback = nullptr;
+    SaveFeedbackLabel *m_saveFeedback = nullptr;
     QTimer *m_feedbackTimer = nullptr;
     QTimer *m_applyDebounce = nullptr;
-    QPushButton *m_resetBtn = nullptr;
+    ActionButton *m_resetBtn = nullptr;
     ISettingsRepository *m_settings = nullptr;
+    QList<QLabel *> m_sectionTitles;
     bool m_resetting = false;
+    bool m_darkMode = false;
     QString m_lastValidPath;
 };

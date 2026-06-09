@@ -2,15 +2,13 @@
 
 #include "RecordMode.h"
 
-#include <QColor>
 #include <QList>
 #include <QWidget>
 
 class QButtonGroup;
-class QToolButton;
+class RecordModeCard;
 
-class ModeSwitch : public QWidget
-{
+class ModeSwitch : public QWidget {
     Q_OBJECT
 
 public:
@@ -23,16 +21,10 @@ public:
 signals:
     void modeChanged(RecordMode mode);
 
-protected:
-    void paintEvent(QPaintEvent *event) override;
-
 private:
-    void updateIcons();
+    void updateCards();
 
     QButtonGroup *m_group = nullptr;
-    QList<QToolButton *> m_buttons;
-    QColor m_pillBorder;
-    QColor m_pillFill;
-    QColor m_dividerColor;
+    QList<RecordModeCard *> m_buttons;
     bool m_darkMode = false;
 };

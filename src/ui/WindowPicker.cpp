@@ -1,16 +1,20 @@
 #include "WindowPicker.h"
 #include "WindowDragHelper.h"
-#include "utils/WindowEnumerator.h"
+#include "theme/ThemeColors.h"
+#include "widgets/ActionButton.h"
+#include "widgets/PaintedLineEdit.h"
+#include "widgets/StyledListWidget.h"
+#include "utils/win32/WindowEnumerator.h"
 
 #include <QAbstractButton>
-#include <QDialogButtonBox>
 #include <QGraphicsDropShadowEffect>
-#include "utils/Win32Icon.h"
+#include "utils/win32/Win32Icon.h"
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
 #include <QTimer>
 #include <QPainter>
+#include <QPainterPath>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
@@ -32,15 +36,12 @@ WindowPicker::WindowPicker(QWidget *parent)
     root->setContentsMargins(14, 14, 14, 14);
 
     m_surface = new QWidget(this);
-    m_surface->setObjectName(QStringLiteral("dialogSurface"));
-    m_surface->setAttribute(Qt::WA_StyledBackground, true);
 
     auto *surfaceLayout = new QVBoxLayout(m_surface);
     surfaceLayout->setSpacing(12);
-    surfaceLayout->setContentsMargins(20, 0, 20, 16);
+    surfaceLayout->setContentsMargins(20, 16, 20, 16);
 
     m_titleBar = new QWidget(m_surface);
-    m_titleBar->setObjectName(QStringLiteral("dialogTitleBar"));
     m_titleBar->setFixedHeight(48);
     auto *titleLayout = new QHBoxLayout(m_titleBar);
     titleLayout->setContentsMargins(0, 0, 0, 0);
@@ -49,7 +50,6 @@ WindowPicker::WindowPicker(QWidget *parent)
     header->setObjectName(QStringLiteral("pageHeader"));
 
     m_closeBtn = new QPushButton(QStringLiteral("✕"), m_titleBar);
-    m_closeBtn->setObjectName(QStringLiteral("closeButton"));
     m_closeBtn->setFixedSize(30, 30);
     m_closeBtn->setCursor(Qt::PointingHandCursor);
     m_closeBtn->setFlat(true);
@@ -61,22 +61,29 @@ WindowPicker::WindowPicker(QWidget *parent)
 
     auto *searchRow = new QHBoxLayout;
     searchRow->setSpacing(8);
-    m_filterEdit = new QLineEdit(m_surface);
+    m_filterEdit = new PaintedLineEdit(m_surface);
     m_filterEdit->setPlaceholderText(QStringLiteral("搜索窗口..."));
     searchRow->addWidget(m_filterEdit, 1);
 
-    m_refreshBtn = new QPushButton(QStringLiteral("刷新"), m_surface);
+    m_refreshBtn = new ActionButton(QStringLiteral("刷新"), ActionButton::Reset, m_surface);
     m_refreshBtn->setCursor(Qt::PointingHandCursor);
     m_refreshBtn->setToolTip(QStringLiteral("重新扫描当前打开的窗口"));
     searchRow->addWidget(m_refreshBtn);
     surfaceLayout->addLayout(searchRow);
 
-    m_list = new QListWidget(m_surface);
+    m_list = new StyledListWidget(m_surface);
     m_list->setIconSize(QSize(24, 24));
     surfaceLayout->addWidget(m_list, 1);
 
-    auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, m_surface);
-    surfaceLayout->addWidget(buttonBox);
+    auto *btnRow = new QWidget(m_surface);
+    auto *btnLayout = new QHBoxLayout(btnRow);
+    btnLayout->setContentsMargins(0, 6, 0, 0);
+    btnLayout->addStretch();
+    m_cancelBtn = new ActionButton(QStringLiteral("取消"), ActionButton::Reset, btnRow);
+    m_okBtn = new ActionButton(QStringLiteral("确定"), ActionButton::Browse, btnRow);
+    btnLayout->addWidget(m_cancelBtn);
+    btnLayout->addWidget(m_okBtn);
+    surfaceLayout->addWidget(btnRow);
 
     root->addWidget(m_surface);
 
@@ -115,8 +122,8 @@ WindowPicker::WindowPicker(QWidget *parent)
     connect(m_refreshBtn, &QPushButton::clicked, this, &WindowPicker::refreshWindows);
 
     connect(m_list, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
-    connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+    connect(m_okBtn, &QPushButton::clicked, this, &QDialog::accept);
+    connect(m_cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 void WindowPicker::refreshWindows()
@@ -129,15 +136,39 @@ void WindowPicker::refreshWindows()
     m_filterEdit->setFocus();
 }
 
+void WindowPicker::setDarkMode(bool dark)
+{
+    m_darkMode = dark;
+    if (auto *edit = qobject_cast<PaintedLineEdit *>(m_filterEdit))
+        edit->setDarkMode(dark);
+    if (auto *button = qobject_cast<ActionButton *>(m_refreshBtn))
+        button->setDarkMode(dark);
+    if (auto *cb = qobject_cast<ActionButton *>(m_cancelBtn))
+        cb->setDarkMode(dark);
+    if (auto *ob = qobject_cast<ActionButton *>(m_okBtn))
+        ob->setDarkMode(dark);
+    if (auto *list = qobject_cast<StyledListWidget *>(m_list))
+        list->setDarkMode(dark);
+    const auto &a = ThemeColors::forMode(dark).app;
+    QPalette p = m_filterEdit->palette();
+    p.setColor(QPalette::Highlight, a.selectionBg);
+    p.setColor(QPalette::HighlightedText, a.selectionText);
+    m_filterEdit->setPalette(p);
+    update();
+}
+
 void WindowPicker::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    // Clip away shadow margin area for the background
+    const auto &a = ThemeColors::forMode(m_darkMode).app;
     const QRectF body = rect().adjusted(14, 14, -14, -14);
-    painter.setClipRect(body);
-    painter.fillRect(body, Qt::transparent);
+    QPainterPath path;
+    path.addRoundedRect(body, 12, 12);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(a.dialogSurfaceBg);
+    painter.drawPath(path);
 }
 
 void WindowPicker::mousePressEvent(QMouseEvent *event)

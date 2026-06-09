@@ -48,7 +48,7 @@ LRESULT CALLBACK HotkeyManager::keyboardHookProc(int nCode, WPARAM wParam, LPARA
                 if (s_instance && s_instance->m_recordingHotkeysEnabled)
                     emit s_instance->escapePressed();
             }, Qt::QueuedConnection);
-            return 1;
+            return CallNextHookEx(nullptr, nCode, wParam, lParam);
         }
     }
     return CallNextHookEx(nullptr, nCode, wParam, lParam);

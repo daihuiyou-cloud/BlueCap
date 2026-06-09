@@ -17,11 +17,17 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
+    void enterEvent(QEvent *event) override;
+    void leaveEvent(QEvent *event) override;
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
 
 private:
     void renderCache();
 
     bool m_recording = false;
     bool m_darkMode = false;
+    bool m_hovered = false;
+    bool m_pressed = false;
     QPixmap m_bgCache;
 };

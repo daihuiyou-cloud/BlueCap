@@ -4,6 +4,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QIcon>
+#include <QLabel>
 #include <QWidget>
 
 class QLabel;
@@ -12,15 +13,17 @@ class QPushButton;
 class QStackedWidget;
 class QTimer;
 class HotkeyManager;
+class IRecorderService;
 class ISettingsRepository;
+class IVideoLibrary;
 class RecordPage;
-class RecorderController;
 class RecordingOverlay;
 class SettingsPage;
 class Sidebar;
 class TrayManager;
-class VideoLibrary;
 class VideoLibraryPage;
+class TitleBarButton;
+class RecordingIndicator;
 
 class MainWindow : public QWidget, public QAbstractNativeEventFilter
 {
@@ -44,8 +47,6 @@ protected:
 
 private:
     QWidget *createTitleBar();
-    QPushButton *createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName = {});
-    QPushButton *createTitleBarButton(const QString &text, const QString &tooltip);
     void updateMaximizeButton();
     bool inTitleDragArea(const QPoint &position) const;
 
@@ -55,15 +56,13 @@ private:
     void setupRecordConnections();
     void setupToggleRecord();
     void setupTrayConnections();
-    void setupPulseTimer();
     void renderShadowCache();
-    void rebuildPulseStyles();
 
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
     ISettingsRepository *m_settings = nullptr;
-    RecorderController *m_recorder = nullptr;
-    VideoLibrary *m_library = nullptr;
+    IRecorderService *m_recorder = nullptr;
+    IVideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;
     VideoLibraryPage *m_videoLibraryPage = nullptr;
     SettingsPage *m_settingsPage = nullptr;
@@ -72,11 +71,12 @@ private:
     HotkeyManager *m_hotkey = nullptr;
 
     QWidget *m_titleBar = nullptr;
-    QPushButton *m_settingsButton = nullptr;
-    QPushButton *m_minimizeButton = nullptr;
+    QLabel *m_titleLabel = nullptr;
+    TitleBarButton *m_settingsButton = nullptr;
+    TitleBarButton *m_minimizeButton = nullptr;
     QPushButton *m_maximizeButton = nullptr;
-    QPushButton *m_closeButton = nullptr;
-    QLabel *m_recordingIndicator = nullptr;
+    TitleBarButton *m_closeButton = nullptr;
+    RecordingIndicator *m_recordingIndicator = nullptr;
 
     window_drag::State m_dragState;
     bool m_maximized = false;
@@ -85,10 +85,7 @@ private:
     QPixmap m_shadowCache;
     QTimer *m_shadowDebounce = nullptr;
 
-    QTimer *m_pulseTimer = nullptr;
-    bool m_pulseState = false;
-    QString m_pulseStyleBright;
-    QString m_pulseStyleDim;
+
 
     static constexpr int kResizeBorder = 5;
 };

@@ -1,6 +1,7 @@
 #include "RecordPageBottomBar.h"
-#include "IconHelper.h"
-#include "utils/ThemeColors.h"
+#include "utils/IconHelper.h"
+#include "theme/ThemeColors.h"
+#include "widgets/BottomNavSection.h"
 
 #include <QEvent>
 #include <QHBoxLayout>
@@ -10,49 +11,51 @@
 #include <QVBoxLayout>
 
 RecordPageBottomBar::RecordPageBottomBar(QWidget *parent)
-    : QFrame(parent)
+    : BottomBar(parent)
 {
-    setObjectName(QStringLiteral("bottomBar"));
     setMinimumHeight(74);
 
     auto *bottomLayout = new QHBoxLayout(this);
     bottomLayout->setContentsMargins(0, 0, 0, 0);
     bottomLayout->setSpacing(0);
 
-    m_bottomNavSection = new QFrame(this);
-    m_bottomNavSection->setObjectName(QStringLiteral("bottomNavSection"));
-    m_bottomNavSection->setCursor(Qt::PointingHandCursor);
+    m_bottomNavSection = new BottomNavSection(this);
     m_bottomNavSection->setToolTip(QStringLiteral("点击查看全部录制视频"));
     auto *navLayout = new QHBoxLayout(m_bottomNavSection);
     navLayout->setContentsMargins(30, 0, 20, 0);
     navLayout->setSpacing(15);
 
     m_recentIcon = new QLabel(m_bottomNavSection);
-    m_recentIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_recentIcon->setPixmap(icon::renderSvg(
         QStringLiteral(":/icons/clock.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
 
-    auto *recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
-    recentTitle->setObjectName(QStringLiteral("bottomTitle"));
+    m_recentTitle = new QLabel(QStringLiteral("最近视频"), m_bottomNavSection);
+    QFont titleFont = m_recentTitle->font();
+    titleFont.setPixelSize(16);
+    titleFont.setBold(true);
+    m_recentTitle->setFont(titleFont);
+    m_recentTitle->setPalette([&]() {
+        QPalette p; p.setColor(QPalette::WindowText, ThemeColors::forMode(false).app.bottomIconText); return p; }());
 
     m_recentDetailLabel = new QLabel(m_bottomNavSection);
-    m_recentDetailLabel->setObjectName(QStringLiteral("bottomDetail"));
     m_recentDetailLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+    QFont detailFont = m_recentDetailLabel->font();
+    detailFont.setPixelSize(12);
+    m_recentDetailLabel->setFont(detailFont);
 
     auto *recentTextLayout = new QVBoxLayout;
     recentTextLayout->setContentsMargins(0, 0, 0, 0);
     recentTextLayout->setSpacing(2);
-    recentTextLayout->addWidget(recentTitle);
+    recentTextLayout->addWidget(m_recentTitle);
     recentTextLayout->addWidget(m_recentDetailLabel);
 
     navLayout->addWidget(m_recentIcon);
     navLayout->addLayout(recentTextLayout, 1);
     navLayout->addSpacing(4);
 
-    auto *separator = new QFrame(this);
-    separator->setObjectName(QStringLiteral("bottomSeparator"));
-    separator->setFixedWidth(1);
-    separator->setFixedHeight(36);
+    m_separator = new QFrame(this);
+    m_separator->setFixedWidth(1);
+    m_separator->setFixedHeight(36);
 
     auto *rightSection = new QWidget(this);
     auto *rightLayout = new QHBoxLayout(rightSection);
@@ -60,16 +63,19 @@ RecordPageBottomBar::RecordPageBottomBar(QWidget *parent)
     rightLayout->setSpacing(15);
 
     m_keyboardIcon = new QLabel(rightSection);
-    m_keyboardIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_keyboardIcon->setPixmap(icon::renderSvg(
         QStringLiteral(":/icons/keyboard.svg"), ThemeColors::forMode(false).bottomBar.normal, 24));
 
-    auto *shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
-    shortcutLabel->setObjectName(QStringLiteral("shortcutText"));
+    m_shortcutLabel = new QLabel(QStringLiteral("Ctrl + Shift + R"), rightSection);
+    QFont shortcutFont = m_shortcutLabel->font();
+    shortcutFont.setPixelSize(16);
+    shortcutFont.setBold(true);
+    m_shortcutLabel->setFont(shortcutFont);
+    m_shortcutLabel->setPalette([&]() {
+        QPalette p; p.setColor(QPalette::WindowText, ThemeColors::forMode(false).app.shortcutText); return p; }());
 
     const auto &bc = ThemeColors::forMode(false).bottomBar;
     m_openFolderIcon = new QPushButton(rightSection);
-    m_openFolderIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_openFolderIcon->setIcon(icon::coloredIcon(
         QStringLiteral(":/icons/folder.svg"), 20, bc.normal, bc.active, bc.disabled));
     m_openFolderIcon->setIconSize(QSize(20, 20));
@@ -77,20 +83,20 @@ RecordPageBottomBar::RecordPageBottomBar(QWidget *parent)
     m_openFolderIcon->setCursor(Qt::PointingHandCursor);
     m_openFolderIcon->setToolTip(QStringLiteral("打开保存文件夹"));
     m_openFolderIcon->setFlat(true);
+    m_openFolderIcon->setProperty("bluecapRole", QStringLiteral("bottomIcon"));
 
     m_chevronIcon = new QLabel(this);
-    m_chevronIcon->setObjectName(QStringLiteral("bottomIcon"));
     m_chevronIcon->setPixmap(icon::renderSvg(
         QStringLiteral(":/icons/chevron-right.svg"), ThemeColors::forMode(false).bottomBar.normal, 20));
 
     rightLayout->addWidget(m_keyboardIcon);
-    rightLayout->addWidget(shortcutLabel);
+    rightLayout->addWidget(m_shortcutLabel);
     rightLayout->addWidget(m_openFolderIcon);
     rightLayout->addSpacing(4);
     rightLayout->addWidget(m_chevronIcon);
 
     bottomLayout->addWidget(m_bottomNavSection, 1);
-    bottomLayout->addWidget(separator);
+    bottomLayout->addWidget(m_separator);
     bottomLayout->addWidget(rightSection);
 
     m_bottomNavSection->installEventFilter(this);
@@ -106,7 +112,27 @@ void RecordPageBottomBar::setRecentVideoDetail(const QString &text)
 void RecordPageBottomBar::setDarkMode(bool dark)
 {
     m_darkMode = dark;
+    BottomBar::setDarkMode(dark);
     updateIcons();
+    if (m_bottomNavSection)
+        m_bottomNavSection->setDarkMode(dark);
+    const auto &a = ThemeColors::forMode(dark).app;
+    if (m_separator) {
+        QPalette sp = m_separator->palette();
+        sp.setColor(QPalette::Window, a.bottomSeparator);
+        m_separator->setPalette(sp);
+        m_separator->setAutoFillBackground(true);
+    }
+    if (m_recentTitle) {
+        QPalette p;
+        p.setColor(QPalette::WindowText, a.bottomIconText);
+        m_recentTitle->setPalette(p);
+    }
+    if (m_shortcutLabel) {
+        QPalette p;
+        p.setColor(QPalette::WindowText, a.shortcutText);
+        m_shortcutLabel->setPalette(p);
+    }
 }
 
 void RecordPageBottomBar::updateIcons()
