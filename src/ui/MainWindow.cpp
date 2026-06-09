@@ -48,6 +48,19 @@ MainWindow::MainWindow(QWidget *parent)
     QSettings geo;
     if (geo.contains(QStringLiteral("window/geometry"))) {
         restoreGeometry(geo.value(QStringLiteral("window/geometry")).toByteArray());
+        QRect winGeo = frameGeometry();
+        bool onScreen = false;
+        for (auto *s : QGuiApplication::screens()) {
+            if (s->geometry().intersects(winGeo)) {
+                onScreen = true;
+                break;
+            }
+        }
+        if (!onScreen) {
+            QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
+            resize(960, 600);
+            move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
+        }
     } else {
         QRect screen = QGuiApplication::primaryScreen()->availableGeometry();
         move((screen.width() - width()) / 2, (screen.height() - height()) / 2);
@@ -162,10 +175,8 @@ void MainWindow::setupConnections()
 
     connect(m_recorder, &RecorderController::recordingAreaChanged, this,
         [this](const QRect &area, RecordMode mode) {
-            if (mode == RecordMode::FullScreen)
-                m_overlay->showForFullscreen();
-            else
-                m_overlay->showForRegion(area);
+            Q_UNUSED(mode);
+            m_overlay->showForRegion(area);
         });
 
     connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {

@@ -109,6 +109,7 @@ WindowPicker::WindowPicker(QWidget *parent)
         m_filterPending = text;
         m_filterDebounce->start();
     });
+    connect(m_filterEdit, &QLineEdit::returnPressed, this, &QDialog::accept);
 
     connect(m_refreshBtn, &QPushButton::clicked, this, &WindowPicker::refreshWindows);
 
@@ -172,10 +173,6 @@ void WindowPicker::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Escape) {
         reject();
-        return;
-    }
-    if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-        accept();
         return;
     }
     QDialog::keyPressEvent(event);

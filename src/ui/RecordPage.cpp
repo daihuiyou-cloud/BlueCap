@@ -10,11 +10,14 @@
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
 
+#include <QComboBox>
+#include <QCursor>
 #include <QDesktopServices>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFileInfo>
 #include <QFrame>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -22,6 +25,7 @@
 #include <QMouseEvent>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScreen>
 #include <QShortcut>
 #include <QSizePolicy>
 #include <QUrl>
@@ -66,8 +70,17 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     connect(m_modeSwitch, &ModeSwitch::modeChanged, this, [this](RecordMode mode) {
         if (!m_recorder->isRecording()) {
             updateStatusForMode(mode);
+            updateScreenCombo();
         }
     });
+
+    m_screenCombo = new QComboBox(this);
+    m_screenCombo->setObjectName(QStringLiteral("screenCombo"));
+    m_screenCombo->setVisible(false);
+    m_screenCombo->setFixedHeight(32);
+    m_screenCombo->setMinimumWidth(280);
+    root->addWidget(m_screenCombo, 0, Qt::AlignHCenter);
+    root->addSpacing(10);
 
     m_recordButton = new RecordButton(this);
     root->addWidget(m_recordButton, 0, Qt::AlignHCenter);
@@ -285,11 +298,42 @@ void RecordPage::setDarkMode(bool dark)
     update();
 }
 
+void RecordPage::updateScreenCombo()
+{
+    m_screenCombo->clear();
+    const auto screens = QGuiApplication::screens();
+    if (screens.size() < 2 || m_modeSwitch->currentMode() != RecordMode::FullScreen) {
+        m_screenCombo->setVisible(false);
+        return;
+    }
+    m_screenCombo->setVisible(true);
+    int selectedIdx = 0;
+    QScreen *activeScreen = QGuiApplication::screenAt(QCursor::pos());
+    for (int i = 0; i < screens.size(); ++i) {
+        QRect g = screens[i]->geometry();
+        m_screenCombo->addItem(QStringLiteral("屏幕 %1 (%2x%3)").arg(i + 1).arg(g.width()).arg(g.height()));
+        if (screens[i] == activeScreen)
+            selectedIdx = i;
+    }
+    m_screenCombo->setCurrentIndex(selectedIdx);
+}
+
+QScreen *RecordPage::selectedScreen() const
+{
+    if (!m_screenCombo->isVisible())
+        return nullptr;
+    const auto screens = QGuiApplication::screens();
+    int idx = m_screenCombo->currentIndex();
+    if (idx >= 0 && idx < screens.size())
+        return screens[idx];
+    return nullptr;
+}
+
 void RecordPage::startQuickRecording()
 {
     if (m_recorder->isRecording()) return;
     if (m_countdownTimer->isActive()) return;
-    m_recorder->startFullScreenRecording();
+    m_recorder->startFullScreenRecording(nullptr);
 }
 
 void RecordPage::toggleRecording()
@@ -347,11 +391,11 @@ void RecordPage::toggleRecording()
 
 void RecordPage::doStartRecording()
 {
-    m_recordButton->setEnabled(true);
+    m_recordButton->setEnabled(false);
     m_statusLabel->setText(QStringLiteral("正在启动录制程序..."));
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
-        m_recorder->startFullScreenRecording();
+        m_recorder->startFullScreenRecording(selectedScreen());
         break;
     case RecordMode::Region:
         startRegionSelection();

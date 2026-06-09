@@ -12,6 +12,9 @@ public:
 
     QStringList recentVideos() const;
 
+    void scanDirectory(const QString &dir);
+    void removeNonExistent();
+
 public slots:
     void addRecentVideo(const QString &path);
     void clearAndReplace(const QStringList &videos);

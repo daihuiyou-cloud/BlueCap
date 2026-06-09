@@ -27,6 +27,7 @@
 #include <QPainterPath>
 #include <QProcess>
 #include <QPushButton>
+#include <QSettings>
 #include <QStackedWidget>
 #include <QStandardPaths>
 #include <QStyle>
@@ -239,6 +240,11 @@ VideoLibraryPage::VideoLibraryPage(VideoLibrary *library, QWidget *parent)
     connect(m_list, &QListWidget::customContextMenuRequested, this, &VideoLibraryPage::showContextMenu);
     connect(m_library, &VideoLibrary::recentVideosChanged, this, &VideoLibraryPage::refreshList);
 
+    QSettings settings;
+    QString savePath = settings.value(QStringLiteral("settings/savePath")).toString();
+    if (savePath.isEmpty())
+        savePath = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap");
+    m_library->scanDirectory(savePath);
     refreshList(m_library->recentVideos());
 }
 

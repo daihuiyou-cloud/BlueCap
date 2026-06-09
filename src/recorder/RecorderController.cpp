@@ -10,7 +10,6 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QMap>
-#include <QPointer>
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
@@ -102,35 +101,37 @@ RecorderController::RecorderController(QObject *parent)
     m_stderrMonitor->setInterval(5000);
     connect(m_stderrMonitor, &QTimer::timeout, this, &RecorderController::monitorStderr);
 
-    QTimer::singleShot(0, this, &RecorderController::detectHardwareEncoder);
+    detectHardwareEncoder();
 }
 
-void RecorderController::onEncoderFinished()
+void RecorderController::detectHardwareEncoder()
 {
-    if (!m_encoderProbe) return;
-    const QString output = QString::fromUtf8(m_encoderProbe->readAllStandardOutput());
-    if (output.contains(QStringLiteral("h264_mf")))
-        m_encoder = QStringLiteral("h264_mf");
-    else if (output.contains(QStringLiteral("h264_nvenc")))
-        m_encoder = QStringLiteral("h264_nvenc");
-    else if (output.contains(QStringLiteral("h264_amf")))
-        m_encoder = QStringLiteral("h264_amf");
-    else if (output.contains(QStringLiteral("h264_qsv")))
-        m_encoder = QStringLiteral("h264_qsv");
-    else
+    const QString ffmpeg = resolveFfmpegPath();
+    if (!QFileInfo::exists(ffmpeg)) {
         m_encoder = QStringLiteral("libx264");
-    m_encoderDetected = true;
-    m_encoderProbe->deleteLater();
-    m_encoderProbe = nullptr;
-}
+        m_encoderDetected = true;
+        return;
+    }
 
-void RecorderController::onEncoderError()
-{
-    if (!m_encoderProbe) return;
-    m_encoder = QStringLiteral("libx264");
+    QProcess probe;
+    probe.setProcessChannelMode(QProcess::MergedChannels);
+    probe.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+    if (probe.waitForFinished(5000) && probe.exitCode() == 0) {
+        const QString output = QString::fromUtf8(probe.readAllStandardOutput());
+        if (output.contains(QStringLiteral("h264_mf")))
+            m_encoder = QStringLiteral("h264_mf");
+        else if (output.contains(QStringLiteral("h264_nvenc")))
+            m_encoder = QStringLiteral("h264_nvenc");
+        else if (output.contains(QStringLiteral("h264_amf")))
+            m_encoder = QStringLiteral("h264_amf");
+        else if (output.contains(QStringLiteral("h264_qsv")))
+            m_encoder = QStringLiteral("h264_qsv");
+        else
+            m_encoder = QStringLiteral("libx264");
+    } else {
+        m_encoder = QStringLiteral("libx264");
+    }
     m_encoderDetected = true;
-    m_encoderProbe->deleteLater();
-    m_encoderProbe = nullptr;
 }
 
 RecorderController::State RecorderController::state() const
@@ -262,11 +263,6 @@ void RecorderController::startCapture(const QString &inputSpec,
         return;
     }
 
-    if (!m_encoderDetected) {
-        m_encoder = QStringLiteral("libx264");
-        m_encoderDetected = true;
-    }
-
     QStringList args = {
         QStringLiteral("-y"),
         QStringLiteral("-f"), QStringLiteral("gdigrab"),
@@ -286,11 +282,26 @@ void RecorderController::startCapture(const QString &inputSpec,
     start(args);
 }
 
-void RecorderController::startFullScreenRecording()
+void RecorderController::startFullScreenRecording(QScreen *screen)
 {
-    QScreen *screen = QGuiApplication::primaryScreen();
-    emit recordingAreaChanged(screen->geometry(), RecordMode::FullScreen);
-    startCapture(QStringLiteral("desktop"));
+    if (!screen)
+        screen = QGuiApplication::primaryScreen();
+    QRect geo = screen->geometry();
+    qreal dpr = screen->devicePixelRatio();
+    int physX = qRound(geo.x() * dpr);
+    int physY = qRound(geo.y() * dpr);
+    int physW = qRound(geo.width() * dpr);
+    int physH = qRound(geo.height() * dpr);
+    if (physW < 2) physW = 2;
+    if (physH < 2) physH = 2;
+    physW &= ~1;
+    physH &= ~1;
+    emit recordingAreaChanged(geo, RecordMode::FullScreen);
+    startCapture(QStringLiteral("desktop"), {}, {
+        QStringLiteral("-offset_x"), QString::number(physX),
+        QStringLiteral("-offset_y"), QString::number(physY),
+        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(physW).arg(physH),
+    });
 }
 
 void RecorderController::startRegionRecording(const QRect &region)
@@ -493,33 +504,6 @@ void RecorderController::monitorStderr()
             emit recordingWarning(wp.message);
         }
     }
-}
-
-void RecorderController::detectHardwareEncoder()
-{
-    const QString ffmpeg = resolveFfmpegPath();
-    if (!QFileInfo::exists(ffmpeg)) {
-        m_encoder = QStringLiteral("libx264");
-        m_encoderDetected = true;
-        return;
-    }
-
-    m_encoderProbe = new QProcess(this);
-    m_encoderProbe->setProcessChannelMode(QProcess::MergedChannels);
-
-    connect(m_encoderProbe, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
-            this, &RecorderController::onEncoderFinished);
-    connect(m_encoderProbe, &QProcess::errorOccurred,
-            this, &RecorderController::onEncoderError);
-
-    m_encoderProbe->start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
-
-    QPointer<QProcess> guard(m_encoderProbe);
-    QTimer::singleShot(5000, this, [this, guard] {
-        if (guard && guard->state() != QProcess::NotRunning) {
-            guard->kill();
-        }
-    });
 }
 
 QString RecorderController::resolveFfmpegPath()

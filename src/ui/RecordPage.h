@@ -4,10 +4,12 @@
 
 #include <QElapsedTimer>
 #include <QWidget>
+class QComboBox;
 class QFrame;
 class QLabel;
 class QProgressBar;
 class QPushButton;
+class QScreen;
 class QTimer;
 class QVBoxLayout;
 class ModeSwitch;
@@ -50,9 +52,12 @@ private:
     void startRegionSelection();
     void pickWindow();
     void updateStatusForMode(RecordMode mode);
+    void updateScreenCombo();
     void setupBottomBar(QVBoxLayout *root);
+    QScreen *selectedScreen() const;
 
     ModeSwitch *m_modeSwitch = nullptr;
+    QComboBox *m_screenCombo = nullptr;
     RecordButton *m_recordButton = nullptr;
     QLabel *m_titleLabel = nullptr;
     QLabel *m_countdownLabel = nullptr;

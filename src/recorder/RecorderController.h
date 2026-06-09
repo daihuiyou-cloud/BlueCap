@@ -14,6 +14,7 @@
 #include <QString>
 #include <QStringList>
 
+class QScreen;
 class QTimer;
 
 class RecorderController : public QObject
@@ -44,7 +45,7 @@ public:
     static QList<WindowEntry> enumerateWindows();
 
 public slots:
-    void startFullScreenRecording();
+    void startFullScreenRecording(QScreen *screen = nullptr);
     void startRegionRecording(const QRect &region);
     void startWindowRecording(const QString &windowTitle);
     void stopRecording();
@@ -99,8 +100,4 @@ private:
     QStringList m_reportedWarnings;
 
     void detectHardwareEncoder();
-    void onEncoderFinished();
-    void onEncoderError();
-
-    QProcess *m_encoderProbe = nullptr;
 };

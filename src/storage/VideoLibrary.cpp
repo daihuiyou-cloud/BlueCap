@@ -1,9 +1,11 @@
 #include "VideoLibrary.h"
 
+#include <QDir>
+#include <QFileInfo>
 #include <QSettings>
 
 namespace {
-constexpr int kMaxRecentVideos = 8;
+constexpr int kMaxRecentVideos = 500;
 const QLatin1String kLibraryPrefix("library/");
 }
 
@@ -29,6 +31,46 @@ void VideoLibrary::addRecentVideo(const QString &path)
 
     save(m_cache);
     emit recentVideosChanged(m_cache);
+}
+
+void VideoLibrary::scanDirectory(const QString &dir)
+{
+    QDir d(dir);
+    if (!d.exists())
+        return;
+
+    QStringList found;
+    for (const auto &fi : d.entryInfoList({ QStringLiteral("*.mp4") }, QDir::Files, QDir::Time)) {
+        found.append(fi.absoluteFilePath());
+    }
+
+    for (const auto &path : m_cache) {
+        if (!found.contains(path) && QFileInfo::exists(path))
+            found.append(path);
+    }
+
+    if (found != m_cache) {
+        m_cache = found;
+        while (m_cache.size() > kMaxRecentVideos)
+            m_cache.removeLast();
+        save(m_cache);
+        emit recentVideosChanged(m_cache);
+    }
+}
+
+void VideoLibrary::removeNonExistent()
+{
+    int removed = 0;
+    for (int i = m_cache.size() - 1; i >= 0; --i) {
+        if (!QFileInfo::exists(m_cache[i])) {
+            m_cache.removeAt(i);
+            ++removed;
+        }
+    }
+    if (removed > 0) {
+        save(m_cache);
+        emit recentVideosChanged(m_cache);
+    }
 }
 
 void VideoLibrary::clearAndReplace(const QStringList &videos)
