@@ -3,9 +3,12 @@
 #include "utils/Theme.h"
 
 #include <QWidget>
+#include <functional>
 
 class QCheckBox;
 class QComboBox;
+class QEvent;
+class QFrame;
 class QLabel;
 class QLineEdit;
 class QPushButton;
@@ -18,6 +21,7 @@ class SettingsPage : public QWidget
 
 public:
     explicit SettingsPage(QWidget *parent = nullptr);
+    void loadSettings();
 
 signals:
     void frameRateChanged(int fps);
@@ -33,12 +37,13 @@ private slots:
     void browsePath();
     void applySettings(bool showFeedback = false);
     void resetDefaults();
-    void showPathError(const QString &msg);
-
-public:
-    void loadSettings();
 
 private:
+    void blockSignalsAll(bool block);
+    QFrame *createSection(const QString &title, QWidget *form);
+
+    bool eventFilter(QObject *watched, QEvent *event) override;
+
     QLineEdit *m_pathEdit = nullptr;
     QSpinBox *m_fpsSpin = nullptr;
     QComboBox *m_qualityCombo = nullptr;
