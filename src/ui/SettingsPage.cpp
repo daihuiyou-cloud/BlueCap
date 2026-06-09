@@ -15,6 +15,10 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+namespace {
+const QLatin1String kSettingsPrefix("settings/");
+}
+
 SettingsPage::SettingsPage(QWidget *parent)
     : QWidget(parent)
 {
@@ -150,24 +154,24 @@ void SettingsPage::loadSettings()
     m_startTimeoutSpin->blockSignals(true);
     m_stopTimeoutSpin->blockSignals(true);
 
-    m_lastValidPath = s.value(QStringLiteral("settings/savePath"),
+    m_lastValidPath = s.value(kSettingsPrefix + QLatin1String("savePath"),
         QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap")).toString();
     m_pathEdit->setText(m_lastValidPath);
 
-    m_fpsSpin->setValue(s.value(QStringLiteral("settings/frameRate"), 30).toInt());
+    m_fpsSpin->setValue(s.value(kSettingsPrefix + QLatin1String("frameRate"), 30).toInt());
 
     const QString savedPreset = s.value(
-        QStringLiteral("settings/preset"), QStringLiteral("fast")).toString();
+        kSettingsPrefix + QLatin1String("preset"), QStringLiteral("fast")).toString();
     int idx = m_qualityCombo->findData(savedPreset);
     if (idx >= 0) m_qualityCombo->setCurrentIndex(idx);
 
-    int themeIdx = m_themeCombo->findData(s.value(QStringLiteral("settings/theme"), ThemeSystem).toInt());
+    int themeIdx = m_themeCombo->findData(s.value(kSettingsPrefix + QLatin1String("theme"), ThemeSystem).toInt());
     if (themeIdx >= 0) m_themeCombo->setCurrentIndex(themeIdx);
 
-    m_confirmStopCheck->setChecked(s.value(QStringLiteral("settings/confirmStop"), false).toBool());
-    m_showCursorCheck->setChecked(s.value(QStringLiteral("settings/showCursor"), true).toBool());
-    m_startTimeoutSpin->setValue(s.value(QStringLiteral("settings/startTimeout"), 5).toInt());
-    m_stopTimeoutSpin->setValue(s.value(QStringLiteral("settings/stopTimeout"), 5).toInt());
+    m_confirmStopCheck->setChecked(s.value(kSettingsPrefix + QLatin1String("confirmStop"), false).toBool());
+    m_showCursorCheck->setChecked(s.value(kSettingsPrefix + QLatin1String("showCursor"), true).toBool());
+    m_startTimeoutSpin->setValue(s.value(kSettingsPrefix + QLatin1String("startTimeout"), 5).toInt());
+    m_stopTimeoutSpin->setValue(s.value(kSettingsPrefix + QLatin1String("stopTimeout"), 5).toInt());
 
     m_pathEdit->blockSignals(false);
     m_fpsSpin->blockSignals(false);
@@ -220,13 +224,13 @@ void SettingsPage::applySettings(bool showFeedback)
     QSettings settings;
 
     // Always save non-path settings
-    settings.setValue(QStringLiteral("settings/frameRate"), m_fpsSpin->value());
-    settings.setValue(QStringLiteral("settings/preset"), m_qualityCombo->currentData().toString());
-    settings.setValue(QStringLiteral("settings/confirmStop"), m_confirmStopCheck->isChecked());
-    settings.setValue(QStringLiteral("settings/showCursor"), m_showCursorCheck->isChecked());
-    settings.setValue(QStringLiteral("settings/startTimeout"), m_startTimeoutSpin->value());
-    settings.setValue(QStringLiteral("settings/stopTimeout"), m_stopTimeoutSpin->value());
-    settings.setValue(QStringLiteral("settings/theme"), m_themeCombo->currentData().toInt());
+    settings.setValue(kSettingsPrefix + QLatin1String("frameRate"), m_fpsSpin->value());
+    settings.setValue(kSettingsPrefix + QLatin1String("preset"), m_qualityCombo->currentData().toString());
+    settings.setValue(kSettingsPrefix + QLatin1String("confirmStop"), m_confirmStopCheck->isChecked());
+    settings.setValue(kSettingsPrefix + QLatin1String("showCursor"), m_showCursorCheck->isChecked());
+    settings.setValue(kSettingsPrefix + QLatin1String("startTimeout"), m_startTimeoutSpin->value());
+    settings.setValue(kSettingsPrefix + QLatin1String("stopTimeout"), m_stopTimeoutSpin->value());
+    settings.setValue(kSettingsPrefix + QLatin1String("theme"), m_themeCombo->currentData().toInt());
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());
@@ -258,7 +262,7 @@ void SettingsPage::applySettings(bool showFeedback)
 
     if (pathValid) {
         m_lastValidPath = path;
-        settings.setValue(QStringLiteral("settings/savePath"), path);
+        settings.setValue(kSettingsPrefix + QLatin1String("savePath"), path);
         emit savePathChanged(path);
     } else {
         m_pathEdit->setText(m_lastValidPath);

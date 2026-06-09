@@ -4,6 +4,7 @@
 
 namespace {
 constexpr int kMaxRecentVideos = 8;
+const QLatin1String kLibraryPrefix("library/");
 }
 
 VideoLibrary::VideoLibrary(QObject *parent)
@@ -43,11 +44,11 @@ void VideoLibrary::clearAndReplace(const QStringList &videos)
 QStringList VideoLibrary::load() const
 {
     QSettings settings;
-    return settings.value(QStringLiteral("library/recentVideos")).toStringList();
+    return settings.value(kLibraryPrefix + QLatin1String("recentVideos")).toStringList();
 }
 
 void VideoLibrary::save(const QStringList &videos) const
 {
     QSettings settings;
-    settings.setValue(QStringLiteral("library/recentVideos"), videos);
+    settings.setValue(kLibraryPrefix + QLatin1String("recentVideos"), videos);
 }
