@@ -82,10 +82,10 @@ RecorderController::RecorderController(QObject *parent)
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
         QByteArray chunk = m_process->readAllStandardError();
         m_stderrSize += chunk.size();
-        m_stderrChunks.append(chunk);
-        while (m_stderrSize > kMaxStderrBuffer && !m_stderrChunks.isEmpty()) {
-            m_stderrSize -= m_stderrChunks.first().size();
-            m_stderrChunks.removeFirst();
+        m_stderrChunks.push_back(std::move(chunk));
+        while (m_stderrSize > kMaxStderrBuffer && !m_stderrChunks.empty()) {
+            m_stderrSize -= m_stderrChunks.front().size();
+            m_stderrChunks.pop_front();
         }
     });
 
