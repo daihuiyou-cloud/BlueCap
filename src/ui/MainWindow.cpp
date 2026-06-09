@@ -277,9 +277,13 @@ QIcon MainWindow::makeTrayIcon(bool recording)
 
     QString svg = QString::fromUtf8(file.readAll());
     if (recording) {
-        svg.replace(QStringLiteral("#80C8FF"), QStringLiteral("#FF8A8A"));
-        svg.replace(QStringLiteral("#1776F4"), QStringLiteral("#EF3039"));
-        svg.replace(QStringLiteral("#0758E8"), QStringLiteral("#C0202B"));
+        svg.replace(QStringLiteral("#A7E4FF"), QStringLiteral("#FFC4C8"));
+        svg.replace(QStringLiteral("#359BFF"), QStringLiteral("#FF6F78"));
+        svg.replace(QStringLiteral("#0967F2"), QStringLiteral("#EF3039"));
+        svg.replace(QStringLiteral("#054CC4"), QStringLiteral("#B81928"));
+        svg.replace(QStringLiteral("#063E9E"), QStringLiteral("#6E0F19"));
+        svg.replace(QStringLiteral("#BFE4FF"), QStringLiteral("#FFD0D3"));
+        svg.replace(QStringLiteral("#A9D9FF"), QStringLiteral("#FFB3B8"));
     }
 
     QSvgRenderer renderer(svg.toUtf8());
