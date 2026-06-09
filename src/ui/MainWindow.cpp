@@ -1,5 +1,7 @@
 #include "MainWindow.h"
+#include "HotkeyManager.h"
 #include "IconHelper.h"
+#include "TrayManager.h"
 #include "utils/Theme.h"
 #include "utils/ThemeColors.h"
 
@@ -14,11 +16,8 @@
 #include <QAction>
 #include <QApplication>
 #include <QCloseEvent>
-#include <QEvent>
 #include <QHBoxLayout>
-#include <QIcon>
 #include <QLabel>
-#include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
@@ -70,10 +69,21 @@ MainWindow::MainWindow(QWidget *parent)
     m_library = new VideoLibrary(this);
     m_overlay = new RecordingOverlay(this);
 
+    m_tray = new TrayManager(m_recorder, this);
+    m_hotkey = new HotkeyManager(this);
+    qApp->installNativeEventFilter(this);
+
     setupUI();
-    setupTray();
+    setupPulseTimer();
     setupConnections();
-    setupHotkey();
+    m_tray->show();
+
+    if (!m_hotkey->isRegistered()) {
+        qWarning("Failed to register global hotkey (Ctrl+Shift+R). Another application may have claimed it.");
+        m_tray->showMessage(QStringLiteral("BlueCap"),
+            QStringLiteral("全局快捷键 Ctrl+Shift+R 注册失败，可能被其他程序占用。"),
+            QSystemTrayIcon::Warning, 5000);
+    }
 
     m_shadowDebounce = new QTimer(this);
     m_shadowDebounce->setSingleShot(true);
@@ -81,6 +91,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_shadowDebounce, &QTimer::timeout, this, &MainWindow::renderShadowCache);
 
     QTimer::singleShot(0, this, &MainWindow::renderShadowCache);
+}
+
+MainWindow::~MainWindow()
+{
+    qApp->removeNativeEventFilter(this);
 }
 
 void MainWindow::setupUI()
@@ -190,13 +205,7 @@ void MainWindow::setupConnections()
             m_recordingIndicator->setStyleSheet(QString());
             m_overlay->hideOverlay();
         }
-        m_trayIcon->setIcon(recording ? m_trayIconRecording : m_trayIconIdle);
-        if (m_trayQuickAction)
-            m_trayQuickAction->setEnabled(!recording);
-        if (m_trayRecordAction)
-            m_trayRecordAction->setText(recording
-            ? QStringLiteral("停止录制")
-            : QStringLiteral("开始/停止录制"));
+        m_tray->updateRecordingState(recording);
     });
 
     connect(m_recorder, &RecorderController::errorOccurred, this, [this] {
@@ -204,9 +213,8 @@ void MainWindow::setupConnections()
     });
 
     connect(m_recorder, &RecorderController::recordingWarning, this, [this](const QString &msg) {
-        if (m_trayIcon)
-            m_trayIcon->showMessage(QStringLiteral("BlueCap"), msg,
-                QSystemTrayIcon::Warning, 4000);
+        m_tray->showMessage(QStringLiteral("BlueCap"), msg,
+            QSystemTrayIcon::Warning, 4000);
     });
 
     connect(m_recordPage, &RecordPage::elapsedUpdated, this, [this](int seconds) {
@@ -220,61 +228,44 @@ void MainWindow::setupConnections()
             text = QStringLiteral("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
         m_overlay->setStatusText(text);
     });
-}
 
-void MainWindow::setupHotkey()
-{
-    qApp->installNativeEventFilter(this);
-    m_hotkeyRegistered = RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
-    if (!m_hotkeyRegistered) {
-        qWarning("Failed to register global hotkey (Ctrl+Shift+R). Another application may have claimed it.");
-        if (m_trayIcon)
-            m_trayIcon->showMessage(QStringLiteral("BlueCap"),
-                QStringLiteral("全局快捷键 Ctrl+Shift+R 注册失败，可能被其他程序占用。"),
-                QSystemTrayIcon::Warning, 5000);
-    }
-}
+    connect(m_hotkey, &HotkeyManager::hotkeyPressed, this, [this] {
+        bool wasRecording = m_recorder->isRecording();
+        m_recordPage->toggleRecording();
+        bool nowRecording = m_recorder->isRecording();
+        if (wasRecording != nowRecording) {
+            m_tray->showMessage(QStringLiteral("BlueCap"),
+                nowRecording ? QStringLiteral("录制已开始") : QStringLiteral("录制已停止"),
+                QSystemTrayIcon::Information, 2500);
+            if (nowRecording && !isVisible()) {
+                showNormal();
+                activateWindow();
+            }
+        }
+    });
 
-void MainWindow::setupTray()
-{
-    m_trayIconIdle = makeTrayIcon(false);
-    m_trayIconRecording = makeTrayIcon(true);
-    m_trayIcon = new QSystemTrayIcon(m_trayIconIdle, this);
-    m_trayMenu = new QMenu(this);
-
-    QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
-    QAction *quickAction = m_trayMenu->addAction(QStringLiteral("快速全屏录制"));
-    QAction *recordAction = m_trayMenu->addAction(QStringLiteral("开始/停止录制"));
-    m_trayQuickAction = quickAction;
-    m_trayRecordAction = recordAction;
-    m_trayMenu->addSeparator();
-    QAction *quitAction = m_trayMenu->addAction(QStringLiteral("退出"));
-
-    m_trayIcon->setContextMenu(m_trayMenu);
-    m_trayIcon->show();
-
-    connect(showAction, &QAction::triggered, this, [this] {
-        if (isVisible() && !isMinimized()) {
+    connect(m_tray, &TrayManager::showWindowRequested, this, [this] {
+        if (isVisible() && !isMinimized())
             hide();
-        } else {
+        else {
             showNormal();
             activateWindow();
         }
     });
-    connect(quickAction, &QAction::triggered, this, [this] {
+
+    connect(m_tray, &TrayManager::quickRecordingRequested, this, [this] {
         hide();
         m_recordPage->startQuickRecording();
     });
-    connect(recordAction, &QAction::triggered, m_recordPage, &RecordPage::toggleRecording);
-    connect(quitAction, &QAction::triggered, qApp, &QApplication::quit);
 
-    connect(m_trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
-        if (reason == QSystemTrayIcon::DoubleClick) {
-            showNormal();
-            activateWindow();
-        }
-    });
+    connect(m_tray, &TrayManager::toggleRecordingRequested,
+            m_recordPage, &RecordPage::toggleRecording);
 
+    connect(m_tray, &TrayManager::quitRequested, qApp, &QApplication::quit);
+}
+
+void MainWindow::setupPulseTimer()
+{
     m_pulseTimer = new QTimer(this);
     rebuildPulseStyles();
     connect(m_pulseTimer, &QTimer::timeout, this, [this] {
@@ -282,45 +273,6 @@ void MainWindow::setupTray()
         m_recordingIndicator->setStyleSheet(m_pulseState
             ? m_pulseStyleBright : m_pulseStyleDim);
     });
-}
-
-QIcon MainWindow::makeTrayIcon(bool recording)
-{
-    QFile file(QStringLiteral(":/icons/app-logo.svg"));
-    if (!file.open(QIODevice::ReadOnly))
-        return QIcon();
-
-    QString svg = QString::fromUtf8(file.readAll());
-    if (recording) {
-        svg.replace(QStringLiteral("#A7E4FF"), QStringLiteral("#FFC4C8"));
-        svg.replace(QStringLiteral("#359BFF"), QStringLiteral("#FF6F78"));
-        svg.replace(QStringLiteral("#0967F2"), QStringLiteral("#EF3039"));
-        svg.replace(QStringLiteral("#054CC4"), QStringLiteral("#B81928"));
-        svg.replace(QStringLiteral("#063E9E"), QStringLiteral("#6E0F19"));
-        svg.replace(QStringLiteral("#BFE4FF"), QStringLiteral("#FFD0D3"));
-        svg.replace(QStringLiteral("#A9D9FF"), QStringLiteral("#FFB3B8"));
-    }
-
-    QSvgRenderer renderer(svg.toUtf8());
-    QIcon icon;
-    for (int size : {16, 32, 64}) {
-        QPixmap px(size, size);
-        px.fill(Qt::transparent);
-        QPainter p(&px);
-        p.setRenderHint(QPainter::Antialiasing);
-        renderer.render(&p, QRectF(0, 0, size, size));
-        p.end();
-        icon.addPixmap(px);
-    }
-    return icon;
-}
-
-MainWindow::~MainWindow()
-{
-    qApp->removeNativeEventFilter(this);
-    if (m_hotkeyRegistered) {
-        UnregisterHotKey(nullptr, 1);
-    }
 }
 
 bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
@@ -331,108 +283,39 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
         return false;
 
     auto *msg = static_cast<MSG *>(message);
-    switch (msg->message) {
-    case WM_HOTKEY:
-        if (msg->wParam != 1)
-            return false;
-        {
-            bool wasRecording = m_recorder->isRecording();
-            m_recordPage->toggleRecording();
-            bool nowRecording = m_recorder->isRecording();
-            if (wasRecording != nowRecording) {
-                m_trayIcon->showMessage(QStringLiteral("BlueCap"),
-                    nowRecording ? QStringLiteral("录制已开始")
-                                 : QStringLiteral("录制已停止"),
-                    QSystemTrayIcon::Information, 2500);
-                if (nowRecording && !isVisible()) {
-                    showNormal();
-                    activateWindow();
-                }
-            }
-        }
-        if (result)
-            *result = 0;
-        return true;
-
-    case WM_NCHITTEST:
-        if (IsZoomed(msg->hwnd))
-            return false;
-        {
-            RECT winRect;
-            GetWindowRect(msg->hwnd, &winRect);
-            int x = GET_X_LPARAM(msg->lParam);
-            int y = GET_Y_LPARAM(msg->lParam);
-
-            bool left   = x < winRect.left   + kResizeBorder;
-            bool right  = x > winRect.right  - kResizeBorder;
-            bool top    = y < winRect.top    + kResizeBorder;
-            bool bottom = y > winRect.bottom - kResizeBorder;
-
-            if (top && left)       *result = HTTOPLEFT;
-            else if (top && right) *result = HTTOPRIGHT;
-            else if (bottom && left) *result = HTBOTTOMLEFT;
-            else if (bottom && right) *result = HTBOTTOMRIGHT;
-            else if (top)          *result = HTTOP;
-            else if (bottom)       *result = HTBOTTOM;
-            else if (left)         *result = HTLEFT;
-            else if (right)        *result = HTRIGHT;
-            else                   return false;
-        }
-        return true;
-
-    default:
+    if (msg->message != WM_NCHITTEST)
         return false;
-    }
-}
 
-void MainWindow::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
-        m_dragging = true;
-        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
-        event->accept();
-        return;
-    }
+    if (IsZoomed(msg->hwnd))
+        return false;
 
-    QWidget::mousePressEvent(event);
-}
+    RECT winRect;
+    GetWindowRect(msg->hwnd, &winRect);
+    int x = GET_X_LPARAM(msg->lParam);
+    int y = GET_Y_LPARAM(msg->lParam);
 
-void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
-        if (m_maximized) {
-            showNormal();
-        } else {
-            showMaximized();
-        }
-        event->accept();
-        return;
-    }
-    QWidget::mouseDoubleClickEvent(event);
-}
+    bool left   = x < winRect.left   + kResizeBorder;
+    bool right  = x > winRect.right  - kResizeBorder;
+    bool top    = y < winRect.top    + kResizeBorder;
+    bool bottom = y > winRect.bottom - kResizeBorder;
 
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-        move(event->globalPos() - m_dragPosition);
-        event->accept();
-        return;
-    }
-
-    QWidget::mouseMoveEvent(event);
-}
-
-void MainWindow::mouseReleaseEvent(QMouseEvent *event)
-{
-    m_dragging = false;
-    QWidget::mouseReleaseEvent(event);
+    if (top && left)       *result = HTTOPLEFT;
+    else if (top && right) *result = HTTOPRIGHT;
+    else if (bottom && left) *result = HTBOTTOMLEFT;
+    else if (bottom && right) *result = HTBOTTOMRIGHT;
+    else if (top)          *result = HTTOP;
+    else if (bottom)       *result = HTBOTTOM;
+    else if (left)         *result = HTLEFT;
+    else if (right)        *result = HTRIGHT;
+    else                   return false;
+    return true;
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if (m_recorder->isRecording()) {
         hide();
-        m_trayIcon->showMessage(QStringLiteral("BlueCap"),
+        m_tray->showMessage(QStringLiteral("BlueCap"),
             QStringLiteral("录制正在进行中，程序已最小化到系统托盘。"),
             QSystemTrayIcon::Information, 3000);
         event->ignore();
@@ -546,11 +429,10 @@ QWidget *MainWindow::createTitleBar()
     });
     connect(m_minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
     connect(m_maximizeButton, &QPushButton::clicked, this, [this] {
-        if (m_maximized) {
+        if (m_maximized)
             showNormal();
-        } else {
+        else
             showMaximized();
-        }
     });
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
@@ -570,9 +452,8 @@ QPushButton *MainWindow::createTitleBarButton(const QString &text, const QString
 QPushButton *MainWindow::createWindowButton(const QString &iconPath, const QString &tooltip, const QString &objectName)
 {
     auto *button = createTitleBarButton(QString(), tooltip);
-    if (!objectName.isEmpty()) {
+    if (!objectName.isEmpty())
         button->setObjectName(objectName);
-    }
     button->setIcon(QIcon(iconPath));
     button->setIconSize(QSize(20, 20));
     return button;
@@ -590,9 +471,8 @@ void MainWindow::updateMaximizeButton()
 
 void MainWindow::changeEvent(QEvent *event)
 {
-    if (event->type() == QEvent::WindowStateChange) {
+    if (event->type() == QEvent::WindowStateChange)
         updateMaximizeButton();
-    }
     QWidget::changeEvent(event);
 }
 
@@ -606,4 +486,44 @@ bool MainWindow::inTitleDragArea(const QPoint &position) const
     if (m_closeButton && m_closeButton->isVisible())
         return position.x() < m_closeButton->geometry().x();
     return true;
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
+        m_dragging = true;
+        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
+        event->accept();
+        return;
+    }
+    QWidget::mousePressEvent(event);
+}
+
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
+        if (m_maximized)
+            showNormal();
+        else
+            showMaximized();
+        event->accept();
+        return;
+    }
+    QWidget::mouseDoubleClickEvent(event);
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event)
+{
+    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
+        move(event->globalPos() - m_dragPosition);
+        event->accept();
+        return;
+    }
+    QWidget::mouseMoveEvent(event);
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *event)
+{
+    m_dragging = false;
+    QWidget::mouseReleaseEvent(event);
 }

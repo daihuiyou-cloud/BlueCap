@@ -1,4 +1,5 @@
 #include "RecorderController.h"
+#include "utils/FfmpegLocator.h"
 
 #include <algorithm>
 
@@ -9,7 +10,6 @@
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QScreen>
-#include <QMap>
 #include <QSet>
 #include <QStandardPaths>
 #include <QTimer>
@@ -32,20 +32,6 @@ QString friendlyError(const QString &raw)
     if (raw.contains(QStringLiteral("Disk full")) || raw.contains(QStringLiteral("No space left")))
         return QStringLiteral("磁盘空间不足，请释放空间后重试。");
     return QStringLiteral("录制出现异常：%1\n\n请尝试重启应用。如果问题持续，请检查日志。").arg(raw);
-}
-
-QString sanitizeWindowTitle(const QString &title)
-{
-    QString sanitized = title;
-    auto end = std::remove_if(sanitized.begin(), sanitized.end(), [](QChar c) {
-        return c == '\n' || c == '\r' || c == '"' || c == '\'' || c == '\\'
-            || c == ';' || c == '|' || c == '&' || c == '$' || c == '`' || c == '%';
-    });
-    if (end != sanitized.end())
-        sanitized.chop(static_cast<int>(sanitized.end() - end));
-    if (sanitized.length() > 1024)
-        sanitized.truncate(1024);
-    return sanitized;
 }
 
 QString processErrorToString(QProcess::ProcessError error)
@@ -198,40 +184,6 @@ void RecorderController::setStopTimeout(int ms)
     m_stopTimeoutMs = qBound(1000, ms, 30000);
 }
 
-QList<RecorderController::WindowEntry> RecorderController::enumerateWindows()
-{
-    struct WindowInfo {
-        QString title;
-        HWND hwnd;
-    };
-    QList<WindowInfo> windows;
-
-    EnumWindows([](HWND hwnd, LPARAM lParam) -> BOOL {
-        if (!IsWindowVisible(hwnd) || !GetWindowTextLengthW(hwnd)) {
-            return TRUE;
-        }
-        wchar_t buf[256];
-        GetWindowTextW(hwnd, buf, 256);
-        auto *list = reinterpret_cast<QList<WindowInfo>*>(lParam);
-        list->append({ QString::fromWCharArray(buf), hwnd });
-        return TRUE;
-    }, reinterpret_cast<LPARAM>(&windows));
-
-    QMap<QString, int> counts;
-    QList<WindowEntry> result;
-    for (const auto &info : windows) {
-        const QString &original = info.title;
-        QString display = original;
-        int &count = counts[original];
-        if (count > 0) {
-            display += QStringLiteral(" (%1)").arg(count + 1);
-        }
-        result.append({ display, original, reinterpret_cast<qulonglong>(info.hwnd) });
-        count++;
-    }
-    return result;
-}
-
 void RecorderController::startCapture(const QString &inputSpec,
                                       const QStringList &extraArgs,
                                       const QStringList &inputArgs)
@@ -345,7 +297,7 @@ void RecorderController::startRegionRecording(const QRect &region)
 
 void RecorderController::startWindowRecording(const QString &windowTitle)
 {
-    startCapture(QStringLiteral("title=%1").arg(sanitizeWindowTitle(windowTitle)));
+    startCapture(QStringLiteral("title=%1").arg(ffmpeg_locator::sanitizeWindowTitle(windowTitle)));
 }
 
 void RecorderController::start(const QStringList &args)
@@ -510,22 +462,7 @@ QString RecorderController::resolveFfmpegPath()
 {
     if (!m_ffmpegPath.isEmpty())
         return m_ffmpegPath;
-
-    const QString bundlePath = QCoreApplication::applicationDirPath()
-        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
-    if (QFileInfo::exists(bundlePath)) {
-        m_ffmpegPath = bundlePath;
-        return m_ffmpegPath;
-    }
-
-    const QString sourcePath = QString::fromUtf8(BLUECAP_SOURCE_DIR)
-        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
-    if (QFileInfo::exists(sourcePath)) {
-        m_ffmpegPath = sourcePath;
-        return m_ffmpegPath;
-    }
-
-    m_ffmpegPath = QStringLiteral("ffmpeg.exe");
+    m_ffmpegPath = ffmpeg_locator::findFfmpegPath();
     return m_ffmpegPath;
 }
 

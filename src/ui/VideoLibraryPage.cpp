@@ -1,18 +1,17 @@
 #include "VideoLibraryPage.h"
 #include "IconHelper.h"
 #include "storage/VideoLibrary.h"
+#include "utils/FfmpegLocator.h"
 #include "utils/Format.h"
 #include "utils/ThemeColors.h"
 #include "utils/Win32Icon.h"
 
 #include <QAbstractItemView>
-#include <QCoreApplication>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFutureWatcher>
 #include <QtConcurrent/QtConcurrentRun>
-#include <QFileIconProvider>
 #include <QFileInfo>
 #include <QImage>
 #include <QFrame>
@@ -40,24 +39,9 @@
 
 namespace {
 
-QString findBundledFfmpeg()
-{
-    const QString bundlePath = QCoreApplication::applicationDirPath()
-        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
-    if (QFileInfo::exists(bundlePath))
-        return bundlePath;
-
-    const QString sourceBundlePath = QStringLiteral(BLUECAP_SOURCE_DIR)
-        + QStringLiteral("/3rd/ffmpeg/ffmpeg.exe");
-    if (QFileInfo::exists(sourceBundlePath))
-        return sourceBundlePath;
-
-    return QStandardPaths::findExecutable(QStringLiteral("ffmpeg.exe"));
-}
-
 QImage thumbnailViaFfmpeg(const QString &filePath)
 {
-    const QString ffmpeg = findBundledFfmpeg();
+    const QString ffmpeg = ffmpeg_locator::findFfmpegPath();
     if (ffmpeg.isEmpty())
         return {};
 

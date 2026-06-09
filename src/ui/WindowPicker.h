@@ -1,6 +1,6 @@
 #pragma once
 
-#include "recorder/RecorderController.h"
+#include "utils/WindowEnumerator.h"
 
 #include <QDialog>
 #include <QHash>
@@ -42,7 +42,7 @@ private:
     QLineEdit *m_filterEdit = nullptr;
     QPushButton *m_refreshBtn = nullptr;
     QHash<qulonglong, QPixmap> m_iconCache;
-    QList<RecorderController::WindowEntry> m_windows;
+    QList<WindowEntry> m_windows;
     QPoint m_dragPosition;
     bool m_dragging = false;
     QTimer *m_filterDebounce = nullptr;

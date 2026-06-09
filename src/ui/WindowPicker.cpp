@@ -1,5 +1,5 @@
 #include "WindowPicker.h"
-#include "recorder/RecorderController.h"
+#include "utils/WindowEnumerator.h"
 
 #include <QAbstractButton>
 #include <QDialogButtonBox>
@@ -85,7 +85,7 @@ WindowPicker::WindowPicker(QWidget *parent)
     shadow->setColor(QColor(0, 0, 0, 50));
     m_surface->setGraphicsEffect(shadow);
 
-    m_windows = RecorderController::enumerateWindows();
+    m_windows = window_enumerator::enumerateWindows();
     populateList();
 
     m_filterEdit->setFocus();
@@ -120,7 +120,7 @@ WindowPicker::WindowPicker(QWidget *parent)
 
 void WindowPicker::refreshWindows()
 {
-    m_windows = RecorderController::enumerateWindows();
+    m_windows = window_enumerator::enumerateWindows();
     m_iconCache.clear();
     populateList(m_filterEdit->text());
     if (m_list->count() > 0)

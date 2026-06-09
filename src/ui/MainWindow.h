@@ -5,17 +5,16 @@
 #include <QWidget>
 
 class QLabel;
-class QMenu;
 class QPoint;
 class QPushButton;
-class QAction;
 class QStackedWidget;
 class QTimer;
-class QSystemTrayIcon;
+class HotkeyManager;
 class RecordPage;
 class RecorderController;
 class RecordingOverlay;
 class Sidebar;
+class TrayManager;
 class VideoLibrary;
 class VideoLibraryPage;
 
@@ -48,9 +47,9 @@ private:
 
     void setupUI();
     void setupConnections();
-    void setupHotkey();
-    void setupTray();
-    QIcon makeTrayIcon(bool recording);
+    void setupPulseTimer();
+    void renderShadowCache();
+    void rebuildPulseStyles();
 
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -58,32 +57,29 @@ private:
     VideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;
     VideoLibraryPage *m_videoLibraryPage = nullptr;
-    QLabel *m_recordingIndicator = nullptr;
-    QTimer *m_pulseTimer = nullptr;
-    bool m_pulseState = false;
-    QSystemTrayIcon *m_trayIcon = nullptr;
-    QMenu *m_trayMenu = nullptr;
-    QPoint m_dragPosition;
-    bool m_dragging = false;
-    bool m_maximized = false;
-    bool m_darkMode = false;
-    bool m_hotkeyRegistered = false;
+    RecordingOverlay *m_overlay = nullptr;
+    TrayManager *m_tray = nullptr;
+    HotkeyManager *m_hotkey = nullptr;
+
+    QWidget *m_titleBar = nullptr;
     QPushButton *m_settingsButton = nullptr;
     QPushButton *m_minimizeButton = nullptr;
     QPushButton *m_maximizeButton = nullptr;
     QPushButton *m_closeButton = nullptr;
-    QWidget *m_titleBar = nullptr;
-    RecordingOverlay *m_overlay = nullptr;
+    QLabel *m_recordingIndicator = nullptr;
+
+    QPoint m_dragPosition;
+    bool m_dragging = false;
+    bool m_maximized = false;
+    bool m_darkMode = false;
+
     QPixmap m_shadowCache;
     QTimer *m_shadowDebounce = nullptr;
-    QIcon m_trayIconRecording;
-    QIcon m_trayIconIdle;
-    QAction *m_trayQuickAction = nullptr;
-    QAction *m_trayRecordAction = nullptr;
+
+    QTimer *m_pulseTimer = nullptr;
+    bool m_pulseState = false;
     QString m_pulseStyleBright;
     QString m_pulseStyleDim;
-    void renderShadowCache();
-    void rebuildPulseStyles();
 
     static constexpr int kResizeBorder = 5;
 };

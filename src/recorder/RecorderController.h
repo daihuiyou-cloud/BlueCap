@@ -4,10 +4,7 @@
 
 #include <deque>
 
-#include <QList>
-#include <QMap>
 #include <QObject>
-#include <QPair>
 #include <QByteArray>
 #include <QProcess>
 #include <QRect>
@@ -36,13 +33,6 @@ public:
     void setShowCursor(bool show);
     void setStartTimeout(int ms);
     void setStopTimeout(int ms);
-
-    struct WindowEntry {
-        QString displayName;
-        QString title;
-        qulonglong hwnd;
-    };
-    static QList<WindowEntry> enumerateWindows();
 
 public slots:
     void startFullScreenRecording(QScreen *screen = nullptr);
