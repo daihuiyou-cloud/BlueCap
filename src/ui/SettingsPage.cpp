@@ -121,8 +121,6 @@ SettingsPage::SettingsPage(QWidget *parent)
 
     root->addStretch();
 
-    loadSettings();
-
     // Auto-save on any change (debounced to batch registry writes)
     auto scheduleApply = [this] { m_applyDebounce->start(); };
     connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, scheduleApply);
@@ -142,6 +140,16 @@ void SettingsPage::loadSettings()
 {
     QSettings s;
 
+    // Block signals to prevent debounced save from triggering during initial load
+    m_pathEdit->blockSignals(true);
+    m_fpsSpin->blockSignals(true);
+    m_qualityCombo->blockSignals(true);
+    m_themeCombo->blockSignals(true);
+    m_confirmStopCheck->blockSignals(true);
+    m_showCursorCheck->blockSignals(true);
+    m_startTimeoutSpin->blockSignals(true);
+    m_stopTimeoutSpin->blockSignals(true);
+
     m_pathEdit->setText(s.value(QStringLiteral("settings/savePath"),
         QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap")).toString());
 
@@ -159,6 +167,15 @@ void SettingsPage::loadSettings()
     m_showCursorCheck->setChecked(s.value(QStringLiteral("settings/showCursor"), true).toBool());
     m_startTimeoutSpin->setValue(s.value(QStringLiteral("settings/startTimeout"), 5).toInt());
     m_stopTimeoutSpin->setValue(s.value(QStringLiteral("settings/stopTimeout"), 5).toInt());
+
+    m_pathEdit->blockSignals(false);
+    m_fpsSpin->blockSignals(false);
+    m_qualityCombo->blockSignals(false);
+    m_themeCombo->blockSignals(false);
+    m_confirmStopCheck->blockSignals(false);
+    m_showCursorCheck->blockSignals(false);
+    m_startTimeoutSpin->blockSignals(false);
+    m_stopTimeoutSpin->blockSignals(false);
 
     emit frameRateChanged(m_fpsSpin->value());
     emit presetChanged(m_qualityCombo->currentData().toString());

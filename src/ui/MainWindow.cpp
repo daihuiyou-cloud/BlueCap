@@ -286,9 +286,15 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
 {
     static const QByteArray kMsgGen = QByteArrayLiteral("windows_generic_MSG");
     static const QByteArray kMsgDsp = QByteArrayLiteral("windows_dispatcher_MSG");
-    if (eventType == kMsgGen || eventType == kMsgDsp) {
-        auto *msg = static_cast<MSG *>(message);
-        if (msg->message == WM_HOTKEY && msg->wParam == 1) {
+    if (eventType != kMsgGen && eventType != kMsgDsp)
+        return false;
+
+    auto *msg = static_cast<MSG *>(message);
+    switch (msg->message) {
+    case WM_HOTKEY:
+        if (msg->wParam != 1)
+            return false;
+        {
             bool wasRecording = m_recorder->isRecording();
             m_recordPage->toggleRecording();
             bool nowRecording = m_recorder->isRecording();
@@ -302,15 +308,15 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
                     activateWindow();
                 }
             }
-            if (result) {
-                *result = 0;
-            }
-            return true;
         }
+        if (result)
+            *result = 0;
+        return true;
 
-        if (msg->message == WM_NCHITTEST) {
-            if (IsZoomed(msg->hwnd))
-                return false;
+    case WM_NCHITTEST:
+        if (IsZoomed(msg->hwnd))
+            return false;
+        {
             RECT winRect;
             GetWindowRect(msg->hwnd, &winRect);
             int x = GET_X_LPARAM(msg->lParam);
@@ -330,10 +336,12 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
             else if (left)         *result = HTLEFT;
             else if (right)        *result = HTRIGHT;
             else                   return false;
-            return true;
         }
+        return true;
+
+    default:
+        return false;
     }
-    return false;
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)

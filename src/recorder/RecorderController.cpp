@@ -1,5 +1,7 @@
 #include "RecorderController.h"
 
+#include <algorithm>
+
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
@@ -36,19 +38,14 @@ QString friendlyError(const QString &raw)
 QString sanitizeWindowTitle(const QString &title)
 {
     QString sanitized = title;
-    sanitized.remove(QChar('\n'));
-    sanitized.remove(QChar('\r'));
-    sanitized.remove(QChar('"'));
-    sanitized.remove(QChar('\''));
-    sanitized.remove(QChar('\\'));
-    sanitized.remove(QChar(';'));
-    sanitized.remove(QChar('|'));
-    sanitized.remove(QChar('&'));
-    sanitized.remove(QChar('$'));
-    sanitized.remove(QChar('`'));
-    sanitized.remove(QChar('%'));
+    auto end = std::remove_if(sanitized.begin(), sanitized.end(), [](QChar c) {
+        return c == '\n' || c == '\r' || c == '"' || c == '\'' || c == '\\'
+            || c == ';' || c == '|' || c == '&' || c == '$' || c == '`' || c == '%';
+    });
+    if (end != sanitized.end())
+        sanitized.chop(static_cast<int>(sanitized.end() - end));
     if (sanitized.length() > 1024)
-        sanitized = sanitized.left(1024);
+        sanitized.truncate(1024);
     return sanitized;
 }
 
