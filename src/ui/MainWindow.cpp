@@ -38,7 +38,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QWidget(parent)
 {
     setWindowTitle(QStringLiteral("BlueCap"));
-    setWindowIcon(QIcon(QStringLiteral(":/icons/app-logo.svg")));
+    setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.ico")));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
     setAttribute(Qt::WA_TranslucentBackground);
     resize(960, 600);
@@ -267,23 +267,29 @@ void MainWindow::setupTray()
 
 QIcon MainWindow::makeTrayIcon(bool recording)
 {
-    // Draw at 2x resolution for crisp display on high-DPI screens
-    QPixmap px(64, 64);
-    px.setDevicePixelRatio(2.0);
-    px.fill(Qt::transparent);
-    QPainter p(&px);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setBrush(recording ? QColor(239, 48, 57) : QColor(9, 103, 242));
-    p.setPen(Qt::NoPen);
-    p.drawRoundedRect(4, 4, 56, 56, 12, 12);
+    QFile file(QStringLiteral(":/icons/app-logo.svg"));
+    if (!file.open(QIODevice::ReadOnly))
+        return QIcon();
+
+    QString svg = QString::fromUtf8(file.readAll());
     if (recording) {
-        p.fillRect(20, 20, 24, 24, Qt::white);
-    } else {
-        p.setBrush(Qt::white);
-        p.drawEllipse(20, 20, 24, 24);
+        svg.replace(QStringLiteral("#80C8FF"), QStringLiteral("#FF8A8A"));
+        svg.replace(QStringLiteral("#1776F4"), QStringLiteral("#EF3039"));
+        svg.replace(QStringLiteral("#0758E8"), QStringLiteral("#C0202B"));
     }
-    p.end();
-    return QIcon(px);
+
+    QSvgRenderer renderer(svg.toUtf8());
+    QIcon icon;
+    for (int size : {16, 32, 64}) {
+        QPixmap px(size, size);
+        px.fill(Qt::transparent);
+        QPainter p(&px);
+        p.setRenderHint(QPainter::Antialiasing);
+        renderer.render(&p, QRectF(0, 0, size, size));
+        p.end();
+        icon.addPixmap(px);
+    }
+    return icon;
 }
 
 MainWindow::~MainWindow()
