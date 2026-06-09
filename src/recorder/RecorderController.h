@@ -99,4 +99,8 @@ private:
     QStringList m_reportedWarnings;
 
     void detectHardwareEncoder();
+    void onEncoderFinished();
+    void onEncoderError();
+
+    QProcess *m_encoderProbe = nullptr;
 };

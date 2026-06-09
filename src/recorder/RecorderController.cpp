@@ -105,6 +105,34 @@ RecorderController::RecorderController(QObject *parent)
     QTimer::singleShot(0, this, &RecorderController::detectHardwareEncoder);
 }
 
+void RecorderController::onEncoderFinished()
+{
+    if (!m_encoderProbe) return;
+    const QString output = QString::fromUtf8(m_encoderProbe->readAllStandardOutput());
+    if (output.contains(QStringLiteral("h264_mf")))
+        m_encoder = QStringLiteral("h264_mf");
+    else if (output.contains(QStringLiteral("h264_nvenc")))
+        m_encoder = QStringLiteral("h264_nvenc");
+    else if (output.contains(QStringLiteral("h264_amf")))
+        m_encoder = QStringLiteral("h264_amf");
+    else if (output.contains(QStringLiteral("h264_qsv")))
+        m_encoder = QStringLiteral("h264_qsv");
+    else
+        m_encoder = QStringLiteral("libx264");
+    m_encoderDetected = true;
+    m_encoderProbe->deleteLater();
+    m_encoderProbe = nullptr;
+}
+
+void RecorderController::onEncoderError()
+{
+    if (!m_encoderProbe) return;
+    m_encoder = QStringLiteral("libx264");
+    m_encoderDetected = true;
+    m_encoderProbe->deleteLater();
+    m_encoderProbe = nullptr;
+}
+
 RecorderController::State RecorderController::state() const
 {
     return m_state;
@@ -471,25 +499,22 @@ void RecorderController::detectHardwareEncoder()
         return;
     }
 
-    QProcess probe;
-    probe.setProcessChannelMode(QProcess::MergedChannels);
-    probe.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
-    if (probe.waitForFinished(5000)) {
-        const QString output = QString::fromUtf8(probe.readAllStandardOutput());
-        if (output.contains(QStringLiteral("h264_mf")))
-            m_encoder = QStringLiteral("h264_mf");
-        else if (output.contains(QStringLiteral("h264_nvenc")))
-            m_encoder = QStringLiteral("h264_nvenc");
-        else if (output.contains(QStringLiteral("h264_amf")))
-            m_encoder = QStringLiteral("h264_amf");
-        else if (output.contains(QStringLiteral("h264_qsv")))
-            m_encoder = QStringLiteral("h264_qsv");
-        else
-            m_encoder = QStringLiteral("libx264");
-    } else {
-        m_encoder = QStringLiteral("libx264");
-    }
-    m_encoderDetected = true;
+    m_encoderProbe = new QProcess(this);
+    m_encoderProbe->setProcessChannelMode(QProcess::MergedChannels);
+
+    connect(m_encoderProbe, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
+            this, &RecorderController::onEncoderFinished);
+    connect(m_encoderProbe, &QProcess::errorOccurred,
+            this, &RecorderController::onEncoderError);
+
+    m_encoderProbe->start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
+
+    QPointer<QProcess> guard(m_encoderProbe);
+    QTimer::singleShot(5000, this, [this, guard] {
+        if (guard && guard->state() != QProcess::NotRunning) {
+            guard->kill();
+        }
+    });
 }
 
 QString RecorderController::resolveFfmpegPath()
@@ -511,8 +536,8 @@ QString RecorderController::resolveFfmpegPath()
         return m_ffmpegPath;
     }
 
-    m_ffmpegPath.clear();
-    return {};
+    m_ffmpegPath = QStringLiteral("ffmpeg.exe");
+    return m_ffmpegPath;
 }
 
 QString RecorderController::createOutputPath() const

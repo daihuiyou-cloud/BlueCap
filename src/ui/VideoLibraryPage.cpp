@@ -255,10 +255,12 @@ void VideoLibraryPage::applyFilter()
         item->setSizeHint(QSize(0, 82));
         m_itemMap.insert(path, item);
 
-        // Cache hit — set icon immediately
         if (m_thumbnailCache.contains(path)) {
             item->setIcon(QIcon(m_thumbnailCache[path]));
-        } else {
+            int idx = m_thumbnailLRU.indexOf(path);
+            if (idx > 0)
+                m_thumbnailLRU.move(idx, 0);
+        } else if (!m_pendingThumbnails.contains(path)) {
             m_pendingThumbnails.append(path);
         }
     }

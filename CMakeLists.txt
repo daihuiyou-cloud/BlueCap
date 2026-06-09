@@ -55,3 +55,20 @@ if(EXISTS "${BLUECAP_FFMPEG_DIR}/ffmpeg.exe")
         COMMENT "Copying bundled FFmpeg executable"
     )
 endif()
+
+find_program(CLANG_FORMAT NAMES clang-format)
+if(CLANG_FORMAT)
+    file(GLOB_RECURSE BLUECAP_ALL_SOURCE
+        src/*.cpp src/*.h src/*.hpp
+    )
+    add_custom_target(format
+        COMMAND ${CLANG_FORMAT} -i -style=file ${BLUECAP_ALL_SOURCE}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Formatting source files with clang-format"
+    )
+    add_custom_target(format-check
+        COMMAND ${CLANG_FORMAT} --dry-run -Werror -style=file ${BLUECAP_ALL_SOURCE}
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Checking code formatting"
+    )
+endif()
