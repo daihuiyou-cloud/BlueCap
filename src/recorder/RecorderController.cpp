@@ -73,6 +73,7 @@ RecorderController::RecorderController(QObject *parent)
 {
     m_process = new QProcess(this);
     m_process->setProcessChannelMode(QProcess::SeparateChannels);
+    m_stderrBuffer.reserve(kMaxStderrBuffer);
 
     connect(m_process, &QProcess::started, this, &RecorderController::handleStarted);
     connect(m_process, qOverload<int, QProcess::ExitStatus>(&QProcess::finished),
@@ -82,7 +83,7 @@ RecorderController::RecorderController(QObject *parent)
     connect(m_process, &QProcess::readyReadStandardError, this, [this] {
         m_stderrBuffer.append(m_process->readAllStandardError());
         if (m_stderrBuffer.size() > kMaxStderrBuffer)
-            m_stderrBuffer = m_stderrBuffer.right(kMaxStderrBuffer);
+            m_stderrBuffer.remove(0, m_stderrBuffer.size() - kMaxStderrBuffer);
     });
 
     m_startTimer = new QTimer(this);
@@ -437,31 +438,6 @@ void RecorderController::detectHardwareEncoderAsync()
             probe->kill();
         }
     });
-}
-
-QString RecorderController::detectHardwareEncoder()
-{
-    const QString ffmpeg = resolveFfmpegPath();
-    QProcess probe;
-    probe.setProcessChannelMode(QProcess::MergedChannels);
-    probe.start(ffmpeg, { QStringLiteral("-hide_banner"), QStringLiteral("-encoders") });
-    if (!probe.waitForFinished(5000)) {
-        probe.kill();
-        return QStringLiteral("libx264");
-    }
-    const QString output = QString::fromLocal8Bit(probe.readAllStandardOutput());
-
-    // h264_mf (MediaFoundation) is built into Windows, always reliable
-    if (output.contains(QStringLiteral("h264_mf")))
-        return QStringLiteral("h264_mf");
-    if (output.contains(QStringLiteral("h264_nvenc")))
-        return QStringLiteral("h264_nvenc");
-    if (output.contains(QStringLiteral("h264_amf")))
-        return QStringLiteral("h264_amf");
-    if (output.contains(QStringLiteral("h264_qsv")))
-        return QStringLiteral("h264_qsv");
-
-    return QStringLiteral("libx264");
 }
 
 QString RecorderController::resolveFfmpegPath()

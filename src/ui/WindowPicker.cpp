@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
+#include <QTimer>
 #include <QPainter>
 #include <QLabel>
 #include <QLineEdit>
@@ -93,11 +94,19 @@ WindowPicker::WindowPicker(QWidget *parent)
 
     connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::reject);
 
+    m_filterDebounce = new QTimer(this);
+    m_filterDebounce->setSingleShot(true);
+    m_filterDebounce->setInterval(150);
+    connect(m_filterDebounce, &QTimer::timeout, this, [this] {
+        populateList(m_filterPending);
+    });
+
     auto *filterShortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_F), this);
     connect(filterShortcut, &QShortcut::activated, m_filterEdit, qOverload<>(&QWidget::setFocus));
 
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this](const QString &text) {
-        populateList(text);
+        m_filterPending = text;
+        m_filterDebounce->start();
     });
 
     connect(m_refreshBtn, &QPushButton::clicked, this, &WindowPicker::refreshWindows);

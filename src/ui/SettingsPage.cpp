@@ -101,6 +101,11 @@ SettingsPage::SettingsPage(QWidget *parent)
     m_feedbackTimer->setSingleShot(true);
     connect(m_feedbackTimer, &QTimer::timeout, m_saveFeedback, &QLabel::hide);
 
+    m_applyDebounce = new QTimer(this);
+    m_applyDebounce->setSingleShot(true);
+    m_applyDebounce->setInterval(300);
+    connect(m_applyDebounce, &QTimer::timeout, this, [this] { applySettings(true); });
+
     auto *btnRow = new QWidget(this);
     auto *btnLayout = new QHBoxLayout(btnRow);
     btnLayout->setContentsMargins(0, 8, 0, 0);
@@ -118,14 +123,15 @@ SettingsPage::SettingsPage(QWidget *parent)
 
     loadSettings();
 
-    // Auto-save on any change
-    connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
-    connect(m_qualityCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SettingsPage::applySettings);
-    connect(m_themeCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, &SettingsPage::applySettings);
-    connect(m_confirmStopCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
-    connect(m_showCursorCheck, &QCheckBox::toggled, this, &SettingsPage::applySettings);
-    connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
-    connect(m_stopTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, &SettingsPage::applySettings);
+    // Auto-save on any change (debounced to batch registry writes)
+    auto scheduleApply = [this] { m_applyDebounce->start(); };
+    connect(m_fpsSpin, qOverload<int>(&QSpinBox::valueChanged), this, scheduleApply);
+    connect(m_qualityCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, scheduleApply);
+    connect(m_themeCombo, qOverload<int>(&QComboBox::currentIndexChanged), this, scheduleApply);
+    connect(m_confirmStopCheck, &QCheckBox::toggled, this, scheduleApply);
+    connect(m_showCursorCheck, &QCheckBox::toggled, this, scheduleApply);
+    connect(m_startTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, scheduleApply);
+    connect(m_stopTimeoutSpin, qOverload<int>(&QSpinBox::valueChanged), this, scheduleApply);
     connect(m_pathEdit, &QLineEdit::editingFinished, this, [this] { applySettings(true); });
 
     connect(browseBtn, &QPushButton::clicked, this, &SettingsPage::browsePath);

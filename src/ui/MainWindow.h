@@ -77,7 +77,10 @@ private:
     QTimer *m_shadowDebounce = nullptr;
     QIcon m_trayIconRecording;
     QIcon m_trayIconIdle;
+    QString m_pulseStyleBright;
+    QString m_pulseStyleDim;
     void renderShadowCache();
+    void rebuildPulseStyles();
 
     static constexpr int kResizeBorder = 5;
 };

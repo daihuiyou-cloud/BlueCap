@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QFontMetrics>
 #include <QKeyEvent>
+#include <QScreen>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QTimer>
@@ -22,24 +23,23 @@ RegionSelector::RegionSelector(QWidget *parent)
 
 void RegionSelector::cacheScreenLayout()
 {
+    m_screens = QGuiApplication::screens();
     QRect virtualGeometry;
-    const auto screens = QGuiApplication::screens();
-    for (const auto *screen : screens) {
+    for (const auto *screen : m_screens) {
         virtualGeometry = virtualGeometry.united(screen->geometry());
     }
     setGeometry(virtualGeometry);
-    m_screenLayoutValid = false;
 }
 
 ScreenLayout RegionSelector::screenForPoint(const QPoint &pt) const
 {
-    const auto screens = QGuiApplication::screens();
-    for (const auto *screen : screens) {
+    for (const auto *screen : m_screens) {
         QRect geo = screen->geometry();
         if (geo.contains(pt))
             return { geo.topLeft(), geo.width(), geo.height() };
     }
-    QRect primary = QGuiApplication::primaryScreen()->geometry();
+    QRect primary = m_screens.isEmpty() ? QRect()
+        : m_screens.first()->geometry();
     return { primary.topLeft(), primary.width(), primary.height() };
 }
 
@@ -114,8 +114,7 @@ void RegionSelector::paintEvent(QPaintEvent *)
     QPoint screenTopLeft = mapFromGlobal(screen.topLeft);
 
     // Draw dark overlay — only fill visible screen area (not the full virtual desktop)
-    const auto screens = QGuiApplication::screens();
-    for (const auto *s : screens) {
+    for (const auto *s : m_screens) {
         QRect sg = s->geometry();
         QRect local = QRect(mapFromGlobal(sg.topLeft()), sg.size());
         painter.fillRect(local, QColor(0, 0, 0, 80));

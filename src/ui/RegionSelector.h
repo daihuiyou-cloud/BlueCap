@@ -3,8 +3,7 @@
 #include <QWidget>
 #include <QRubberBand>
 
-#include <QGuiApplication>
-#include <QScreen>
+class QScreen;
 
 struct ScreenLayout {
     QPoint topLeft;
@@ -37,6 +36,5 @@ private:
     QPoint m_currentPos;
     QRubberBand *m_rubberBand = nullptr;
     bool m_selecting = false;
-    ScreenLayout m_cachedScreenLayout = {};
-    bool m_screenLayoutValid = false;
+    QList<QScreen *> m_screens;
 };

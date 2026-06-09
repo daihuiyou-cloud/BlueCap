@@ -57,7 +57,6 @@ MainWindow::MainWindow(QWidget *parent)
     m_overlay = new RecordingOverlay(this);
 
     setupUI();
-    renderShadowCache();
     setupTray();
     setupConnections();
     setupHotkey();
@@ -66,6 +65,8 @@ MainWindow::MainWindow(QWidget *parent)
     m_shadowDebounce->setSingleShot(true);
     m_shadowDebounce->setInterval(100);
     connect(m_shadowDebounce, &QTimer::timeout, this, &MainWindow::renderShadowCache);
+
+    QTimer::singleShot(0, this, &MainWindow::renderShadowCache);
 }
 
 void MainWindow::setupUI()
@@ -131,6 +132,9 @@ void MainWindow::setupConnections()
             m_recordPage->setDarkMode(m_darkMode);
             m_sidebar->setDarkMode(m_darkMode);
             m_videoLibraryPage->setDarkMode(m_darkMode);
+            rebuildPulseStyles();
+            if (m_recorder->isRecording())
+                m_recordingIndicator->setStyleSheet(m_pulseStyleBright);
 
             QColor titleNormal = m_darkMode ? QColor(0x9a, 0xa8, 0xbc) : QColor(0x26, 0x33, 0x4b);
             QColor titleActive = m_darkMode ? QColor(0x4d, 0xa3, 0xff) : QColor(0x09, 0x67, 0xf2);
@@ -241,21 +245,11 @@ void MainWindow::setupTray()
     });
 
     m_pulseTimer = new QTimer(this);
+    rebuildPulseStyles();
     connect(m_pulseTimer, &QTimer::timeout, this, [this] {
         m_pulseState = !m_pulseState;
-        QColor bg, border;
-        if (m_darkMode) {
-            bg = m_pulseState ? QColor(224, 82, 94, 180) : QColor(224, 82, 94, 90);
-            border = m_pulseState ? QColor(224, 82, 94, 220) : QColor(224, 82, 94, 150);
-        } else {
-            bg = m_pulseState ? QColor(224, 82, 94, 56) : QColor(224, 82, 94, 30);
-            border = m_pulseState ? QColor(224, 82, 94, 128) : QColor(224, 82, 94, 76);
-        }
-        m_recordingIndicator->setStyleSheet(QStringLiteral(
-            "color: #e0525e; font-size: 13px; font-weight: 800; "
-            "padding: 4px 12px; border-radius: 12px; "
-            "background: %1; border: 1px solid %2;"
-        ).arg(bg.name(QColor::HexArgb), border.name(QColor::HexArgb)));
+        m_recordingIndicator->setStyleSheet(m_pulseState
+            ? m_pulseStyleBright : m_pulseStyleDim);
     });
 }
 
@@ -413,6 +407,19 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     m_shadowDebounce->start();
     QWidget::resizeEvent(event);
+}
+
+void MainWindow::rebuildPulseStyles()
+{
+    static const char *kBase = "color: #e0525e; font-size: 13px; font-weight: 800; "
+        "padding: 4px 12px; border-radius: 12px; ";
+    if (m_darkMode) {
+        m_pulseStyleBright = QStringLiteral("%1background: rgba(224,82,94,180); border: 1px solid rgba(224,82,94,220);").arg(kBase);
+        m_pulseStyleDim = QStringLiteral("%1background: rgba(224,82,94,90); border: 1px solid rgba(224,82,94,150);").arg(kBase);
+    } else {
+        m_pulseStyleBright = QStringLiteral("%1background: rgba(224,82,94,56); border: 1px solid rgba(224,82,94,128);").arg(kBase);
+        m_pulseStyleDim = QStringLiteral("%1background: rgba(224,82,94,30); border: 1px solid rgba(224,82,94,76);").arg(kBase);
+    }
 }
 
 void MainWindow::renderShadowCache()

@@ -37,7 +37,6 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
 
     m_recordingTimer = new QTimer(this);
     connect(m_recordingTimer, &QTimer::timeout, this, &RecordPage::updateElapsedTime);
-    m_elapsed = new QElapsedTimer;
 
     m_countdownTimer = new QTimer(this);
     connect(m_countdownTimer, &QTimer::timeout, this, [this] {
@@ -402,7 +401,7 @@ void RecordPage::handleRecordingChanged(bool recording)
 
     if (recording) {
         m_recordingTimer->start(1000);
-        m_elapsed->start();
+        m_elapsed.start();
         m_titleLabel->setText(QStringLiteral("正在录制 00:00"));
         m_statusLabel->setText(QStringLiteral("点击中间按钮或按 Esc 停止录制"));
         m_statusLabel->setToolTip(QStringLiteral("录制完成后可点击打开视频"));
@@ -496,7 +495,7 @@ void RecordPage::updateStatusForMode(RecordMode mode)
 
 void RecordPage::updateElapsedTime()
 {
-    qint64 secs = m_elapsed->elapsed() / 1000;
+    qint64 secs = m_elapsed.elapsed() / 1000;
     int h = secs / 3600;
     int m = (secs % 3600) / 60;
     int s = secs % 60;

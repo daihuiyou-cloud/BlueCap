@@ -2,9 +2,8 @@
 
 #include "ModeSwitch.h"
 
+#include <QElapsedTimer>
 #include <QWidget>
-
-class QElapsedTimer;
 class QFrame;
 class QLabel;
 class QProgressBar;
@@ -69,7 +68,7 @@ private:
     RecorderController *m_recorder = nullptr;
     VideoLibrary *m_library = nullptr;
     QTimer *m_recordingTimer = nullptr;
-    QElapsedTimer *m_elapsed = nullptr;
+    QElapsedTimer m_elapsed;
     QTimer *m_countdownTimer = nullptr;
     QTimer *m_stopProgressTimer = nullptr;
     int m_countdownValue = 0;

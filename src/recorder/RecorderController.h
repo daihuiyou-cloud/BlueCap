@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ui/ModeSwitch.h"
+#include "RecordMode.h"
 
 #include <QList>
 #include <QMap>
@@ -89,5 +89,4 @@ private:
     QByteArray m_stderrBuffer;
 
     void detectHardwareEncoderAsync();
-    QString detectHardwareEncoder();
 };

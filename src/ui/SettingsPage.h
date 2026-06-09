@@ -49,5 +49,6 @@ private:
     QSpinBox *m_stopTimeoutSpin = nullptr;
     QLabel *m_saveFeedback = nullptr;
     QTimer *m_feedbackTimer = nullptr;
+    QTimer *m_applyDebounce = nullptr;
     QPushButton *m_resetBtn = nullptr;
 };

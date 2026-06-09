@@ -1,13 +1,13 @@
 #pragma once
 
+#include "RecordMode.h"
+
 #include <QColor>
 #include <QList>
 #include <QWidget>
 
 class QButtonGroup;
 class QToolButton;
-
-enum class RecordMode { FullScreen, Region, Window };
 
 class ModeSwitch : public QWidget
 {

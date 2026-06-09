@@ -12,6 +12,7 @@
 class QLineEdit;
 class QListWidget;
 class QPushButton;
+class QTimer;
 class QWidget;
 
 class WindowPicker : public QDialog
@@ -44,4 +45,6 @@ private:
     QList<RecorderController::WindowEntry> m_windows;
     QPoint m_dragPosition;
     bool m_dragging = false;
+    QTimer *m_filterDebounce = nullptr;
+    QString m_filterPending;
 };
