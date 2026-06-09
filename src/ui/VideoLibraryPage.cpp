@@ -10,6 +10,8 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QImage>
@@ -68,6 +70,31 @@ QPixmap thumbnailViaFfmpeg(const QString &filePath)
     QPixmap px;
     px.loadFromData(proc.readAllStandardOutput(), "BMP");
     return px;
+}
+
+QPixmap fetchThumbnailRaw(const QString &filePath)
+{
+    QPixmap result;
+    IShellItemImageFactory *factory = nullptr;
+    HRESULT hr = SHCreateItemFromParsingName(
+        reinterpret_cast<const wchar_t *>(filePath.utf16()),
+        nullptr,
+        IID_PPV_ARGS(&factory));
+
+    if (SUCCEEDED(hr) && factory) {
+        HBITMAP hBitmap = nullptr;
+        hr = factory->GetImage({ 320, 180 }, 0, &hBitmap);
+        if (SUCCEEDED(hr) && hBitmap) {
+            result = win32::hBitmapToPixmap(hBitmap);
+            DeleteObject(hBitmap);
+        }
+        factory->Release();
+    }
+
+    if (result.isNull())
+        result = thumbnailViaFfmpeg(filePath);
+
+    return result;
 }
 
 bool moveToTrash(const QString &filePath)
@@ -246,15 +273,27 @@ void VideoLibraryPage::processNextThumbnail()
         return;
 
     QString path = m_pendingThumbnails.takeFirst();
-    QPixmap thumb = getVideoThumbnail(path);
-    if (!thumb.isNull()) {
-        auto *item = m_itemMap.value(path);
-        if (item)
-            item->setIcon(QIcon(thumb));
-    }
 
-    if (!m_pendingThumbnails.isEmpty())
-        QTimer::singleShot(30, this, &VideoLibraryPage::processNextThumbnail);
+    auto *watcher = new QFutureWatcher<QPixmap>(this);
+    connect(watcher, &QFutureWatcher<QPixmap>::finished, this, [this, watcher, path]() {
+        QPixmap thumb = watcher->result();
+        if (!thumb.isNull()) {
+            if (m_thumbnailCache.size() >= kMaxThumbnails) {
+                QString oldest = m_thumbnailLRU.takeLast();
+                m_thumbnailCache.remove(oldest);
+            }
+            m_thumbnailCache[path] = thumb;
+            m_thumbnailLRU.prepend(path);
+
+            auto *item = m_itemMap.value(path);
+            if (item)
+                item->setIcon(QIcon(thumb));
+        }
+        watcher->deleteLater();
+        if (!m_pendingThumbnails.isEmpty())
+            QTimer::singleShot(0, this, &VideoLibraryPage::processNextThumbnail);
+    });
+    watcher->setFuture(QtConcurrent::run(fetchThumbnailRaw, path));
 }
 
 void VideoLibraryPage::openSelected()
@@ -321,48 +360,6 @@ void VideoLibraryPage::showToast(const QString &message)
     m_toastLabel->setText(message);
     m_toastWidget->setVisible(true);
     m_toastTimer->start(5000);
-}
-
-QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
-{
-    auto cacheIt = m_thumbnailCache.find(filePath);
-    if (cacheIt != m_thumbnailCache.end()) {
-        // Promote to front — single scan with move instead of remove+insert
-        int idx = m_thumbnailLRU.indexOf(filePath);
-        if (idx > 0)
-            m_thumbnailLRU.move(idx, 0);
-        return cacheIt.value();
-    }
-
-    QPixmap fallback;
-    IShellItemImageFactory *factory = nullptr;
-    HRESULT hr = SHCreateItemFromParsingName(
-        reinterpret_cast<const wchar_t *>(filePath.utf16()),
-        nullptr,
-        IID_PPV_ARGS(&factory));
-
-    if (SUCCEEDED(hr) && factory) {
-        HBITMAP hBitmap = nullptr;
-        hr = factory->GetImage({ 320, 180 }, 0, &hBitmap);
-        if (SUCCEEDED(hr) && hBitmap) {
-            fallback = win32::hBitmapToPixmap(hBitmap);
-            DeleteObject(hBitmap);
-        }
-        factory->Release();
-    }
-
-    if (fallback.isNull())
-        fallback = thumbnailViaFfmpeg(filePath);
-
-    if (!fallback.isNull()) {
-        if (m_thumbnailCache.size() >= kMaxThumbnails) {
-            QString oldest = m_thumbnailLRU.takeLast();
-            m_thumbnailCache.remove(oldest);
-        }
-        m_thumbnailCache[filePath] = fallback;
-        m_thumbnailLRU.prepend(filePath);
-    }
-    return fallback;
 }
 
 void VideoLibraryPage::renameSelected()

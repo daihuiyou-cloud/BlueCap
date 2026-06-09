@@ -511,8 +511,8 @@ QString RecorderController::resolveFfmpegPath()
         return m_ffmpegPath;
     }
 
-    m_ffmpegPath = QStringLiteral("ffmpeg.exe");
-    return m_ffmpegPath;
+    m_ffmpegPath.clear();
+    return {};
 }
 
 QString RecorderController::createOutputPath() const

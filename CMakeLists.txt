@@ -8,7 +8,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt5 REQUIRED COMPONENTS Widgets Svg)
+find_package(Qt5 REQUIRED COMPONENTS Widgets Svg Concurrent)
 
 add_executable(BlueCap WIN32
     src/main.cpp
@@ -29,7 +29,7 @@ add_executable(BlueCap WIN32
 )
 
 target_include_directories(BlueCap PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_link_libraries(BlueCap PRIVATE Qt5::Widgets Qt5::Svg)
+target_link_libraries(BlueCap PRIVATE Qt5::Widgets Qt5::Svg Qt5::Concurrent)
 
 target_compile_definitions(BlueCap PRIVATE
     BLUECAP_SOURCE_DIR="${CMAKE_SOURCE_DIR}"

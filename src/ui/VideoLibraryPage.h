@@ -33,7 +33,6 @@ private slots:
 private:
     void applyFilter();
     void showToast(const QString &message);
-    QPixmap getVideoThumbnail(const QString &filePath);
     void processNextThumbnail();
 
     VideoLibrary *m_library = nullptr;
