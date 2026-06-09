@@ -1,15 +1,11 @@
 #pragma once
 
+#include "ThemePreference.h"
+
 #include <QApplication>
 #include <QFile>
 #include <QSettings>
 #include <QString>
-
-enum ThemePreference {
-    ThemeSystem = 0,
-    ThemeLight  = 1,
-    ThemeDark   = 2
-};
 
 namespace theme {
 
@@ -37,12 +33,12 @@ inline QString loadStyleSheet(int theme)
     return {};
 }
 
-inline void apply(int preference)
+inline void apply(int preference, QApplication *app = qApp)
 {
     const int theme = resolve(preference);
     const QString qss = loadStyleSheet(theme);
-    if (!qss.isEmpty())
-        qApp->setStyleSheet(qss);
+    if (!qss.isEmpty() && app)
+        app->setStyleSheet(qss);
 }
 
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ModeSwitch.h"
+#include "RecordMode.h"
 
 #include <QElapsedTimer>
 #include <QWidget>

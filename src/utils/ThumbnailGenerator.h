@@ -4,19 +4,16 @@
 #include <QProcess>
 #include <QString>
 
-#include "FfmpegLocator.h"
-
 namespace thumbnail {
 
-inline QImage fromVideo(const QString &filePath)
+inline QImage fromVideo(const QString &ffmpegPath, const QString &filePath)
 {
-    const QString ffmpeg = ffmpeg_locator::findFfmpegPath();
-    if (ffmpeg.isEmpty())
+    if (ffmpegPath.isEmpty())
         return {};
 
     QProcess proc;
     proc.setProcessChannelMode(QProcess::SeparateChannels);
-    proc.start(ffmpeg, {
+    proc.start(ffmpegPath, {
         QStringLiteral("-hide_banner"),
         QStringLiteral("-loglevel"), QStringLiteral("error"),
         QStringLiteral("-ss"), QStringLiteral("00:00:00"),

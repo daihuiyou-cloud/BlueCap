@@ -51,7 +51,7 @@ QString processErrorToString(QProcess::ProcessError error)
 }
 
 RecorderController::RecorderController(QObject *parent)
-    : QObject(parent)
+    : IRecorderService(parent)
 {
     m_process = new QProcess(this);
     m_process->setProcessChannelMode(QProcess::SeparateChannels);

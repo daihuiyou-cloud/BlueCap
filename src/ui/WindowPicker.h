@@ -1,5 +1,6 @@
 #pragma once
 
+#include "WindowDragHelper.h"
 #include "utils/WindowEnumerator.h"
 
 #include <QDialog>
@@ -43,8 +44,7 @@ private:
     QPushButton *m_refreshBtn = nullptr;
     QHash<qulonglong, QPixmap> m_iconCache;
     QList<WindowEntry> m_windows;
-    QPoint m_dragPosition;
-    bool m_dragging = false;
+    window_drag::State m_dragState;
     QTimer *m_filterDebounce = nullptr;
     QString m_filterPending;
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "WindowDragHelper.h"
+
 #include <QAbstractNativeEventFilter>
 #include <QIcon>
 #include <QWidget>
@@ -14,6 +16,7 @@ class ISettingsRepository;
 class RecordPage;
 class RecorderController;
 class RecordingOverlay;
+class SettingsPage;
 class Sidebar;
 class TrayManager;
 class VideoLibrary;
@@ -63,6 +66,7 @@ private:
     VideoLibrary *m_library = nullptr;
     RecordPage *m_recordPage = nullptr;
     VideoLibraryPage *m_videoLibraryPage = nullptr;
+    SettingsPage *m_settingsPage = nullptr;
     RecordingOverlay *m_overlay = nullptr;
     TrayManager *m_tray = nullptr;
     HotkeyManager *m_hotkey = nullptr;
@@ -74,8 +78,7 @@ private:
     QPushButton *m_closeButton = nullptr;
     QLabel *m_recordingIndicator = nullptr;
 
-    QPoint m_dragPosition;
-    bool m_dragging = false;
+    window_drag::State m_dragState;
     bool m_maximized = false;
     bool m_darkMode = false;
 

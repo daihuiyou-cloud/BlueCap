@@ -151,10 +151,9 @@ RecordPage::RecordPage(IRecorderService *recorder, VideoLibrary *library, QWidge
             this, &RecordPage::openSaveFolder);
 
     connect(m_recordButton, &QAbstractButton::clicked, this, &RecordPage::toggleRecording);
-    auto *src = m_recorder->signalSource();
-    connect(src, SIGNAL(recordingChanged(bool)), this, SLOT(handleRecordingChanged(bool)));
-    connect(src, SIGNAL(videoSaved(const QString &)), this, SLOT(handleVideoSaved(const QString &)));
-    connect(src, SIGNAL(errorOccurred(const QString &)), this, SLOT(handleError(const QString &)));
+    connect(m_recorder, &IRecorderService::recordingChanged, this, &RecordPage::handleRecordingChanged);
+    connect(m_recorder, &IRecorderService::videoSaved, this, &RecordPage::handleVideoSaved);
+    connect(m_recorder, &IRecorderService::errorOccurred, this, &RecordPage::handleError);
     connect(m_library, &VideoLibrary::recentVideosChanged,
             this, &RecordPage::updateRecentVideos);
 

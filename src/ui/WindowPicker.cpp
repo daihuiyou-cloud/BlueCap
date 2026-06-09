@@ -1,4 +1,5 @@
 #include "WindowPicker.h"
+#include "WindowDragHelper.h"
 #include "utils/WindowEnumerator.h"
 
 #include <QAbstractButton>
@@ -143,29 +144,22 @@ void WindowPicker::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton) {
         QPoint pos = m_surface->mapFrom(this, event->pos());
-        if (m_titleBar->geometry().contains(pos)) {
-            m_dragging = true;
-            m_dragPosition = event->globalPos() - frameGeometry().topLeft();
-            event->accept();
+        if (window_drag::handlePress(this, m_titleBar, pos, event, m_dragState))
             return;
-        }
     }
     QDialog::mousePressEvent(event);
 }
 
 void WindowPicker::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-        move(event->globalPos() - m_dragPosition);
-        event->accept();
+    if (window_drag::handleMove(this, event, m_dragState))
         return;
-    }
     QDialog::mouseMoveEvent(event);
 }
 
 void WindowPicker::mouseReleaseEvent(QMouseEvent *event)
 {
-    m_dragging = false;
+    window_drag::handleRelease(event, m_dragState);
     QDialog::mouseReleaseEvent(event);
 }
 

@@ -2,6 +2,7 @@
 #include "HotkeyManager.h"
 #include "IconHelper.h"
 #include "TrayManager.h"
+#include "WindowDragHelper.h"
 #include "utils/Theme.h"
 #include "utils/ThemeColors.h"
 
@@ -133,7 +134,8 @@ void MainWindow::setupUI()
     m_stack->addWidget(m_recordPage);
     m_videoLibraryPage = new VideoLibraryPage(m_library, m_stack);
     m_stack->addWidget(m_videoLibraryPage);
-    m_stack->addWidget(new SettingsPage(m_settings, m_stack));
+    m_settingsPage = new SettingsPage(m_settings, m_stack);
+    m_stack->addWidget(m_settingsPage);
     bodyLayout->addWidget(m_stack, 1);
 
     surfaceLayout->addWidget(body, 1);
@@ -151,10 +153,10 @@ void MainWindow::setupPageConnections()
 
 void MainWindow::setupSettingsConnections()
 {
-    auto *settingsPage = qobject_cast<SettingsPage *>(m_stack->widget(2));
-    if (!settingsPage)
+    if (!m_settingsPage)
         return;
 
+    SettingsPage *settingsPage = m_settingsPage;
     connect(settingsPage, &SettingsPage::frameRateChanged,
             m_recorder, &RecorderController::setFrameRate);
     connect(settingsPage, &SettingsPage::presetChanged,
@@ -201,13 +203,13 @@ void MainWindow::setupSettingsConnections()
 
 void MainWindow::setupRecordConnections()
 {
-    connect(m_recorder, &RecorderController::recordingAreaChanged, this,
+    connect(m_recorder, &IRecorderService::recordingAreaChanged, this,
         [this](const QRect &area, RecordMode mode) {
             Q_UNUSED(mode);
             m_overlay->showForRegion(area);
         });
 
-    connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {
+    connect(m_recorder, &IRecorderService::recordingChanged, this, [this](bool recording) {
         m_recordingIndicator->setVisible(recording);
         m_hotkey->setRecordingHotkeysEnabled(recording);
         if (recording) {
@@ -223,11 +225,11 @@ void MainWindow::setupRecordConnections()
         m_tray->updateRecordingState(recording);
     });
 
-    connect(m_recorder, &RecorderController::errorOccurred, this, [this] {
+    connect(m_recorder, &IRecorderService::errorOccurred, this, [this] {
         m_overlay->hideOverlay();
     });
 
-    connect(m_recorder, &RecorderController::recordingWarning, this, [this](const QString &msg) {
+    connect(m_recorder, &IRecorderService::recordingWarning, this, [this](const QString &msg) {
         m_tray->showMessage(QStringLiteral("BlueCap"), msg,
             QSystemTrayIcon::Warning, 4000);
     });
@@ -518,12 +520,8 @@ bool MainWindow::inTitleDragArea(const QPoint &position) const
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
-        m_dragging = true;
-        m_dragPosition = event->globalPos() - frameGeometry().topLeft();
-        event->accept();
+    if (window_drag::handlePress(this, m_titleBar, event->pos(), event, m_dragState))
         return;
-    }
     QWidget::mousePressEvent(event);
 }
 
@@ -542,16 +540,13 @@ void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event)
 {
-    if (m_dragging && (event->buttons() & Qt::LeftButton)) {
-        move(event->globalPos() - m_dragPosition);
-        event->accept();
+    if (window_drag::handleMove(this, event, m_dragState))
         return;
-    }
     QWidget::mouseMoveEvent(event);
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event)
 {
-    m_dragging = false;
+    window_drag::handleRelease(event, m_dragState);
     QWidget::mouseReleaseEvent(event);
 }

@@ -1,15 +1,19 @@
 #pragma once
 
+#include "RecordMode.h"
+
 #include <QRect>
-#include <QString>
 #include <QObject>
+#include <QString>
 
 class QScreen;
 
-class IRecorderService
+class IRecorderService : public QObject
 {
+    Q_OBJECT
+
 public:
-    virtual ~IRecorderService() = default;
+    explicit IRecorderService(QObject *parent = nullptr) : QObject(parent) {}
 
     virtual bool isRecording() const = 0;
     virtual QString currentOutputPath() const = 0;
@@ -27,5 +31,11 @@ public:
     virtual void setStartTimeout(int ms) = 0;
     virtual void setStopTimeout(int ms) = 0;
 
-    virtual QObject *signalSource() const = 0;
+signals:
+    void recordingChanged(bool recording);
+    void outputPathChanged(const QString &path);
+    void videoSaved(const QString &path);
+    void errorOccurred(const QString &message);
+    void recordingAreaChanged(const QRect &area, RecordMode mode);
+    void recordingWarning(const QString &message);
 };

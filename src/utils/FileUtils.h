@@ -20,4 +20,20 @@ inline bool moveToTrash(const QString &filePath)
     return SHFileOperationW(&fos) == 0;
 }
 
+inline bool isValidFileName(const QString &name)
+{
+    if (name.isEmpty())
+        return false;
+    static const QLatin1Char illegal[] = {
+        QLatin1Char('/'), QLatin1Char('\\'), QLatin1Char(':'),
+        QLatin1Char('*'), QLatin1Char('?'), QLatin1Char('"'),
+        QLatin1Char('<'), QLatin1Char('>'), QLatin1Char('|')
+    };
+    for (auto ch : illegal) {
+        if (name.contains(ch))
+            return false;
+    }
+    return true;
+}
+
 }

@@ -14,7 +14,7 @@
 class QScreen;
 class QTimer;
 
-class RecorderController : public QObject, public IRecorderService
+class RecorderController : public IRecorderService
 {
     Q_OBJECT
 
@@ -23,30 +23,22 @@ public:
 
     enum class State { Idle, Starting, Recording, Stopping };
     State state() const;
-    bool isRecording() const;
-    QString currentOutputPath() const;
-    QString currentSavePath() const;
+    bool isRecording() const override;
+    QString currentOutputPath() const override;
+    QString currentSavePath() const override;
 
-    void setFrameRate(int fps);
-    void setPreset(const QString &preset);
-    void setSavePath(const QString &path);
-    void setShowCursor(bool show);
-    void setStartTimeout(int ms);
-    void setStopTimeout(int ms);
+    void setFrameRate(int fps) override;
+    void setPreset(const QString &preset) override;
+    void setSavePath(const QString &path) override;
+    void setShowCursor(bool show) override;
+    void setStartTimeout(int ms) override;
+    void setStopTimeout(int ms) override;
 
 public slots:
-    void startFullScreenRecording(QScreen *screen = nullptr);
-    void startRegionRecording(const QRect &region);
-    void startWindowRecording(const QString &windowTitle);
-    void stopRecording();
-
-signals:
-    void recordingChanged(bool recording);
-    void outputPathChanged(const QString &path);
-    void videoSaved(const QString &path);
-    void errorOccurred(const QString &message);
-    void recordingAreaChanged(const QRect &area, RecordMode mode);
-    void recordingWarning(const QString &message);
+    void startFullScreenRecording(QScreen *screen = nullptr) override;
+    void startRegionRecording(const QRect &region) override;
+    void startWindowRecording(const QString &windowTitle) override;
+    void stopRecording() override;
 
 private slots:
     void handleStarted();
@@ -90,6 +82,4 @@ private:
     QStringList m_reportedWarnings;
 
     void detectHardwareEncoder();
-
-    QObject *signalSource() const override { return const_cast<QObject *>(static_cast<const QObject *>(this)); }
 };

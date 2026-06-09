@@ -25,6 +25,7 @@ add_executable(BlueCap WIN32
     src/ui/VideoLibraryPage.cpp
     src/ui/TrayManager.cpp
     src/ui/HotkeyManager.cpp
+    src/recorder/IRecorderService.h
     src/recorder/RecorderController.cpp
     src/storage/VideoLibrary.cpp
     src/utils/WindowEnumerator.cpp

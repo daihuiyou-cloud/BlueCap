@@ -1,6 +1,7 @@
 #include "VideoLibraryPage.h"
 #include "IconHelper.h"
 #include "storage/VideoLibrary.h"
+#include "utils/FfmpegLocator.h"
 #include "utils/FileUtils.h"
 #include "utils/Format.h"
 #include "utils/ThumbnailGenerator.h"
@@ -349,7 +350,10 @@ void VideoLibraryPage::processNextThumbnail()
         if (!m_pendingThumbnails.isEmpty())
             QTimer::singleShot(0, this, &VideoLibraryPage::processNextThumbnail);
     });
-    watcher->setFuture(QtConcurrent::run(thumbnail::fromVideo, path));
+    const QString ffmpegPath = ffmpeg_locator::findFfmpegPath();
+    watcher->setFuture(QtConcurrent::run([ffmpegPath, path]() {
+        return thumbnail::fromVideo(ffmpegPath, path);
+    }));
 }
 
 void VideoLibraryPage::openSelected()
@@ -439,11 +443,7 @@ void VideoLibraryPage::renameSelected()
     if (!ok || newName.isEmpty() || newName == oldName)
         return;
 
-    if (newName.contains(QLatin1Char('/')) || newName.contains(QLatin1Char('\\'))
-        || newName.contains(QLatin1Char(':')) || newName.contains(QLatin1Char('*'))
-        || newName.contains(QLatin1Char('?')) || newName.contains(QLatin1Char('"'))
-        || newName.contains(QLatin1Char('<')) || newName.contains(QLatin1Char('>'))
-        || newName.contains(QLatin1Char('|'))) {
+    if (!file_utils::isValidFileName(newName)) {
         QMessageBox::warning(this, QStringLiteral("重命名失败"),
             QStringLiteral("文件名包含非法字符。"));
         return;
