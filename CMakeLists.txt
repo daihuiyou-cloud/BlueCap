@@ -10,6 +10,10 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 REQUIRED COMPONENTS Widgets Svg Concurrent)
 
+set_source_files_properties(resources/app-icon.rc PROPERTIES
+    OBJECT_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/resources/icons/app-icon.ico"
+)
+
 add_executable(BlueCap WIN32
     src/main.cpp
     src/ui/MainWindow.cpp
