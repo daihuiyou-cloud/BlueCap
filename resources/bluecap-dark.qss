@@ -201,6 +201,49 @@ QPushButton#bottomIcon:pressed {
     font-weight: 800;
 }
 
+#settingsPanel {
+    border: 1px solid rgba(70, 86, 112, 0.62);
+    border-radius: 8px;
+    background: rgba(13, 18, 27, 0.42);
+}
+
+#settingsSectionTitle {
+    color: #e0e6f0;
+    font-size: 15px;
+    font-weight: 800;
+    background: transparent;
+}
+
+#settingsForm {
+    background: transparent;
+}
+
+#settingsForm QLabel {
+    min-width: 76px;
+    color: #9aa8bc;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
+}
+
+#settingsPanel QLineEdit,
+#settingsPanel QSpinBox,
+#settingsPanel QComboBox {
+    border-color: rgba(74, 90, 118, 0.88);
+    background: rgba(14, 19, 29, 0.58);
+    font-size: 14px;
+}
+
+#settingsPanel QCheckBox {
+    font-size: 14px;
+    color: #b8c3d4;
+    spacing: 10px;
+}
+
+#settingsFooter {
+    background: transparent;
+}
+
 QListWidget {
     border: 1px solid rgba(60, 70, 85, 0.95);
     border-radius: 8px;
@@ -275,16 +318,19 @@ QProgressBar::chunk {
 }
 
 #resetBtn {
-    background: transparent;
-    border: 1px solid rgba(60, 70, 85, 0.95);
-    border-radius: 6px;
-    padding: 8px 20px;
-    font-size: 13px;
-    color: #8898b0;
+    background: rgba(19, 25, 36, 0.72);
+    border: 1px solid rgba(82, 98, 126, 0.92);
+    border-radius: 8px;
+    padding: 0 22px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #aebbd0;
 }
 
 #resetBtn:hover {
-    background: rgba(50, 60, 80, 0.66);
+    color: #e4f1ff;
+    border-color: rgba(77, 163, 255, 0.62);
+    background: rgba(42, 93, 154, 0.24);
 }
 
 #resetBtn:pressed {
@@ -301,17 +347,19 @@ QProgressBar::chunk {
 }
 
 #browseBtn {
-    background: rgba(20, 24, 32, 0.5);
-    border: 1px solid rgba(60, 70, 85, 0.95);
-    border-radius: 6px;
-    font-size: 13px;
-    color: #b0bcc8;
-    padding: 5px 12px;
+    background: rgba(30, 40, 56, 0.78);
+    border: 1px solid rgba(82, 98, 126, 0.92);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #c8d0dc;
+    padding: 0 14px;
 }
 
 #browseBtn:hover {
-    background: rgba(50, 60, 80, 0.66);
-    border-color: #4da3ff;
+    color: #e4f1ff;
+    background: rgba(42, 93, 154, 0.30);
+    border-color: rgba(77, 163, 255, 0.72);
 }
 
 #browseBtn:pressed {

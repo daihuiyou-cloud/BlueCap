@@ -201,6 +201,49 @@ QPushButton#bottomIcon:pressed {
     font-weight: 800;
 }
 
+#settingsPanel {
+    border: 1px solid rgba(202, 214, 234, 0.82);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.54);
+}
+
+#settingsSectionTitle {
+    color: #162039;
+    font-size: 15px;
+    font-weight: 800;
+    background: transparent;
+}
+
+#settingsForm {
+    background: transparent;
+}
+
+#settingsForm QLabel {
+    min-width: 76px;
+    color: #53617a;
+    font-size: 13px;
+    font-weight: 600;
+    background: transparent;
+}
+
+#settingsPanel QLineEdit,
+#settingsPanel QSpinBox,
+#settingsPanel QComboBox {
+    border-color: rgba(188, 202, 224, 0.92);
+    background: rgba(255, 255, 255, 0.70);
+    font-size: 14px;
+}
+
+#settingsPanel QCheckBox {
+    font-size: 14px;
+    color: #1f2940;
+    spacing: 10px;
+}
+
+#settingsFooter {
+    background: transparent;
+}
+
 QListWidget {
     border: 1px solid rgba(207, 216, 232, 0.95);
     border-radius: 8px;
@@ -275,16 +318,19 @@ QProgressBar::chunk {
 }
 
 #resetBtn {
-    background: transparent;
-    border: 1px solid rgba(207, 216, 232, 0.95);
-    border-radius: 6px;
-    padding: 8px 20px;
-    font-size: 13px;
+    background: rgba(255, 255, 255, 0.70);
+    border: 1px solid rgba(188, 202, 224, 0.96);
+    border-radius: 8px;
+    padding: 0 22px;
+    font-size: 14px;
+    font-weight: 700;
     color: #53617a;
 }
 
 #resetBtn:hover {
-    background: rgba(232, 242, 255, 0.66);
+    color: #0967f2;
+    border-color: rgba(9, 103, 242, 0.46);
+    background: rgba(232, 242, 255, 0.92);
 }
 
 #resetBtn:pressed {
@@ -301,17 +347,19 @@ QProgressBar::chunk {
 }
 
 #browseBtn {
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(207, 216, 232, 0.95);
-    border-radius: 6px;
-    font-size: 13px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(188, 202, 224, 0.96);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
     color: #1f2940;
-    padding: 5px 12px;
+    padding: 0 14px;
 }
 
 #browseBtn:hover {
-    background: rgba(232, 242, 255, 0.66);
-    border-color: #0967f2;
+    color: #0967f2;
+    background: rgba(232, 242, 255, 0.92);
+    border-color: rgba(9, 103, 242, 0.52);
 }
 
 #browseBtn:pressed {
