@@ -2,21 +2,56 @@
 
 #include <QApplication>
 #include <QByteArray>
+#include <QMetaObject>
 
-#include <windows.h>
+HotkeyManager *HotkeyManager::s_instance = nullptr;
 
 HotkeyManager::HotkeyManager(QObject *parent)
     : QObject(parent)
 {
+    s_instance = this;
     qApp->installNativeEventFilter(this);
     m_registered = RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_SHIFT, 'R');
 }
 
 HotkeyManager::~HotkeyManager()
 {
+    if (m_keyboardHook) {
+        UnhookWindowsHookEx(m_keyboardHook);
+        m_keyboardHook = nullptr;
+    }
     qApp->removeNativeEventFilter(this);
     if (m_registered)
         UnregisterHotKey(nullptr, 1);
+    if (s_instance == this)
+        s_instance = nullptr;
+}
+
+void HotkeyManager::setRecordingHotkeysEnabled(bool enabled)
+{
+    m_recordingHotkeysEnabled = enabled;
+    if (enabled && !m_keyboardHook) {
+        m_keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, keyboardHookProc,
+            GetModuleHandle(nullptr), 0);
+    } else if (!enabled && m_keyboardHook) {
+        UnhookWindowsHookEx(m_keyboardHook);
+        m_keyboardHook = nullptr;
+    }
+}
+
+LRESULT CALLBACK HotkeyManager::keyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+    if (nCode == HC_ACTION && wParam == WM_KEYDOWN && s_instance) {
+        auto *kbd = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
+        if (kbd->vkCode == VK_ESCAPE && s_instance->m_recordingHotkeysEnabled) {
+            QMetaObject::invokeMethod(s_instance, [=] {
+                if (s_instance && s_instance->m_recordingHotkeysEnabled)
+                    emit s_instance->escapePressed();
+            }, Qt::QueuedConnection);
+            return 1;
+        }
+    }
+    return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
 bool HotkeyManager::nativeEventFilter(const QByteArray &eventType, void *message, long *result)
@@ -27,11 +62,13 @@ bool HotkeyManager::nativeEventFilter(const QByteArray &eventType, void *message
         return false;
 
     auto *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_HOTKEY && msg->wParam == 1) {
-        emit hotkeyPressed();
-        if (result)
-            *result = 0;
-        return true;
+    if (msg->message == WM_HOTKEY) {
+        if (msg->wParam == 1) {
+            emit hotkeyPressed();
+            if (result)
+                *result = 0;
+            return true;
+        }
     }
     return false;
 }

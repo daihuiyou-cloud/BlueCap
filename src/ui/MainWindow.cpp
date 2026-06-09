@@ -196,6 +196,7 @@ void MainWindow::setupConnections()
 
     connect(m_recorder, &RecorderController::recordingChanged, this, [this](bool recording) {
         m_recordingIndicator->setVisible(recording);
+        m_hotkey->setRecordingHotkeysEnabled(recording);
         if (recording) {
             m_pulseState = false;
             m_recordingIndicator->setStyleSheet(QString());
@@ -230,11 +231,12 @@ void MainWindow::setupConnections()
         m_overlay->setStatusText(text);
     });
 
-    connect(m_hotkey, &HotkeyManager::hotkeyPressed, this, [this] {
+    auto toggleRecord = [this] {
         bool wasRecording = m_recorder->isRecording();
         m_recordPage->toggleRecording();
         bool nowRecording = m_recorder->isRecording();
         if (wasRecording != nowRecording) {
+            m_hotkey->setRecordingHotkeysEnabled(nowRecording);
             m_tray->showMessage(QStringLiteral("BlueCap"),
                 nowRecording ? QStringLiteral("录制已开始") : QStringLiteral("录制已停止"),
                 QSystemTrayIcon::Information, 2500);
@@ -243,6 +245,12 @@ void MainWindow::setupConnections()
                 activateWindow();
             }
         }
+    };
+
+    connect(m_hotkey, &HotkeyManager::hotkeyPressed, this, toggleRecord);
+    connect(m_hotkey, &HotkeyManager::escapePressed, this, [this] {
+        if (m_recorder->isRecording())
+            m_recordPage->toggleRecording();
     });
 
     connect(m_tray, &TrayManager::showWindowRequested, this, [this] {
