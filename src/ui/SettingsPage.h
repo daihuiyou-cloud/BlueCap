@@ -51,4 +51,5 @@ private:
     QTimer *m_feedbackTimer = nullptr;
     QTimer *m_applyDebounce = nullptr;
     QPushButton *m_resetBtn = nullptr;
+    bool m_resetting = false;
 };

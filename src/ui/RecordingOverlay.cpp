@@ -1,6 +1,7 @@
 #include "RecordingOverlay.h"
 
 #include <QGuiApplication>
+#include <QFontMetrics>
 #include <QPainter>
 #include <QScreen>
 #include <QShowEvent>
@@ -54,7 +55,14 @@ void RecordingOverlay::showForFullscreen()
 void RecordingOverlay::hideOverlay()
 {
     m_pulseTimer->stop();
+    m_statusText.clear();
     hide();
+}
+
+void RecordingOverlay::setStatusText(const QString &text)
+{
+    m_statusText = text;
+    update();
 }
 
 void RecordingOverlay::showEvent(QShowEvent *event)
@@ -92,5 +100,26 @@ void RecordingOverlay::paintEvent(QPaintEvent *)
         painter.setPen(Qt::NoPen);
         painter.setBrush(QColor(239, 48, 57, alpha));
         painter.drawEllipse(dotCenter, dotR, dotR);
+    }
+
+    if (!m_statusText.isEmpty() && m_isFullscreen) {
+        QFont font = painter.font();
+        font.setPointSize(11);
+        font.setBold(true);
+        painter.setFont(font);
+
+        QString text = QStringLiteral("●  %1").arg(m_statusText);
+        QFontMetrics fm(font);
+        int tw = fm.horizontalAdvance(text) + 32;
+        int th = 30;
+        int x = 16;
+        int y = 16;
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, 150));
+        painter.drawRoundedRect(x, y, tw, th, 8, 8);
+
+        painter.setPen(Qt::white);
+        painter.drawText(x + 16, y + th - 8, text);
     }
 }

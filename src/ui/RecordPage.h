@@ -24,6 +24,7 @@ public:
 
 signals:
     void recentVideosClicked();
+    void elapsedUpdated(int seconds);
 
 public:
     void startQuickRecording();

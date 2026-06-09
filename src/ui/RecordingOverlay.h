@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QString>
 #include <QWidget>
 
 class QTimer;
@@ -14,6 +15,7 @@ public:
     void showForRegion(const QRect &region);
     void showForFullscreen();
     void hideOverlay();
+    void setStatusText(const QString &text);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -24,4 +26,5 @@ private:
     QTimer *m_pulseTimer = nullptr;
     bool m_pulseState = false;
     bool m_isFullscreen = false;
+    QString m_statusText;
 };

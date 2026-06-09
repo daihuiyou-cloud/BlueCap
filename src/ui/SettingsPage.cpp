@@ -199,6 +199,7 @@ void SettingsPage::browsePath()
 
 void SettingsPage::resetDefaults()
 {
+    m_resetting = true;
     m_pathEdit->setText(QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap"));
     m_fpsSpin->setValue(30);
     int idx = m_qualityCombo->findData(QStringLiteral("fast"));
@@ -262,10 +263,11 @@ void SettingsPage::applySettings(bool showFeedback)
     if (showFeedback) {
         if (pathValid) {
             m_saveFeedback->setStyleSheet(QStringLiteral("color: #28965c; font-size: 13px; font-weight: 700; padding: 4px 8px;"));
-            m_saveFeedback->setText(QStringLiteral("✓ 已保存"));
+            m_saveFeedback->setText(m_resetting ? QStringLiteral("✓ 已恢复默认设置") : QStringLiteral("✓ 已保存"));
             m_saveFeedback->setVisible(true);
             m_feedbackTimer->start(2000);
         }
+        m_resetting = false;
     }
 }
 

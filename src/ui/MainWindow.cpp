@@ -191,6 +191,18 @@ void MainWindow::setupConnections()
     connect(m_recorder, &RecorderController::errorOccurred, this, [this] {
         m_overlay->hideOverlay();
     });
+
+    connect(m_recordPage, &RecordPage::elapsedUpdated, this, [this](int seconds) {
+        int h = seconds / 3600;
+        int m = (seconds % 3600) / 60;
+        int s = seconds % 60;
+        QString text;
+        if (h > 0)
+            text = QStringLiteral("%1:%2:%3").arg(h, 2, 10, QChar('0')).arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+        else
+            text = QStringLiteral("%1:%2").arg(m, 2, 10, QChar('0')).arg(s, 2, 10, QChar('0'));
+        m_overlay->setStatusText(text);
+    });
 }
 
 void MainWindow::setupHotkey()

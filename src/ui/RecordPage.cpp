@@ -376,12 +376,22 @@ void RecordPage::openSaveFolder()
 
 void RecordPage::startRegionSelection()
 {
+    bool *committed = new bool(false);
     auto *selector = new RegionSelector;
     selector->setAttribute(Qt::WA_DeleteOnClose);
     connect(selector, &RegionSelector::regionSelected, this,
-        [this](const QRect &region) {
+        [this, committed](const QRect &region) {
+            *committed = true;
             m_recorder->startRegionRecording(region);
         });
+    connect(selector, &QObject::destroyed, this, [this, committed] {
+        if (!*committed && m_hiddenForRecording) {
+            m_hiddenForRecording = false;
+            window()->showNormal();
+            window()->activateWindow();
+        }
+        delete committed;
+    });
     selector->show();
 }
 
@@ -394,6 +404,17 @@ void RecordPage::pickWindow()
         QString selected = picker->selectedWindow();
         if (!selected.isEmpty()) {
             m_recorder->startWindowRecording(selected);
+        } else if (m_hiddenForRecording) {
+            m_hiddenForRecording = false;
+            window()->showNormal();
+            window()->activateWindow();
+        }
+    });
+    connect(picker, &QDialog::rejected, this, [this] {
+        if (m_hiddenForRecording) {
+            m_hiddenForRecording = false;
+            window()->showNormal();
+            window()->activateWindow();
         }
     });
     picker->show();
@@ -439,8 +460,8 @@ void RecordPage::handleVideoSaved(const QString &path)
     m_library->addRecentVideo(path);
     m_lastSavedPath = path;
     QFileInfo fi(path);
-    m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)").arg(fi.fileName(), format::fileSize(fi.size())));
-    m_statusLabel->setToolTip(QStringLiteral("点击打开刚保存的视频"));
+    m_statusLabel->setText(QStringLiteral("已保存：%1 (%2)  |  单击打开  |  右键打开文件夹").arg(fi.fileName(), format::fileSize(fi.size())));
+    m_statusLabel->setToolTip(QStringLiteral("左键打开视频，右键打开所在文件夹"));
     m_statusOpensSavedVideo = true;
 }
 
@@ -515,6 +536,7 @@ void RecordPage::updateElapsedTime()
             .arg(m, 2, 10, QChar('0'))
             .arg(s, 2, 10, QChar('0')));
     }
+    emit elapsedUpdated(static_cast<int>(secs));
 }
 
 void RecordPage::updateStopProgress()
@@ -543,6 +565,10 @@ bool RecordPage::eventFilter(QObject *obj, QEvent *event)
                 emit recentVideosClicked();
                 return true;
             }
+        }
+        if (me->button() == Qt::RightButton && obj == m_statusLabel && m_statusOpensSavedVideo) {
+            openSaveFolder();
+            return true;
         }
     }
     return QWidget::eventFilter(obj, event);
