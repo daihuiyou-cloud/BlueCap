@@ -129,6 +129,7 @@ RecordPage::RecordPage(RecorderController *recorder, VideoLibrary *library, QWid
     root->addWidget(m_stopProgress, 0, Qt::AlignCenter);
 
     auto *escapeShortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+    escapeShortcut->setContext(Qt::ApplicationShortcut);
     connect(escapeShortcut, &QShortcut::activated, this, [this] {
         if (m_recorder->isRecording()) {
             toggleRecording();

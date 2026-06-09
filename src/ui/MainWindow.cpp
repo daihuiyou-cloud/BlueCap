@@ -200,6 +200,7 @@ void MainWindow::setupConnections()
             m_pulseState = false;
             m_recordingIndicator->setStyleSheet(QString());
             m_pulseTimer->start(800);
+            m_overlay->setHintText(QStringLiteral("Esc 停止录制"));
         } else {
             m_pulseTimer->stop();
             m_recordingIndicator->setStyleSheet(QString());

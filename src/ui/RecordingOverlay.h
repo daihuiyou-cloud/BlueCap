@@ -16,6 +16,7 @@ public:
     void showForFullscreen();
     void hideOverlay();
     void setStatusText(const QString &text);
+    void setHintText(const QString &text);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -27,4 +28,5 @@ private:
     bool m_pulseState = false;
     bool m_isFullscreen = false;
     QString m_statusText;
+    QString m_hintText;
 };
