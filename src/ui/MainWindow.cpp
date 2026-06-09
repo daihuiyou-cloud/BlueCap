@@ -180,8 +180,10 @@ void MainWindow::setupConnections()
             m_overlay->hideOverlay();
         }
         m_trayIcon->setIcon(recording ? m_trayIconRecording : m_trayIconIdle);
-        m_trayMenu->actions()[1]->setEnabled(!recording);
-        m_trayMenu->actions()[2]->setText(recording
+        if (m_trayQuickAction)
+            m_trayQuickAction->setEnabled(!recording);
+        if (m_trayRecordAction)
+            m_trayRecordAction->setText(recording
             ? QStringLiteral("停止录制")
             : QStringLiteral("开始/停止录制"));
     });
@@ -232,6 +234,8 @@ void MainWindow::setupTray()
     QAction *showAction = m_trayMenu->addAction(QStringLiteral("显示/隐藏"));
     QAction *quickAction = m_trayMenu->addAction(QStringLiteral("快速全屏录制"));
     QAction *recordAction = m_trayMenu->addAction(QStringLiteral("开始/停止录制"));
+    m_trayQuickAction = quickAction;
+    m_trayRecordAction = recordAction;
     m_trayMenu->addSeparator();
     QAction *quitAction = m_trayMenu->addAction(QStringLiteral("退出"));
 

@@ -55,5 +55,6 @@ private:
     QHash<QString, QListWidgetItem *> m_itemMap;
     QHash<QString, QLabel *> m_thumbnailLabels;
     QIcon m_placeholderIcon;
+    int m_thumbnailGeneration = 0;
     static constexpr int kMaxThumbnails = 50;
 };

@@ -261,9 +261,11 @@ void VideoLibraryPage::refreshList(const QStringList &videos)
 
 void VideoLibraryPage::applyFilter()
 {
+    ++m_thumbnailGeneration;
     m_list->clear();
     m_pendingThumbnails.clear();
     m_thumbnailLabels.clear();
+    m_itemMap.clear();
     QString filter = m_filterEdit->text().trimmed();
 
     QStringList matched;
@@ -378,10 +380,15 @@ void VideoLibraryPage::processNextThumbnail()
         return;
 
     QString path = m_pendingThumbnails.takeFirst();
+    const int generation = m_thumbnailGeneration;
 
     auto *watcher = new QFutureWatcher<QImage>(this);
-    connect(watcher, &QFutureWatcher<QImage>::finished, this, [this, watcher, path]() {
+    connect(watcher, &QFutureWatcher<QImage>::finished, this, [this, watcher, path, generation]() {
         const QImage image = watcher->result();
+        if (generation != m_thumbnailGeneration) {
+            watcher->deleteLater();
+            return;
+        }
         if (!image.isNull()) {
             const QPixmap thumb = QPixmap::fromImage(image);
             if (m_thumbnailCache.size() >= kMaxThumbnails) {

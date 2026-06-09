@@ -165,7 +165,16 @@ void RecorderController::setFrameRate(int fps)
 
 void RecorderController::setPreset(const QString &preset)
 {
-    m_preset = preset;
+    static const QSet<QString> kAllowedPresets = {
+        QStringLiteral("ultrafast"),
+        QStringLiteral("superfast"),
+        QStringLiteral("veryfast"),
+        QStringLiteral("faster"),
+        QStringLiteral("fast"),
+        QStringLiteral("medium"),
+        QStringLiteral("slow"),
+    };
+    m_preset = kAllowedPresets.contains(preset) ? preset : QStringLiteral("fast");
 }
 
 void RecorderController::setShowCursor(bool show)
@@ -175,17 +184,17 @@ void RecorderController::setShowCursor(bool show)
 
 void RecorderController::setStartTimeout(int ms)
 {
-    m_startTimeoutMs = ms;
+    m_startTimeoutMs = qBound(1000, ms, 30000);
 }
 
 void RecorderController::setSavePath(const QString &path)
 {
-    m_savePath = path;
+    m_savePath = QDir::fromNativeSeparators(path.trimmed());
 }
 
 void RecorderController::setStopTimeout(int ms)
 {
-    m_stopTimeoutMs = ms;
+    m_stopTimeoutMs = qBound(1000, ms, 30000);
 }
 
 QList<RecorderController::WindowEntry> RecorderController::enumerateWindows()
@@ -264,14 +273,14 @@ void RecorderController::startCapture(const QString &inputSpec,
     };
     // inputArgs (offset_x, offset_y, video_size, etc.) must go BEFORE -i
     args << inputArgs;
+    if (!m_showCursor)
+        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
     args << QStringLiteral("-framerate") << QString::number(m_frameRate);
     args << QStringLiteral("-i") << inputSpec;
     args << QStringLiteral("-c:v") << m_encoder;
     if (m_encoder == QStringLiteral("libx264"))
         args << QStringLiteral("-preset") << m_preset;
     args << QStringLiteral("-pix_fmt") << QStringLiteral("yuv420p");
-    if (!m_showCursor)
-        args << QStringLiteral("-draw_mouse") << QStringLiteral("0");
     args << extraArgs << m_currentOutputPath;
 
     start(args);
@@ -343,10 +352,6 @@ void RecorderController::stopRecording()
     m_stopRequested = true;
 
     m_process->write("q\n");
-    if (!m_process->waitForBytesWritten(1000)) {
-        m_process->kill();
-        return;
-    }
     m_stopTimer->start(m_stopTimeoutMs);
 }
 
@@ -390,7 +395,7 @@ void RecorderController::handleFinishedCheck()
         return;
     }
 
-    if (m_exitCode != 0 && !m_stopRequested) {
+    if (m_exitCode != 0) {
         if (fileExists) QFile::remove(m_currentOutputPath);
         QByteArray fullStderr;
         fullStderr.reserve(m_stderrSize);

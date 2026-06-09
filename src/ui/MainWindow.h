@@ -8,6 +8,7 @@ class QLabel;
 class QMenu;
 class QPoint;
 class QPushButton;
+class QAction;
 class QStackedWidget;
 class QTimer;
 class QSystemTrayIcon;
@@ -77,6 +78,8 @@ private:
     QTimer *m_shadowDebounce = nullptr;
     QIcon m_trayIconRecording;
     QIcon m_trayIconIdle;
+    QAction *m_trayQuickAction = nullptr;
+    QAction *m_trayRecordAction = nullptr;
     QString m_pulseStyleBright;
     QString m_pulseStyleDim;
     void renderShadowCache();
