@@ -463,9 +463,10 @@ void MainWindow::renderShadowCache()
     p.setPen(Qt::NoPen);
 
     const QRectF shadowRect = rect().adjusted(12, 12, -12, -12);
-    for (int i = 10; i >= 1; --i) {
-        p.setBrush(QColor(38, 80, 150, 2 + i));
-        p.drawRoundedRect(shadowRect.adjusted(-i, -i + 6, i, i + 6), 34 + i, 34 + i);
+    for (int i = 5; i >= 1; --i) {
+        const qreal k = i * 2.0;
+        p.setBrush(QColor(38, 80, 150, 2 + i * 3));
+        p.drawRoundedRect(shadowRect.adjusted(-k, -k + 4, k, k + 8), 36 + k, 36 + k);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <QAbstractButton>
 #include <QDialogButtonBox>
 #include <QGraphicsDropShadowEffect>
+#include "utils/Win32Icon.h"
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
@@ -180,43 +181,6 @@ void WindowPicker::keyPressEvent(QKeyEvent *event)
     QDialog::keyPressEvent(event);
 }
 
-namespace {
-
-QPixmap iconFromHICON(HICON hIcon)
-{
-    if (!hIcon) return {};
-    ICONINFO ii = {};
-    if (!GetIconInfo(hIcon, &ii))
-        return {};
-    BITMAP bm = {};
-    if (!GetObject(ii.hbmColor, sizeof(bm), &bm)) {
-        DeleteObject(ii.hbmColor);
-        DeleteObject(ii.hbmMask);
-        return {};
-    }
-    QImage img(bm.bmWidth, bm.bmHeight, QImage::Format_ARGB32_Premultiplied);
-    if (img.isNull()) {
-        DeleteObject(ii.hbmColor);
-        DeleteObject(ii.hbmMask);
-        return {};
-    }
-    BITMAPINFO bi = {};
-    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bi.bmiHeader.biWidth = bm.bmWidth;
-    bi.bmiHeader.biHeight = -bm.bmHeight;
-    bi.bmiHeader.biPlanes = 1;
-    bi.bmiHeader.biBitCount = 32;
-    bi.bmiHeader.biCompression = BI_RGB;
-    HDC hdc = GetDC(nullptr);
-    int lines = GetDIBits(hdc, ii.hbmColor, 0, bm.bmHeight, img.bits(), &bi, DIB_RGB_COLORS);
-    ReleaseDC(nullptr, hdc);
-    DeleteObject(ii.hbmColor);
-    DeleteObject(ii.hbmMask);
-    return lines > 0 ? QPixmap::fromImage(img) : QPixmap();
-}
-
-}
-
 void WindowPicker::populateList(const QString &filter)
 {
     m_list->clear();
@@ -245,7 +209,7 @@ void WindowPicker::populateList(const QString &filter)
             if (!hIcon)
                 hIcon = reinterpret_cast<HICON>(
                     GetClassLongPtrW(hwnd, GCLP_HICONSM));
-            QPixmap px = iconFromHICON(hIcon);
+            QPixmap px = win32::iconFromHICON(hIcon);
             if (!px.isNull()) {
                 m_iconCache.insert(entry.hwnd, px);
                 item->setIcon(QIcon(px));

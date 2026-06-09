@@ -150,8 +150,9 @@ void SettingsPage::loadSettings()
     m_startTimeoutSpin->blockSignals(true);
     m_stopTimeoutSpin->blockSignals(true);
 
-    m_pathEdit->setText(s.value(QStringLiteral("settings/savePath"),
-        QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap")).toString());
+    m_lastValidPath = s.value(QStringLiteral("settings/savePath"),
+        QStandardPaths::writableLocation(QStandardPaths::MoviesLocation) + QStringLiteral("/BlueCap")).toString();
+    m_pathEdit->setText(m_lastValidPath);
 
     m_fpsSpin->setValue(s.value(QStringLiteral("settings/frameRate"), 30).toInt());
 
@@ -256,8 +257,11 @@ void SettingsPage::applySettings(bool showFeedback)
     }
 
     if (pathValid) {
+        m_lastValidPath = path;
         settings.setValue(QStringLiteral("settings/savePath"), path);
         emit savePathChanged(path);
+    } else {
+        m_pathEdit->setText(m_lastValidPath);
     }
 
     if (showFeedback) {

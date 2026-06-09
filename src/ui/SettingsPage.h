@@ -52,4 +52,5 @@ private:
     QTimer *m_applyDebounce = nullptr;
     QPushButton *m_resetBtn = nullptr;
     bool m_resetting = false;
+    QString m_lastValidPath;
 };

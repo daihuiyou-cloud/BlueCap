@@ -3,6 +3,7 @@
 #include "storage/VideoLibrary.h"
 #include "utils/Format.h"
 #include "utils/ThemeColors.h"
+#include "utils/Win32Icon.h"
 
 #include <QAbstractItemView>
 #include <QCoreApplication>
@@ -322,30 +323,6 @@ void VideoLibraryPage::showToast(const QString &message)
     m_toastTimer->start(5000);
 }
 
-static QPixmap hBitmapToPixmap(HBITMAP hBitmap)
-{
-    BITMAP bm;
-    if (!GetObject(hBitmap, sizeof(bm), &bm) || !bm.bmWidth || !bm.bmHeight)
-        return {};
-
-    QImage img(bm.bmWidth, bm.bmHeight, QImage::Format_ARGB32_Premultiplied);
-    if (img.isNull()) return {};
-
-    BITMAPINFO bi = {};
-    bi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bi.bmiHeader.biWidth = bm.bmWidth;
-    bi.bmiHeader.biHeight = -bm.bmHeight;
-    bi.bmiHeader.biPlanes = 1;
-    bi.bmiHeader.biBitCount = 32;
-    bi.bmiHeader.biCompression = BI_RGB;
-
-    HDC hdc = GetDC(nullptr);
-    int lines = GetDIBits(hdc, hBitmap, 0, bm.bmHeight, img.bits(), &bi, DIB_RGB_COLORS);
-    ReleaseDC(nullptr, hdc);
-
-    return lines > 0 ? QPixmap::fromImage(img) : QPixmap();
-}
-
 QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
 {
     auto cacheIt = m_thumbnailCache.find(filePath);
@@ -368,7 +345,7 @@ QPixmap VideoLibraryPage::getVideoThumbnail(const QString &filePath)
         HBITMAP hBitmap = nullptr;
         hr = factory->GetImage({ 320, 180 }, 0, &hBitmap);
         if (SUCCEEDED(hr) && hBitmap) {
-            fallback = hBitmapToPixmap(hBitmap);
+            fallback = win32::hBitmapToPixmap(hBitmap);
             DeleteObject(hBitmap);
         }
         factory->Release();
