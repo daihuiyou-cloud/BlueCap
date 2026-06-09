@@ -2,11 +2,9 @@
 
 #include <QAction>
 #include <QApplication>
-#include <QFile>
 #include <QMenu>
 #include <QPainter>
 #include <QPixmap>
-#include <QSvgRenderer>
 #include <QSystemTrayIcon>
 
 TrayManager::TrayManager(QObject *parent)
@@ -70,29 +68,31 @@ void TrayManager::showMessage(const QString &title, const QString &message,
 
 QIcon TrayManager::makeTrayIcon(bool recording)
 {
-    QFile file(QStringLiteral(":/icons/app-logo.svg"));
-    if (!file.open(QIODevice::ReadOnly))
+    const QPixmap source(QStringLiteral(":/icons/app-logo.png"));
+    if (source.isNull())
         return QIcon();
 
-    QString svg = QString::fromUtf8(file.readAll());
-    if (recording) {
-        svg.replace(QStringLiteral("#A7E4FF"), QStringLiteral("#FFC4C8"));
-        svg.replace(QStringLiteral("#359BFF"), QStringLiteral("#FF6F78"));
-        svg.replace(QStringLiteral("#0967F2"), QStringLiteral("#EF3039"));
-        svg.replace(QStringLiteral("#054CC4"), QStringLiteral("#B81928"));
-        svg.replace(QStringLiteral("#063E9E"), QStringLiteral("#6E0F19"));
-        svg.replace(QStringLiteral("#BFE4FF"), QStringLiteral("#FFD0D3"));
-        svg.replace(QStringLiteral("#A9D9FF"), QStringLiteral("#FFB3B8"));
-    }
-
-    QSvgRenderer renderer(svg.toUtf8());
     QIcon icon;
-    for (int size : {16, 32, 64}) {
+    for (int size : {16, 32, 64, 256}) {
         QPixmap px(size, size);
         px.fill(Qt::transparent);
+
+        const QPixmap scaled = source.scaled(size, size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        const QPoint topLeft((size - scaled.width()) / 2, (size - scaled.height()) / 2);
+
         QPainter p(&px);
         p.setRenderHint(QPainter::Antialiasing);
-        renderer.render(&p, QRectF(0, 0, size, size));
+        p.drawPixmap(topLeft, scaled);
+
+        if (recording) {
+            const qreal badgeSize = qMax<qreal>(6.0, size * 0.34);
+            const qreal margin = qMax<qreal>(1.5, size * 0.08);
+            const QRectF badge(size - badgeSize - margin, size - badgeSize - margin,
+                               badgeSize, badgeSize);
+            p.setPen(QPen(Qt::white, qMax<qreal>(1.2, size * 0.06)));
+            p.setBrush(QColor(224, 82, 94));
+            p.drawEllipse(badge);
+        }
         p.end();
         icon.addPixmap(px);
     }

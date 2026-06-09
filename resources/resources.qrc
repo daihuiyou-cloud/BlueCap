@@ -2,7 +2,7 @@
     <qresource prefix="/">
         <file>bluecap.qss</file>
         <file>bluecap-dark.qss</file>
-        <file>icons/app-logo.svg</file>
+        <file>icons/app-logo.png</file>
         <file>icons/nav-record.svg</file>
         <file>icons/nav-library.svg</file>
         <file>icons/nav-settings.svg</file>

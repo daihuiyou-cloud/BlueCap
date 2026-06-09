@@ -416,7 +416,7 @@ QWidget *MainWindow::createTitleBar()
     logo->setObjectName(QStringLiteral("appLogo"));
     logo->setFixedSize(28, 28);
     logo->setAlignment(Qt::AlignCenter);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.svg")).pixmap(28, 28));
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(28, 28));
 
     auto *title = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
     title->setObjectName(QStringLiteral("windowTitle"));
