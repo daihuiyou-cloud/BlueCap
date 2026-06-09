@@ -335,7 +335,13 @@ void RecordPage::toggleRecording()
         m_countdownTimer->start(1000);
         break;
     case RecordMode::Region:
+        window()->hide();
+        m_hiddenForRecording = true;
+        doStartRecording();
+        break;
     case RecordMode::Window:
+        window()->hide();
+        m_hiddenForRecording = true;
         doStartRecording();
         break;
     }
