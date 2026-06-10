@@ -490,8 +490,10 @@ struct ThemeColors {
         return c;
     }
 
-    static ThemeColors forMode(bool darkMode)
+    static const ThemeColors &forMode(bool darkMode)
     {
-        return darkMode ? dark() : light();
+        static const ThemeColors lightInstance = light();
+        static const ThemeColors darkInstance = dark();
+        return darkMode ? darkInstance : lightInstance;
     }
 };

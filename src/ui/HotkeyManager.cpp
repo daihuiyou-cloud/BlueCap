@@ -4,7 +4,7 @@
 #include <QByteArray>
 #include <QMetaObject>
 
-HotkeyManager *HotkeyManager::s_instance = nullptr;
+QPointer<HotkeyManager> HotkeyManager::s_instance;
 
 HotkeyManager::HotkeyManager(QObject *parent)
     : QObject(parent)
@@ -16,6 +16,9 @@ HotkeyManager::HotkeyManager(QObject *parent)
 
 HotkeyManager::~HotkeyManager()
 {
+    if (s_instance.data() == this)
+        s_instance.clear();
+
     if (m_keyboardHook) {
         UnhookWindowsHookEx(m_keyboardHook);
         m_keyboardHook = nullptr;
@@ -23,8 +26,6 @@ HotkeyManager::~HotkeyManager()
     qApp->removeNativeEventFilter(this);
     if (m_registered)
         UnregisterHotKey(nullptr, 1);
-    if (s_instance == this)
-        s_instance = nullptr;
 }
 
 void HotkeyManager::setRecordingHotkeysEnabled(bool enabled)
@@ -41,11 +42,11 @@ void HotkeyManager::setRecordingHotkeysEnabled(bool enabled)
 
 LRESULT CALLBACK HotkeyManager::keyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-    if (nCode == HC_ACTION && wParam == WM_KEYDOWN && s_instance) {
+    if (nCode == HC_ACTION && wParam == WM_KEYDOWN && !s_instance.isNull()) {
         auto *kbd = reinterpret_cast<KBDLLHOOKSTRUCT *>(lParam);
         if (kbd->vkCode == VK_ESCAPE && s_instance->m_recordingHotkeysEnabled) {
             QMetaObject::invokeMethod(s_instance, [=] {
-                if (s_instance && s_instance->m_recordingHotkeysEnabled)
+                if (!s_instance.isNull() && s_instance->m_recordingHotkeysEnabled)
                     emit s_instance->escapePressed();
             }, Qt::QueuedConnection);
             return CallNextHookEx(nullptr, nCode, wParam, lParam);

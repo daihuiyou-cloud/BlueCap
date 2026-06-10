@@ -1,7 +1,7 @@
 #pragma once
 
 #include "paint/PaintTheme.h"
-#include "ui/WindowDragHelper.h"
+#include "utils/WindowDragHelper.h"
 
 #include <QDialog>
 #include <QString>

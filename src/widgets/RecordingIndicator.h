@@ -16,8 +16,11 @@ public:
     void stopPulse();
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 private:
+    void rebuildPath();
     QTimer *m_pulseTimer = nullptr;
+    QPainterPath m_cachedPath;
     bool m_pulseState = false;
     bool m_darkMode = false;
     paint::Palette m_palette;

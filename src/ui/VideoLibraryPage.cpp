@@ -307,16 +307,7 @@ void VideoLibraryPage::deleteSelected()
             QFile::remove(path);
         }
 
-        QStringList videos = m_library->recentVideos();
-        videos.removeAll(path);
-        for (int i = 0; i < videos.size();) {
-            if (!QFileInfo::exists(videos[i])) {
-                videos.removeAt(i);
-            } else {
-                ++i;
-            }
-        }
-        m_library->clearAndReplace(videos);
+        m_library->removeVideo(path);
 
         showToast(movedToTrash
             ? QStringLiteral("已删除「%1」，可从回收站恢复").arg(fi.fileName())

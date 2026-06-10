@@ -50,12 +50,13 @@ add_executable(BlueCap WIN32
     src/widgets/VideoListItemWidget.cpp
     src/widgets/SearchLineEdit.cpp
     src/widgets/StyledListWidget.cpp
+    src/ui/NavigationController.cpp
     src/ui/MainWindow.cpp
     src/ui/Sidebar.cpp
     src/ui/ModeSwitch.cpp
     src/ui/RecordButton.cpp
     src/ui/RecordPage.cpp
-    src/ui/RecordPageBottomBar.cpp
+
     src/ui/RecordingOverlay.cpp
     src/ui/RegionSelector.cpp
     src/ui/SettingsPage.cpp
@@ -65,6 +66,8 @@ add_executable(BlueCap WIN32
     src/ui/HotkeyManager.cpp
     src/theme/Theme.h
     src/theme/ThemeColors.h
+    src/theme/ThemeManager.cpp
+    src/theme/ThemeManager.h
     src/theme/ThemePreference.h
     src/style/BlueCapStyle.h
     src/widgets/SurfaceWidget.h

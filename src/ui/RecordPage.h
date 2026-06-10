@@ -27,6 +27,8 @@ public:
 
 signals:
     void elapsedUpdated(int seconds);
+    void requestWindowHide();
+    void requestWindowShow();
 
 public:
     void startQuickRecording();

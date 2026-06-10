@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     app.setFont(appFont);
 
     QSettings settings;
-    theme::apply(settings.value(QStringLiteral("settings/theme"), ThemeSystem).toInt());
+    BlueCapStyle::applyTheme(settings.value(QStringLiteral("settings/theme"), ThemeSystem).toInt());
 
     MainWindow window;
     window.show();

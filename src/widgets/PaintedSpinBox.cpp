@@ -14,22 +14,26 @@ PaintedSpinBox::PaintedSpinBox(QWidget *parent)
     setAutoFillBackground(false);
     setAttribute(Qt::WA_StyledBackground, false);
     setButtonSymbols(QAbstractSpinBox::NoButtons);
-    lineEdit()->setFrame(false);
-    lineEdit()->setAutoFillBackground(false);
-    lineEdit()->setTextMargins(12, 0, 34, 0);
-    lineEdit()->setStyleSheet(QStringLiteral("QLineEdit { background: transparent; border: none; }"));
+    if (auto *le = lineEdit()) {
+        le->setFrame(false);
+        le->setAutoFillBackground(false);
+        le->setTextMargins(12, 0, 34, 0);
+        le->setStyleSheet(QStringLiteral("QLineEdit { background: transparent; border: none; }"));
+    }
 }
 
 void PaintedSpinBox::setDarkMode(bool dark)
 {
     m_darkMode = dark;
     const auto pal = paint::theme(dark);
-    QPalette p = lineEdit()->palette();
-    p.setColor(QPalette::Base, Qt::transparent);
-    p.setColor(QPalette::Text, isEnabled() ? pal.colors.app.inputText : pal.colors.app.inputDisabledText);
-    p.setColor(QPalette::Highlight, pal.colors.app.selectionBg);
-    p.setColor(QPalette::HighlightedText, pal.colors.app.selectionText);
-    lineEdit()->setPalette(p);
+    if (auto *le = lineEdit()) {
+        QPalette p = le->palette();
+        p.setColor(QPalette::Base, Qt::transparent);
+        p.setColor(QPalette::Text, isEnabled() ? pal.colors.app.inputText : pal.colors.app.inputDisabledText);
+        p.setColor(QPalette::Highlight, pal.colors.app.selectionBg);
+        p.setColor(QPalette::HighlightedText, pal.colors.app.selectionText);
+        le->setPalette(p);
+    }
     update();
 }
 

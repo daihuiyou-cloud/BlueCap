@@ -2,6 +2,7 @@
 
 #include <QPainter>
 #include <QPainterPath>
+#include <QResizeEvent>
 #include <QTimer>
 
 RecordingIndicator::RecordingIndicator(QWidget *parent)
@@ -10,6 +11,7 @@ RecordingIndicator::RecordingIndicator(QWidget *parent)
     setVisible(false);
     setFixedHeight(28);
     m_palette = paint::theme(false);
+    rebuildPath();
 }
 
 void RecordingIndicator::setDarkMode(bool dark)
@@ -39,6 +41,18 @@ void RecordingIndicator::stopPulse()
     update();
 }
 
+void RecordingIndicator::rebuildPath()
+{
+    m_cachedPath = QPainterPath();
+    m_cachedPath.addRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 12, 12);
+}
+
+void RecordingIndicator::resizeEvent(QResizeEvent *event)
+{
+    rebuildPath();
+    QLabel::resizeEvent(event);
+}
+
 void RecordingIndicator::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
@@ -54,18 +68,15 @@ void RecordingIndicator::paintEvent(QPaintEvent *)
     QColor border(baseRed.red(), baseRed.green(), baseRed.blue(),
                   m_darkMode ? qMin(borderAlpha + 60, 250) : qMin(borderAlpha, 150));
 
-    QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
-    QPainterPath path;
-    path.addRoundedRect(r, 12, 12);
-
     painter.setPen(QPen(border, 1));
     painter.setBrush(bg);
-    painter.drawPath(path);
+    painter.drawPath(m_cachedPath);
 
     QFont font = painter.font();
     font.setPixelSize(13);
     font.setBold(true);
     painter.setFont(font);
     painter.setPen(baseRed);
-    painter.drawText(r, Qt::AlignCenter, QStringLiteral("● 录制中"));
+    painter.drawText(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5),
+                     Qt::AlignCenter, QStringLiteral("● 录制中"));
 }

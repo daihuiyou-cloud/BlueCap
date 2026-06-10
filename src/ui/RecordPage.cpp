@@ -370,7 +370,7 @@ void RecordPage::toggleRecording()
 
     switch (m_modeSwitch->currentMode()) {
     case RecordMode::FullScreen:
-        window()->hide();
+        emit requestWindowHide();
         m_hiddenForRecording = true;
         m_countdownValue = 3;
         m_titleLabel->setVisible(false);
@@ -380,12 +380,12 @@ void RecordPage::toggleRecording()
         m_countdownTimer->start(1000);
         break;
     case RecordMode::Region:
-        window()->hide();
+        emit requestWindowHide();
         m_hiddenForRecording = true;
         doStartRecording();
         break;
     case RecordMode::Window:
-        window()->hide();
+        emit requestWindowHide();
         m_hiddenForRecording = true;
         doStartRecording();
         break;
@@ -432,8 +432,7 @@ void RecordPage::startRegionSelection()
     connect(selector, &QObject::destroyed, this, [this] {
         if (!m_regionCommitted && m_hiddenForRecording) {
             m_hiddenForRecording = false;
-            window()->showNormal();
-            window()->activateWindow();
+            emit requestWindowShow();
         }
     });
     selector->show();
@@ -451,15 +450,13 @@ void RecordPage::pickWindow()
             m_recorder->startWindowRecording(selected);
         } else if (m_hiddenForRecording) {
             m_hiddenForRecording = false;
-            window()->showNormal();
-            window()->activateWindow();
+            emit requestWindowShow();
         }
     });
     connect(picker, &QDialog::rejected, this, [this] {
         if (m_hiddenForRecording) {
             m_hiddenForRecording = false;
-            window()->showNormal();
-            window()->activateWindow();
+            emit requestWindowShow();
         }
     });
     picker->show();
@@ -490,8 +487,7 @@ void RecordPage::handleRecordingChanged(bool recording)
 
         if (m_hiddenForRecording) {
             m_hiddenForRecording = false;
-            window()->showNormal();
-            window()->activateWindow();
+            emit requestWindowShow();
         }
     }
 

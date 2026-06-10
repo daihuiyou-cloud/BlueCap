@@ -18,6 +18,8 @@ public:
 
 public slots:
     void addRecentVideo(const QString &path) override;
+    void removeVideo(const QString &path) override;
+    void renameVideo(const QString &oldPath, const QString &newPath) override;
     void clearAndReplace(const QStringList &videos) override;
 
 private:

@@ -8,7 +8,7 @@ struct Metrics {
     static constexpr int cardRadius = 14;
     static constexpr int controlRadius = 8;
     static constexpr int focusRadius = 10;
-    static constexpr int sidebarWidth = 200;
+    static constexpr int sidebarWidth = 220;
     static constexpr int titleBarHeight = 56;
     static constexpr int pagePanelRadius = 26;
     static constexpr int modeCardHeight = 128;

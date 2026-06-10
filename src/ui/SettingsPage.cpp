@@ -352,18 +352,26 @@ void SettingsPage::setDarkMode(bool dark)
     m_darkMode = dark;
     const auto &a = ThemeColors::forMode(dark).app;
 
-    for (auto *w : findChildren<QWidget *>()) {
-        if (auto *h = qobject_cast<PageHeader *>(w)) { h->setDarkMode(dark); }
-        else if (auto *pp = qobject_cast<SettingsPanel *>(w)) { pp->setDarkMode(dark); }
-        else if (auto *ss = qobject_cast<SettingsSeparator *>(w)) { ss->setDarkMode(dark); }
-        else if (auto *sf = qobject_cast<SaveFeedbackLabel *>(w)) { sf->setDarkMode(dark); }
-        else if (auto *ab = qobject_cast<ActionButton *>(w)) { ab->setDarkMode(dark); }
-        else if (auto *le = qobject_cast<PaintedLineEdit *>(w)) { le->setDarkMode(dark); }
-        else if (auto *cb = qobject_cast<PaintedComboBox *>(w)) { cb->setDarkMode(dark); }
-        else if (auto *sb = qobject_cast<PaintedSpinBox *>(w)) { sb->setDarkMode(dark); }
-        else if (auto *ck = qobject_cast<PaintedCheckBox *>(w)) { ck->setDarkMode(dark); }
-        else if (auto *sc = qobject_cast<PaintedScrollBar *>(w)) { sc->setDarkMode(dark); }
-    }
+    for (auto *h : findChildren<PageHeader *>())
+        h->setDarkMode(dark);
+    for (auto *pp : findChildren<SettingsPanel *>())
+        pp->setDarkMode(dark);
+    for (auto *ss : findChildren<SettingsSeparator *>())
+        ss->setDarkMode(dark);
+    for (auto *sf : findChildren<SaveFeedbackLabel *>())
+        sf->setDarkMode(dark);
+    for (auto *ab : findChildren<ActionButton *>())
+        ab->setDarkMode(dark);
+    for (auto *le : findChildren<PaintedLineEdit *>())
+        le->setDarkMode(dark);
+    for (auto *cb : findChildren<PaintedComboBox *>())
+        cb->setDarkMode(dark);
+    for (auto *sb : findChildren<PaintedSpinBox *>())
+        sb->setDarkMode(dark);
+    for (auto *ck : findChildren<PaintedCheckBox *>())
+        ck->setDarkMode(dark);
+    for (auto *sc : findChildren<PaintedScrollBar *>())
+        sc->setDarkMode(dark);
 
     for (auto *label : findChildren<QLabel *>()) {
         if (qobject_cast<PageHeader *>(label) || qobject_cast<SaveFeedbackLabel *>(label))

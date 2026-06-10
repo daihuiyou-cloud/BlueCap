@@ -57,12 +57,14 @@ void PaintedScrollBar::paintEvent(QPaintEvent *)
     const int h = height();
     const int barW = 8;
 
+    if (h <= 0) return;
+
     int range = maximum() - minimum() + pageStep();
     if (range <= 0) return;
 
-    qreal handleH = qMax(30.0, (qreal)h * pageStep() / range);
+    qreal handleH = qMax(30.0, qMin((qreal)h * 0.9, (qreal)h * pageStep() / range));
     qreal avail = h - handleH;
-    qreal handleY = (maximum() == minimum())
+    qreal handleY = (maximum() <= minimum() || avail <= 0)
         ? 0
         : avail * (value() - minimum()) / (maximum() - minimum());
 

@@ -19,7 +19,7 @@ public:
     bool isRecording() const;
     int exitCode() const;
     bool wasForceKilled() const;
-    QProcess *process() const;
+    QByteArray readStderr();
     qint64 writeStdin(const QByteArray &data);
 
 public slots:
@@ -33,6 +33,7 @@ signals:
     void startTimeout();
     void stopTimeout();
     void stateChanged(RecordingSession::State state);
+    void stderrReady();
 
 private slots:
     void handleStarted();

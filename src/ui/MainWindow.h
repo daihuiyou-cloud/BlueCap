@@ -1,15 +1,14 @@
 #pragma once
 
-#include "WindowDragHelper.h"
+#include "NavigationController.h"
+#include "theme/ThemeManager.h"
+#include "utils/WindowDragHelper.h"
 
 #include <QAbstractNativeEventFilter>
 #include <QIcon>
-#include <QLabel>
 #include <QWidget>
 
-class QLabel;
 class QPoint;
-class QPushButton;
 class QStackedWidget;
 class QTimer;
 class HotkeyManager;
@@ -38,7 +37,6 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
     void closeEvent(QCloseEvent *event) override;
-    void changeEvent(QEvent *event) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseDoubleClickEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -47,7 +45,6 @@ protected:
 
 private:
     QWidget *createTitleBar();
-    void updateMaximizeButton();
     bool inTitleDragArea(const QPoint &position) const;
 
     void setupUI();
@@ -60,6 +57,7 @@ private:
 
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
+    NavigationController *m_nav = nullptr;
     ISettingsRepository *m_settings = nullptr;
     IRecorderService *m_recorder = nullptr;
     IVideoLibrary *m_library = nullptr;
@@ -71,21 +69,15 @@ private:
     HotkeyManager *m_hotkey = nullptr;
 
     QWidget *m_titleBar = nullptr;
-    QLabel *m_titleLabel = nullptr;
     TitleBarButton *m_settingsButton = nullptr;
     TitleBarButton *m_minimizeButton = nullptr;
-    QPushButton *m_maximizeButton = nullptr;
     TitleBarButton *m_closeButton = nullptr;
     RecordingIndicator *m_recordingIndicator = nullptr;
 
     window_drag::State m_dragState;
-    bool m_maximized = false;
-    bool m_darkMode = false;
 
     QPixmap m_shadowCache;
     QTimer *m_shadowDebounce = nullptr;
-
-
 
     static constexpr int kResizeBorder = 5;
 };

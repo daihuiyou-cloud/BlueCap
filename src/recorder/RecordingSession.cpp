@@ -13,6 +13,8 @@ RecordingSession::RecordingSession(QObject *parent)
             this, &RecordingSession::handleFinished);
     connect(m_process, &QProcess::errorOccurred,
             this, &RecordingSession::handleProcessError);
+    connect(m_process, &QProcess::readyReadStandardError,
+            this, &RecordingSession::stderrReady);
 
     m_startTimer = new QTimer(this);
     m_startTimer->setSingleShot(true);
@@ -43,9 +45,9 @@ bool RecordingSession::wasForceKilled() const
     return m_forceKilled;
 }
 
-QProcess *RecordingSession::process() const
+QByteArray RecordingSession::readStderr()
 {
-    return m_process;
+    return m_process->readAllStandardError();
 }
 
 qint64 RecordingSession::writeStdin(const QByteArray &data)
@@ -118,16 +120,28 @@ void RecordingSession::handleStopTimeout()
         return;
 
     m_process->terminate();
-    if (m_process->waitForFinished(3000))
-        return;
 
-    m_forceKilled = true;
-    m_process->kill();
-    if (m_process->waitForFinished(2000))
-        return;
+    // Non-blocking chain: wait 3s → kill → wait 2s → force idle
+    auto *killTimer = new QTimer(this);
+    killTimer->setSingleShot(true);
+    connect(killTimer, &QTimer::timeout, this, [this, killTimer]() {
+        killTimer->deleteLater();
+        if (m_process->state() == QProcess::NotRunning)
+            return;
 
-    if (m_process->state() != QProcess::NotRunning) {
-        setState(State::Idle);
-        emit stopTimeout();
-    }
+        m_forceKilled = true;
+        m_process->kill();
+
+        auto *forceKillTimer = new QTimer(this);
+        forceKillTimer->setSingleShot(true);
+        connect(forceKillTimer, &QTimer::timeout, this, [this, forceKillTimer]() {
+            forceKillTimer->deleteLater();
+            if (m_process->state() != QProcess::NotRunning) {
+                setState(State::Idle);
+                emit stopTimeout();
+            }
+        });
+        forceKillTimer->start(2000);
+    });
+    killTimer->start(3000);
 }

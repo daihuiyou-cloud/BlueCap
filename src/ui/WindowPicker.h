@@ -1,6 +1,6 @@
 #pragma once
 
-#include "WindowDragHelper.h"
+#include "utils/WindowDragHelper.h"
 #include "utils/win32/WindowEnumerator.h"
 
 #include <QDialog>

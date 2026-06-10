@@ -1,5 +1,7 @@
 #pragma once
 
+#include "NavigationController.h"
+
 #include <QList>
 #include <QWidget>
 
@@ -13,11 +15,11 @@ class Sidebar : public QWidget
 public:
     explicit Sidebar(QWidget *parent = nullptr);
 
-    void selectPage(int index);
+    void selectPage(Page page);
     void setDarkMode(bool dark);
 
 signals:
-    void pageSelected(int index);
+    void pageSelected(Page page);
 
 private:
     void updateIcons();

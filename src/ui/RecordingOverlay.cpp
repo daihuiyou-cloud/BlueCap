@@ -1,11 +1,9 @@
 #include "RecordingOverlay.h"
 #include "theme/ThemeColors.h"
 
-#include <QGuiApplication>
 #include <QFontMetrics>
 #include <QOperatingSystemVersion>
 #include <QPainter>
-#include <QScreen>
 #include <QShowEvent>
 #include <QTimer>
 
@@ -44,20 +42,7 @@ RecordingOverlay::RecordingOverlay(QWidget *parent)
 void RecordingOverlay::showForRegion(const QRect &region)
 {
     m_area = region;
-    m_isFullscreen = false;
     setGeometry(region.adjusted(-4, -4, 4, 4));
-    m_pulseState = false;
-    m_pulseTimer->start();
-    show();
-    raise();
-}
-
-void RecordingOverlay::showForFullscreen()
-{
-    QScreen *screen = QGuiApplication::primaryScreen();
-    m_area = screen->geometry();
-    m_isFullscreen = true;
-    setGeometry(m_area.adjusted(-4, -4, 4, 4));
     m_pulseState = false;
     m_pulseTimer->start();
     show();

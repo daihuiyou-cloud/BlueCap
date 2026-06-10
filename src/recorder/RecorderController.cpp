@@ -51,8 +51,8 @@ RecorderController::RecorderController(QObject *parent)
         emit recordingChanged(false);
     });
 
-    connect(m_session->process(), &QProcess::readyReadStandardError, this, [this] {
-        m_stderrMonitor->feed(m_session->process()->readAllStandardError());
+    connect(m_session, &RecordingSession::stderrReady, this, [this] {
+        m_stderrMonitor->feed(m_session->readStderr());
     });
     connect(m_stderrMonitor, &StderrMonitor::warningDetected,
             this, &IRecorderService::recordingWarning);
@@ -162,59 +162,59 @@ void RecorderController::startCapture(const QString &inputSpec,
     start(args);
 }
 
+namespace {
+
+struct CapturePhys {
+    int x, y, w, h;
+};
+
+CapturePhys toPhysical(const QRect &area, QScreen *screen)
+{
+    QRect screenGeo = screen->geometry();
+    qreal dpr = screen->devicePixelRatio();
+    int localX = area.x() - screenGeo.x();
+    int localY = area.y() - screenGeo.y();
+    int physX = qRound(localX * dpr);
+    int physY = qRound(localY * dpr);
+    int physW = qRound(area.width() * dpr);
+    int physH = qRound(area.height() * dpr);
+    if (physW < 2) physW = 2;
+    if (physH < 2) physH = 2;
+    return { physX, physY, physW & ~1, physH & ~1 };
+}
+
+QScreen *screenForRect(const QRect &region)
+{
+    for (auto *s : QGuiApplication::screens())
+        if (s->geometry().intersects(region))
+            return s;
+    return QGuiApplication::primaryScreen();
+}
+
+}
+
 void RecorderController::startFullScreenRecording(QScreen *screen)
 {
     if (!screen)
         screen = QGuiApplication::primaryScreen();
     QRect geo = screen->geometry();
-    qreal dpr = screen->devicePixelRatio();
-    int physX = qRound(geo.x() * dpr);
-    int physY = qRound(geo.y() * dpr);
-    int physW = qRound(geo.width() * dpr);
-    int physH = qRound(geo.height() * dpr);
-    if (physW < 2) physW = 2;
-    if (physH < 2) physH = 2;
-    physW &= ~1;
-    physH &= ~1;
+    auto phys = toPhysical(geo, screen);
     emit recordingAreaChanged(geo, RecordMode::FullScreen);
     startCapture(QStringLiteral("desktop"), {}, {
-        QStringLiteral("-offset_x"), QString::number(physX),
-        QStringLiteral("-offset_y"), QString::number(physY),
-        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(physW).arg(physH),
+        QStringLiteral("-offset_x"), QString::number(phys.x),
+        QStringLiteral("-offset_y"), QString::number(phys.y),
+        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(phys.w).arg(phys.h),
     });
 }
 
 void RecorderController::startRegionRecording(const QRect &region)
 {
     emit recordingAreaChanged(region, RecordMode::Region);
-
-    QScreen *screen = QGuiApplication::primaryScreen();
-    const auto screens = QGuiApplication::screens();
-    for (auto *s : screens) {
-        if (s->geometry().intersects(region)) {
-            screen = s;
-            break;
-        }
-    }
-
-    QRect screenGeo = screen->geometry();
-    qreal dpr = screen->devicePixelRatio();
-    int localX = region.x() - screenGeo.x();
-    int localY = region.y() - screenGeo.y();
-    int physX = qRound(localX * dpr);
-    int physY = qRound(localY * dpr);
-    int physW = qRound(region.width() * dpr);
-    int physH = qRound(region.height() * dpr);
-
-    if (physW < 2) physW = 2;
-    if (physH < 2) physH = 2;
-    physW &= ~1;
-    physH &= ~1;
-
+    auto phys = toPhysical(region, screenForRect(region));
     startCapture(QStringLiteral("desktop"), {}, {
-        QStringLiteral("-offset_x"), QString::number(physX),
-        QStringLiteral("-offset_y"), QString::number(physY),
-        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(physW).arg(physH),
+        QStringLiteral("-offset_x"), QString::number(phys.x),
+        QStringLiteral("-offset_y"), QString::number(phys.y),
+        QStringLiteral("-video_size"), QStringLiteral("%1x%2").arg(phys.w).arg(phys.h),
     });
 }
 

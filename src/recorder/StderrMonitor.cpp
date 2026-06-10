@@ -52,8 +52,23 @@ void StderrMonitor::poll()
     if (m_pending.isEmpty())
         return;
 
-    const QString text = QString::fromUtf8(m_pending);
-    m_pending.clear();
+    // Preserve incomplete trailing multi-byte UTF-8 for next poll
+    int keep = m_pending.size();
+    while (keep > 0 && (static_cast<unsigned char>(m_pending[keep - 1]) & 0xC0) == 0x80)
+        --keep;
+    if (keep > 0) {
+        unsigned char lead = static_cast<unsigned char>(m_pending[keep - 1]);
+        if ((lead & 0x80) != 0) {
+            int expected = (lead & 0xF8) == 0xF0 ? 4
+                         : (lead & 0xF0) == 0xE0 ? 3
+                         : (lead & 0xE0) == 0xC0 ? 2 : 1;
+            if (m_pending.size() - keep < expected - 1)
+                keep = m_pending.size() - (expected - 1);
+        }
+    }
+
+    const QString text = QString::fromUtf8(m_pending.left(keep));
+    m_pending = m_pending.mid(keep);
 
     struct WarningPattern {
         QLatin1String pattern;

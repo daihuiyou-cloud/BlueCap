@@ -1,11 +1,10 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include "HotkeyManager.h"
-#include "utils/IconHelper.h"
 #include "TrayManager.h"
-#include "WindowDragHelper.h"
+#include "utils/WindowDragHelper.h"
 #include "paint/PaintMetrics.h"
+#include "style/BlueCapStyle.h"
 #include "theme/Theme.h"
-#include "theme/ThemeColors.h"
 #include "widgets/SurfaceWidget.h"
 #include "widgets/TitleBarButton.h"
 #include "widgets/RecordingIndicator.h"
@@ -25,7 +24,6 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QHBoxLayout>
-#include <QLabel>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
@@ -84,6 +82,7 @@ MainWindow::MainWindow(QWidget *parent)
     qApp->installNativeEventFilter(this);
 
     setupUI();
+    m_nav = new NavigationController(m_stack, this);
     setupPageConnections();
     setupSettingsConnections();
     setupRecordConnections();
@@ -119,37 +118,37 @@ void MainWindow::setupUI()
     shell->setSpacing(0);
 
     auto *surface = new SurfaceWidget(this);
-    surface->setDarkMode(m_darkMode);
+    surface->setDarkMode(ThemeManager::instance().isDark());
 
-    auto *surfaceLayout = new QVBoxLayout(surface);
+    auto *surfaceLayout = new QHBoxLayout(surface);
     surfaceLayout->setContentsMargins(0, 0, 0, 0);
-    surfaceLayout->setSpacing(0);
-    surfaceLayout->addWidget(createTitleBar());
+    surfaceLayout->setSpacing(20);
 
-    auto *body = new QWidget(surface);
-    auto *bodyLayout = new QHBoxLayout(body);
-    bodyLayout->setContentsMargins(0, 0, 0, 0);
-    bodyLayout->setSpacing(20);
+    m_sidebar = new Sidebar(surface);
+    surfaceLayout->addWidget(m_sidebar);
 
-    m_sidebar = new Sidebar(body);
-    bodyLayout->addWidget(m_sidebar);
+    auto *content = new QWidget(surface);
+    auto *contentLayout = new QVBoxLayout(content);
+    contentLayout->setContentsMargins(0, 0, 0, 0);
+    contentLayout->setSpacing(0);
+    contentLayout->addWidget(createTitleBar());
 
-    m_stack = new QStackedWidget(body);
+    m_stack = new QStackedWidget(content);
     m_recordPage = new RecordPage(m_recorder, m_library, m_stack);
     m_stack->addWidget(m_recordPage);
     m_videoLibraryPage = new VideoLibraryPage(m_library, m_settings, m_stack);
     m_stack->addWidget(m_videoLibraryPage);
     m_settingsPage = new SettingsPage(m_settings, m_stack);
     m_stack->addWidget(m_settingsPage);
-    bodyLayout->addWidget(m_stack, 1);
+    contentLayout->addWidget(m_stack, 1);
 
-    surfaceLayout->addWidget(body, 1);
+    surfaceLayout->addWidget(content, 1);
     shell->addWidget(surface);
 }
 
 void MainWindow::setupPageConnections()
 {
-    connect(m_sidebar, &Sidebar::pageSelected, m_stack, &QStackedWidget::setCurrentIndex);
+    connect(m_sidebar, &Sidebar::pageSelected, m_nav, &NavigationController::navigate);
 }
 
 void MainWindow::setupSettingsConnections()
@@ -173,34 +172,22 @@ void MainWindow::setupSettingsConnections()
     connect(settingsPage, &SettingsPage::showCursorChanged,
             m_recorder, &IRecorderService::setShowCursor);
 
+    auto *surface = findChild<SurfaceWidget *>();
+    auto &tm = ThemeManager::instance();
+    tm.registerUpdater(m_recordPage,           [this](bool dark){ m_recordPage->setDarkMode(dark); });
+    tm.registerUpdater(m_sidebar,              [this](bool dark){ m_sidebar->setDarkMode(dark); });
+    tm.registerUpdater(m_videoLibraryPage,     [this](bool dark){ m_videoLibraryPage->setDarkMode(dark); });
+    tm.registerUpdater(m_settingsPage,         [this](bool dark){ m_settingsPage->setDarkMode(dark); });
+    tm.registerUpdater(m_recordingIndicator,   [this](bool dark){ m_recordingIndicator->setDarkMode(dark); });
+    tm.registerUpdater(m_settingsButton,       [this](bool dark){ m_settingsButton->setDarkMode(dark); });
+    tm.registerUpdater(m_minimizeButton,       [this](bool dark){ m_minimizeButton->setDarkMode(dark); });
+    tm.registerUpdater(m_closeButton,          [this](bool dark){ m_closeButton->setDarkMode(dark); });
+    if (surface)
+        tm.registerUpdater(surface,            [surface](bool dark){ surface->setDarkMode(dark); });
+
     connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
-        theme::apply(preference);
-        const int resolved = theme::resolve(preference);
-        m_darkMode = (resolved == ThemeDark);
-
-    m_recordPage->setDarkMode(m_darkMode);
-    m_sidebar->setDarkMode(m_darkMode);
-    m_videoLibraryPage->setDarkMode(m_darkMode);
-    m_settingsPage->setDarkMode(m_darkMode);
-
-        auto *surface = findChild<SurfaceWidget *>();
-        if (surface) surface->setDarkMode(m_darkMode);
-
-        m_recordingIndicator->setDarkMode(m_darkMode);
-
-        for (auto *btn : findChildren<TitleBarButton *>())
-            btn->setDarkMode(m_darkMode);
-
-        const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
-        m_maximizeButton->setIcon(icon::coloredIcon(
-            m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
-            20, tc.normal, tc.active, tc.disabled));
-
-        if (m_titleLabel) {
-            QPalette tp = m_titleLabel->palette();
-            tp.setColor(QPalette::WindowText, ThemeColors::forMode(m_darkMode).app.titleText);
-            m_titleLabel->setPalette(tp);
-        }
+        BlueCapStyle::applyTheme(preference);
+        ThemeManager::instance().setDarkMode(theme::resolve(preference) == ThemeDark);
     });
 
     settingsPage->loadSettings();
@@ -235,6 +222,9 @@ void MainWindow::setupRecordConnections()
         m_tray->showMessage(QStringLiteral("BlueCap"), msg,
             QSystemTrayIcon::Warning, 4000);
     });
+
+    connect(m_recordPage, &RecordPage::requestWindowHide, this, &QWidget::hide);
+    connect(m_recordPage, &RecordPage::requestWindowShow, this, [this] { showNormal(); activateWindow(); });
 
     connect(m_recordPage, &RecordPage::elapsedUpdated, this, [this](int seconds) {
         int h = seconds / 3600;
@@ -386,24 +376,8 @@ QWidget *MainWindow::createTitleBar()
     m_titleBar->setFixedHeight(paint::Metrics::titleBarHeight);
 
     auto *layout = new QHBoxLayout(m_titleBar);
-    layout->setContentsMargins(20, 0, 20, 0);
-    layout->setSpacing(10);
-
-    auto *logo = new QLabel(m_titleBar);
-    logo->setFixedSize(28, 28);
-    logo->setAlignment(Qt::AlignCenter);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(28, 28));
-
-    m_titleLabel = new QLabel(QStringLiteral("屏幕录制"), m_titleBar);
-    QFont titleFont = m_titleLabel->font();
-    titleFont.setPixelSize(18);
-    titleFont.setBold(true);
-    m_titleLabel->setFont(titleFont);
-    {
-        QPalette tp = m_titleLabel->palette();
-        tp.setColor(QPalette::WindowText, ThemeColors::forMode(false).app.titleText);
-        m_titleLabel->setPalette(tp);
-    }
+    layout->setContentsMargins(0, 0, 20, 0);
+    layout->setSpacing(12);
 
     m_settingsButton = new TitleBarButton(QStringLiteral(":/icons/title-settings.svg"),
                                           QStringLiteral("设置"), false, m_titleBar);
@@ -413,64 +387,24 @@ QWidget *MainWindow::createTitleBar()
                                           QStringLiteral("最小化"), false, m_titleBar);
     m_minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
 
-    m_maximizeButton = new QPushButton(m_titleBar);
-    m_maximizeButton->setFixedSize(30, 30);
-    m_maximizeButton->setCursor(Qt::PointingHandCursor);
-    m_maximizeButton->setToolTip(QStringLiteral("最大化"));
-    m_maximizeButton->setAccessibleName(QStringLiteral("最大化/还原窗口"));
-    m_maximizeButton->setFlat(true);
-    {
-        const auto &tc = ThemeColors::forMode(false).titleBar;
-        m_maximizeButton->setIcon(icon::coloredIcon(
-            QStringLiteral(":/icons/title-maximize.svg"), 20, tc.normal, tc.active, tc.disabled));
-    }
-
     m_closeButton = new TitleBarButton(QStringLiteral(":/icons/title-close.svg"),
                                        QStringLiteral("关闭"), true, m_titleBar);
     m_closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
 
-    layout->addWidget(logo);
-    layout->addWidget(m_titleLabel);
-
     m_recordingIndicator = new RecordingIndicator(this);
-    layout->addWidget(m_recordingIndicator);
     layout->addStretch();
-
+    layout->addWidget(m_recordingIndicator);
     layout->addWidget(m_settingsButton);
     layout->addWidget(m_minimizeButton);
-    layout->addWidget(m_maximizeButton);
     layout->addWidget(m_closeButton);
 
-    connect(m_settingsButton, &QPushButton::clicked, this, [this] {
-        m_stack->setCurrentIndex(2);
+    connect(m_settingsButton, &QPushButton::clicked, m_nav, [this] {
+        m_nav->navigate(Page::Settings);
     });
     connect(m_minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
-    connect(m_maximizeButton, &QPushButton::clicked, this, [this] {
-        if (m_maximized)
-            showNormal();
-        else
-            showMaximized();
-    });
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
     return m_titleBar;
-}
-
-void MainWindow::updateMaximizeButton()
-{
-    m_maximized = isMaximized();
-    const auto &tc = ThemeColors::forMode(m_darkMode).titleBar;
-    m_maximizeButton->setIcon(icon::coloredIcon(
-        m_maximized ? QStringLiteral(":/icons/title-restore.svg") : QStringLiteral(":/icons/title-maximize.svg"),
-        20, tc.normal, tc.active, tc.disabled));
-    m_maximizeButton->setToolTip(m_maximized ? QStringLiteral("还原") : QStringLiteral("最大化"));
-}
-
-void MainWindow::changeEvent(QEvent *event)
-{
-    if (event->type() == QEvent::WindowStateChange)
-        updateMaximizeButton();
-    QWidget::changeEvent(event);
 }
 
 bool MainWindow::inTitleDragArea(const QPoint &position) const
@@ -503,14 +437,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton && inTitleDragArea(event->pos())) {
-        if (m_maximized)
-            showNormal();
-        else
-            showMaximized();
-        event->accept();
-        return;
-    }
     QWidget::mouseDoubleClickEvent(event);
 }
 

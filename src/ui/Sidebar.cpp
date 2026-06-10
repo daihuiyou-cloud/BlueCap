@@ -18,29 +18,34 @@ Sidebar::Sidebar(QWidget *parent)
     m_group->setExclusive(true);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(20, 18, 20, 20);
-    layout->setSpacing(18);
+    layout->setContentsMargins(22, 24, 18, 20);
+    layout->setSpacing(20);
 
     auto *brand = new QWidget(this);
     auto *brandLayout = new QHBoxLayout(brand);
     brandLayout->setContentsMargins(0, 0, 0, 0);
     brandLayout->setSpacing(12);
+
     auto *logo = new QLabel(brand);
-    logo->setFixedSize(42, 42);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(42, 42));
+    logo->setFixedSize(52, 52);
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(52, 52));
+
     auto *brandText = new QWidget(brand);
     auto *brandTextLayout = new QVBoxLayout(brandText);
     brandTextLayout->setContentsMargins(0, 0, 0, 0);
-    brandTextLayout->setSpacing(1);
+    brandTextLayout->setSpacing(3);
+
     auto *name = new QLabel(QStringLiteral("BlueCap"), brandText);
     QFont nameFont = name->font();
-    nameFont.setPixelSize(20);
+    nameFont.setPixelSize(21);
     nameFont.setBold(true);
     name->setFont(nameFont);
+
     auto *tag = new QLabel(QStringLiteral("简单 · 高效 · 专业"), brandText);
     QFont tagFont = tag->font();
     tagFont.setPixelSize(11);
     tag->setFont(tagFont);
+
     brandTextLayout->addWidget(name);
     brandTextLayout->addWidget(tag);
     brandLayout->addWidget(logo);
@@ -58,7 +63,7 @@ Sidebar::Sidebar(QWidget *parent)
         QStringLiteral("设置")
     };
     const QStringList tooltips = {
-        QStringLiteral("录制（Ctrl+Shift+R）"),
+        QStringLiteral("录制 (Ctrl+Shift+R)"),
         QStringLiteral("视频库"),
         QStringLiteral("设置")
     };
@@ -73,18 +78,19 @@ Sidebar::Sidebar(QWidget *parent)
     }
     layout->addStretch();
 
-    connect(m_group, qOverload<int>(&QButtonGroup::buttonClicked),
-            this, &Sidebar::pageSelected);
+    connect(m_group, qOverload<int>(&QButtonGroup::buttonClicked), this,
+        [this](int index) { emit pageSelected(static_cast<Page>(index)); });
 
     updateIcons();
 }
 
-void Sidebar::selectPage(int index)
+void Sidebar::selectPage(Page page)
 {
-    auto *button = m_group->button(index);
+    int idx = static_cast<int>(page);
+    auto *button = m_group->button(idx);
     if (button) {
         button->setChecked(true);
-        emit pageSelected(index);
+        emit pageSelected(page);
     }
 }
 

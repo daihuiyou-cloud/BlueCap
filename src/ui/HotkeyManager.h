@@ -2,6 +2,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QObject>
+#include <QPointer>
 
 #include <windows.h>
 
@@ -23,7 +24,7 @@ signals:
 
 private:
     static LRESULT CALLBACK keyboardHookProc(int nCode, WPARAM wParam, LPARAM lParam);
-    static HotkeyManager *s_instance;
+    static QPointer<HotkeyManager> s_instance;
 
     bool m_registered = false;
     HHOOK m_keyboardHook = nullptr;

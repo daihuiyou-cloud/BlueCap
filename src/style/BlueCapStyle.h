@@ -12,6 +12,7 @@ class BlueCapStyle : public QProxyStyle
 public:
     explicit BlueCapStyle();
 
+    static void applyTheme(int preference, QApplication *app = nullptr);
     void setDarkMode(bool dark);
     bool isDarkMode() const { return s_darkMode; }
 

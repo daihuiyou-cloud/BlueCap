@@ -74,6 +74,25 @@ void VideoLibrary::removeNonExistent()
     }
 }
 
+void VideoLibrary::removeVideo(const QString &path)
+{
+    if (!m_cache.contains(path))
+        return;
+    m_cache.removeAll(path);
+    save(m_cache);
+    emit recentVideosChanged(m_cache);
+}
+
+void VideoLibrary::renameVideo(const QString &oldPath, const QString &newPath)
+{
+    int idx = m_cache.indexOf(oldPath);
+    if (idx < 0)
+        return;
+    m_cache[idx] = newPath;
+    save(m_cache);
+    emit recentVideosChanged(m_cache);
+}
+
 void VideoLibrary::clearAndReplace(const QStringList &videos)
 {
     m_cache = videos;

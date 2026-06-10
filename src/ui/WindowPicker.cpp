@@ -1,5 +1,5 @@
 #include "WindowPicker.h"
-#include "WindowDragHelper.h"
+#include "utils/WindowDragHelper.h"
 #include "theme/ThemeColors.h"
 #include "widgets/ActionButton.h"
 #include "widgets/PaintedLineEdit.h"

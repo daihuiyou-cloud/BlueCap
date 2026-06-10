@@ -15,6 +15,8 @@ public:
 
 public slots:
     virtual void addRecentVideo(const QString &path) = 0;
+    virtual void removeVideo(const QString &path) = 0;
+    virtual void renameVideo(const QString &oldPath, const QString &newPath) = 0;
     virtual void clearAndReplace(const QStringList &videos) = 0;
 
 signals:

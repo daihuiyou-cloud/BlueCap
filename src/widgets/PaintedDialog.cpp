@@ -94,7 +94,8 @@ void PaintedDialog::paintEvent(QPaintEvent *)
 void PaintedDialog::mousePressEvent(QMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton && m_titleLabel) {
-        QPoint pos = m_titleLabel->mapFrom(this, event->pos());
+        QWidget *titleParent = m_titleLabel->parentWidget();
+        QPoint pos = titleParent ? titleParent->mapFrom(this, event->pos()) : event->pos();
         if (window_drag::handlePress(this, m_titleLabel, pos, event, m_dragState))
             return;
     }

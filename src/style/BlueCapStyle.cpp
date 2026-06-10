@@ -1,5 +1,7 @@
 #include "BlueCapStyle.h"
+#include "theme/Theme.h"
 #include "theme/ThemeColors.h"
+#include "theme/ThemePreference.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -35,6 +37,26 @@ BlueCapStyle::BlueCapStyle()
 void BlueCapStyle::setDarkMode(bool dark)
 {
     s_darkMode = dark;
+}
+
+void BlueCapStyle::applyTheme(int preference, QApplication *app)
+{
+    if (!app) app = qApp;
+    if (!app) return;
+    const int th = theme::resolve(preference);
+    bool dark = (th == ThemeDark);
+    const auto &a = ThemeColors::forMode(dark).app;
+    QPalette pal = app->palette();
+    pal.setColor(QPalette::WindowText, a.defaultText);
+    app->setPalette(pal);
+
+    auto *style = qobject_cast<BlueCapStyle *>(app->style());
+    if (style) {
+        style->setDarkMode(dark);
+        app->setStyleSheet(QString());
+        app->style()->unpolish(app);
+        app->style()->polish(app);
+    }
 }
 
 const BlueCapStyle *BlueCapStyle::styleInstance()
