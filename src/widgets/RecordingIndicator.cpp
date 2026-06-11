@@ -30,7 +30,8 @@ void RecordingIndicator::startPulse()
             update();
         });
     }
-    m_pulseState = false;
+    m_pulseState = true;
+    update();
     m_pulseTimer->start(800);
 }
 

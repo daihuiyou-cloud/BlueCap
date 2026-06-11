@@ -1,10 +1,10 @@
 #include "RecorderController.h"
 #include "RecordingSession.h"
 #include "StderrMonitor.h"
-#include "utils/FfmpegEncoderDetector.h"
-#include "utils/FfmpegError.h"
-#include "utils/FfmpegLocator.h"
-#include "utils/OutputPath.h"
+#include "ffmpeg/FfmpegEncoderDetector.h"
+#include "ffmpeg/FfmpegError.h"
+#include "ffmpeg/FfmpegLocator.h"
+#include "io/OutputPath.h"
 #include "utils/win32/DiskSpaceChecker.h"
 
 #include <QDir>

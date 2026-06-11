@@ -102,10 +102,14 @@ add_executable(BlueCap WIN32
     src/recorder/RecorderController.cpp
     src/storage/IVideoLibrary.h
     src/storage/VideoLibrary.cpp
-    src/utils/FfmpegEncoderDetector.h
-    src/utils/FfmpegError.h
+    src/ffmpeg/FfmpegEncoderDetector.h
+    src/ffmpeg/FfmpegError.h
+    src/ffmpeg/FfmpegLocator.h
+    src/ffmpeg/ThumbnailGenerator.h
+    src/io/Format.h
+    src/io/OutputPath.h
     src/utils/IconHelper.h
-    src/utils/OutputPath.h
+    src/utils/WindowDragHelper.h
     src/utils/win32/DiskSpaceChecker.h
     src/utils/win32/FileUtils.h
     src/utils/win32/Win32Icon.h

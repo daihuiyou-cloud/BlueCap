@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RecordMode.h"
+#include "recorder/RecordMode.h"
 #include "paint/PaintTheme.h"
 
 #include <QAbstractButton>

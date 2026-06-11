@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RecordMode.h"
+#include "recorder/RecordMode.h"
 
 #include <QRect>
 #include <QObject>

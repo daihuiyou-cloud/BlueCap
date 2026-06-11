@@ -1,5 +1,5 @@
 #include "PaintedDialog.h"
-#include "theme/Theme.h"
+#include "theme/ThemeManager.h"
 
 #include "paint/PaintPrimitives.h"
 #include "widgets/ActionButton.h"
@@ -11,16 +11,28 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
-#include <QSettings>
 #include <QVBoxLayout>
 
 namespace {
-bool dialogIsDarkMode()
+
+template<typename F>
+int runDialog(const QString &title, const QString &message, QWidget *parent, F setupButtons)
 {
-    QSettings s(QStringLiteral("BlueCap"), QStringLiteral("BlueCap"));
-    int pref = s.value(QStringLiteral("settings/theme"), ThemeSystem).toInt();
-    return theme::resolve(pref) == ThemeDark;
+    PaintedDialog dialog(title, message, parent);
+    auto *surface = dialog.findChild<QWidget *>();
+    auto *layout = qobject_cast<QVBoxLayout *>(surface->layout());
+
+    auto *buttons = new QWidget(surface);
+    auto *buttonLayout = new QHBoxLayout(buttons);
+    buttonLayout->setContentsMargins(0, 6, 0, 0);
+    buttonLayout->addStretch();
+    setupButtons(buttonLayout, &dialog);
+    layout->addWidget(buttons);
+
+    dialog.setDarkMode(ThemeManager::instance().isDark());
+    return dialog.exec();
 }
+
 }
 
 PaintedDialog::PaintedDialog(const QString &title, const QString &message, QWidget *parent)
@@ -118,51 +130,39 @@ void PaintedDialog::mouseReleaseEvent(QMouseEvent *event)
 bool PaintedDialog::question(QWidget *parent, const QString &title, const QString &message,
                              const QString &yesText, const QString &noText)
 {
-    PaintedDialog dialog(title, message, parent);
-    auto *surface = dialog.findChild<QWidget *>();
-    auto *layout = qobject_cast<QVBoxLayout *>(surface->layout());
-    auto *buttons = new QWidget(surface);
-    auto *buttonLayout = new QHBoxLayout(buttons);
-    buttonLayout->setContentsMargins(0, 6, 0, 0);
-    buttonLayout->addStretch();
-    auto *no = new ActionButton(noText, ActionButton::Reset, buttons);
-    auto *yes = new ActionButton(yesText, ActionButton::Browse, buttons);
-    buttonLayout->addWidget(no);
-    buttonLayout->addWidget(yes);
-    layout->addWidget(buttons);
-    QObject::connect(no, &QPushButton::clicked, &dialog, &QDialog::reject);
-    QObject::connect(yes, &QPushButton::clicked, &dialog, &QDialog::accept);
-    dialog.setDarkMode(dialogIsDarkMode());
-    return dialog.exec() == QDialog::Accepted;
+    int result = runDialog(title, message, parent, [&](QHBoxLayout *bl, QDialog *dlg) {
+        auto *no = new ActionButton(noText, ActionButton::Reset, bl->parentWidget());
+        auto *yes = new ActionButton(yesText, ActionButton::Browse, bl->parentWidget());
+        bl->addWidget(no);
+        bl->addWidget(yes);
+        QObject::connect(no, &QPushButton::clicked, dlg, &QDialog::reject);
+        QObject::connect(yes, &QPushButton::clicked, dlg, &QDialog::accept);
+    });
+    return result == QDialog::Accepted;
 }
 
 void PaintedDialog::warning(QWidget *parent, const QString &title, const QString &message)
 {
-    PaintedDialog dialog(title, message, parent);
-    auto *surface = dialog.findChild<QWidget *>();
-    auto *layout = qobject_cast<QVBoxLayout *>(surface->layout());
-    auto *buttons = new QWidget(surface);
-    auto *buttonLayout = new QHBoxLayout(buttons);
-    buttonLayout->setContentsMargins(0, 6, 0, 0);
-    buttonLayout->addStretch();
-    auto *ok = new ActionButton(QStringLiteral("确定"), ActionButton::Browse, buttons);
-    buttonLayout->addWidget(ok);
-    layout->addWidget(buttons);
-    QObject::connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
-    dialog.setDarkMode(dialogIsDarkMode());
-    dialog.exec();
+    runDialog(title, message, parent, [&](QHBoxLayout *bl, QDialog *dlg) {
+        auto *ok = new ActionButton(QStringLiteral("确定"), ActionButton::Browse, bl->parentWidget());
+        bl->addWidget(ok);
+        QObject::connect(ok, &QPushButton::clicked, dlg, &QDialog::accept);
+    });
 }
 
 QString PaintedDialog::getText(QWidget *parent, const QString &title, const QString &label,
                                const QString &text, bool *ok)
 {
+    QString result;
     PaintedDialog dialog(title, label, parent);
     auto *surface = dialog.findChild<QWidget *>();
     auto *layout = qobject_cast<QVBoxLayout *>(surface->layout());
+
     auto *edit = new PaintedLineEdit(surface);
     edit->setFixedHeight(42);
     edit->setText(text);
     layout->addWidget(edit);
+
     auto *buttons = new QWidget(surface);
     auto *buttonLayout = new QHBoxLayout(buttons);
     buttonLayout->setContentsMargins(0, 6, 0, 0);
@@ -174,7 +174,8 @@ QString PaintedDialog::getText(QWidget *parent, const QString &title, const QStr
     layout->addWidget(buttons);
     QObject::connect(cancel, &QPushButton::clicked, &dialog, &QDialog::reject);
     QObject::connect(confirm, &QPushButton::clicked, &dialog, &QDialog::accept);
-    dialog.setDarkMode(dialogIsDarkMode());
+
+    dialog.setDarkMode(ThemeManager::instance().isDark());
     edit->setFocus();
     const bool accepted = dialog.exec() == QDialog::Accepted;
     if (ok)

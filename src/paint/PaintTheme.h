@@ -35,8 +35,8 @@ inline Palette theme(bool dark)
     const auto &a = p.colors.app;
     if (dark) {
         p.windowOuter = QColor(10, 12, 17);
-        p.panelBg = QColor(16, 19, 26, 248);
-        p.panelBorder = QColor(42, 50, 66);
+        p.panelBg = a.surfaceBg;
+        p.panelBorder = a.surfaceBorder;
         p.cardBg = QColor(24, 28, 37, 230);
         p.cardHoverBg = QColor(30, 36, 48, 242);
         p.cardCheckedBg = QColor(24, 31, 47, 248);

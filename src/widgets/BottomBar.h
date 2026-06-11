@@ -7,7 +7,7 @@ class BottomBar : public QFrame
     Q_OBJECT
 public:
     explicit BottomBar(QWidget *parent = nullptr);
-    virtual void setDarkMode(bool dark);
+    void setDarkMode(bool dark);
 protected:
     void paintEvent(QPaintEvent *event) override;
 private:

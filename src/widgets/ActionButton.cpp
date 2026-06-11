@@ -13,11 +13,9 @@ ActionButton::ActionButton(const QString &text, Style style, QWidget *parent)
     setFlat(true);
     setAutoFillBackground(false);
     setAttribute(Qt::WA_StyledBackground, false);
-    if (m_style == Reset) {
+    if (m_style == Reset || m_style == Browse) {
         setFixedHeight(46);
         setMinimumWidth(118);
-    } else if (m_style == Browse) {
-        setFixedSize(118, 46);
     }
     setMouseTracking(true);
 }
