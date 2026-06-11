@@ -16,6 +16,12 @@ void SurfaceWidget::setDarkMode(bool dark)
     update();
 }
 
+void SurfaceWidget::setRoundedCorners(bool enabled)
+{
+    m_roundedCorners = enabled;
+    update();
+}
+
 void SurfaceWidget::paintEvent(QPaintEvent *)
 {
     QPainter painter(this);
@@ -25,5 +31,6 @@ void SurfaceWidget::paintEvent(QPaintEvent *)
     QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
     painter.setPen(QPen(a.surfaceBorder, 1));
     painter.setBrush(a.surfaceBg);
-    painter.drawRoundedRect(r, paint::Metrics::windowRadius, paint::Metrics::windowRadius);
+    int radius = m_roundedCorners ? paint::Metrics::windowRadius : 0;
+    painter.drawRoundedRect(r, radius, radius);
 }

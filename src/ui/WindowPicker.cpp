@@ -7,7 +7,6 @@
 #include "utils/win32/WindowEnumerator.h"
 
 #include <QAbstractButton>
-#include <QGraphicsDropShadowEffect>
 #include "utils/win32/Win32Icon.h"
 #include <QHBoxLayout>
 #include <QIcon>
@@ -87,12 +86,6 @@ WindowPicker::WindowPicker(QWidget *parent)
 
     root->addWidget(m_surface);
 
-    auto *shadow = new QGraphicsDropShadowEffect(m_surface);
-    shadow->setBlurRadius(20);
-    shadow->setOffset(0, 4);
-    shadow->setColor(QColor(0, 0, 0, 50));
-    m_surface->setGraphicsEffect(shadow);
-
     m_windows = window_enumerator::enumerateWindows();
     populateList();
 
@@ -164,6 +157,14 @@ void WindowPicker::paintEvent(QPaintEvent *)
 
     const auto &a = ThemeColors::forMode(m_darkMode).app;
     const QRectF body = rect().adjusted(14, 14, -14, -14);
+
+    for (int i = 5; i >= 1; --i) {
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(QColor(0, 0, 0, m_darkMode ? 6 + i * 4 : 4 + i * 3));
+        const qreal k = i * 1.5;
+        painter.drawRoundedRect(body.adjusted(-k, -k + 2, k, k + 4), 16 + k, 16 + k);
+    }
+
     QPainterPath path;
     path.addRoundedRect(body, 12, 12);
     painter.setPen(Qt::NoPen);

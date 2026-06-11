@@ -15,7 +15,6 @@ TitleBarButton::TitleBarButton(const QString &iconPath, const QString &tooltip,
     setFixedSize(30, 30);
     setCursor(Qt::PointingHandCursor);
     setToolTip(tooltip);
-    setMouseTracking(true);
     updateIcon();
 }
 
@@ -43,6 +42,7 @@ void TitleBarButton::enterEvent(QEvent *event)
 void TitleBarButton::leaveEvent(QEvent *event)
 {
     m_hovered = false;
+    m_pressed = false;
     update();
     QPushButton::leaveEvent(event);
 }

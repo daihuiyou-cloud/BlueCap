@@ -112,10 +112,10 @@ MainWindow::~MainWindow()
 
 void MainWindow::setupUI()
 {
-    auto *shell = new QVBoxLayout(this);
-    shell->setContentsMargins(paint::Metrics::shellMargin, paint::Metrics::shellMargin,
-                               paint::Metrics::shellMargin, paint::Metrics::shellMargin);
-    shell->setSpacing(0);
+    m_shell = new QVBoxLayout(this);
+    m_shell->setContentsMargins(paint::Metrics::shellMargin, paint::Metrics::shellMargin,
+                                paint::Metrics::shellMargin, paint::Metrics::shellMargin);
+    m_shell->setSpacing(0);
 
     auto *surface = new SurfaceWidget(this);
     surface->setDarkMode(ThemeManager::instance().isDark());
@@ -143,7 +143,7 @@ void MainWindow::setupUI()
     contentLayout->addWidget(m_stack, 1);
 
     surfaceLayout->addWidget(content, 1);
-    shell->addWidget(surface);
+    m_shell->addWidget(surface);
 }
 
 void MainWindow::setupPageConnections()
@@ -179,11 +179,15 @@ void MainWindow::setupSettingsConnections()
     tm.registerUpdater(m_videoLibraryPage,     [this](bool dark){ m_videoLibraryPage->setDarkMode(dark); });
     tm.registerUpdater(m_settingsPage,         [this](bool dark){ m_settingsPage->setDarkMode(dark); });
     tm.registerUpdater(m_recordingIndicator,   [this](bool dark){ m_recordingIndicator->setDarkMode(dark); });
-    tm.registerUpdater(m_settingsButton,       [this](bool dark){ m_settingsButton->setDarkMode(dark); });
     tm.registerUpdater(m_minimizeButton,       [this](bool dark){ m_minimizeButton->setDarkMode(dark); });
     tm.registerUpdater(m_closeButton,          [this](bool dark){ m_closeButton->setDarkMode(dark); });
     if (surface)
         tm.registerUpdater(surface,            [surface](bool dark){ surface->setDarkMode(dark); });
+    tm.registerUpdater(this, [this](bool) {
+        if (!isMaximized())
+            renderShadowCache();
+        update();
+    });
 
     connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
         BlueCapStyle::applyTheme(preference);
@@ -294,6 +298,25 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
         return false;
 
     auto *msg = static_cast<MSG *>(message);
+
+    if (msg->message == WM_NCCALCSIZE) {
+        *result = 0;
+        return true;
+    }
+
+    if (msg->message == WM_GETMINMAXINFO) {
+        auto *mmi = reinterpret_cast<MINMAXINFO *>(msg->lParam);
+        HMONITOR monitor = MonitorFromWindow(msg->hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFO mi = { sizeof(MONITORINFO) };
+        GetMonitorInfo(monitor, &mi);
+        mmi->ptMaxPosition.x = mi.rcWork.left - mi.rcMonitor.left;
+        mmi->ptMaxPosition.y = mi.rcWork.top - mi.rcMonitor.top;
+        mmi->ptMaxSize.x = mi.rcWork.right - mi.rcWork.left;
+        mmi->ptMaxSize.y = mi.rcWork.bottom - mi.rcWork.top;
+        *result = 0;
+        return true;
+    }
+
     if (msg->message != WM_NCHITTEST)
         return false;
 
@@ -305,10 +328,13 @@ bool MainWindow::nativeEventFilter(const QByteArray &eventType, void *message, l
     int x = GET_X_LPARAM(msg->lParam);
     int y = GET_Y_LPARAM(msg->lParam);
 
-    bool left   = x < winRect.left   + kResizeBorder;
-    bool right  = x > winRect.right  - kResizeBorder;
-    bool top    = y < winRect.top    + kResizeBorder;
-    bool bottom = y > winRect.bottom - kResizeBorder;
+    UINT dpi = GetDpiForWindow(msg->hwnd);
+    int border = MulDiv(kResizeBorder, dpi, 96);
+
+    bool left   = x < winRect.left   + border;
+    bool right  = x > winRect.right  - border;
+    bool top    = y < winRect.top    + border;
+    bool bottom = y > winRect.bottom - border;
 
     if (top && left)       *result = HTTOPLEFT;
     else if (top && right) *result = HTTOPRIGHT;
@@ -341,14 +367,17 @@ void MainWindow::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.drawPixmap(0, 0, m_shadowCache);
+    if (!isMaximized())
+        painter.drawPixmap(0, 0, m_shadowCache);
 
     QWidget::paintEvent(event);
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
-    m_shadowDebounce->start();
+    updateWindowState();
+    if (!isMaximized())
+        m_shadowDebounce->start();
     QWidget::resizeEvent(event);
 }
 
@@ -370,6 +399,21 @@ void MainWindow::renderShadowCache()
     }
 }
 
+void MainWindow::updateWindowState()
+{
+    bool maximized = isMaximized();
+    if (maximized == m_wasMaximized)
+        return;
+    m_wasMaximized = maximized;
+    int margin = maximized ? 0 : paint::Metrics::shellMargin;
+    m_shell->setContentsMargins(margin, margin, margin, margin);
+    if (auto *surface = findChild<SurfaceWidget *>())
+        surface->setRoundedCorners(!maximized);
+    if (!maximized)
+        renderShadowCache();
+    update();
+}
+
 QWidget *MainWindow::createTitleBar()
 {
     m_titleBar = new QWidget(this);
@@ -378,10 +422,6 @@ QWidget *MainWindow::createTitleBar()
     auto *layout = new QHBoxLayout(m_titleBar);
     layout->setContentsMargins(0, 0, 20, 0);
     layout->setSpacing(12);
-
-    m_settingsButton = new TitleBarButton(QStringLiteral(":/icons/title-settings.svg"),
-                                          QStringLiteral("设置"), false, m_titleBar);
-    m_settingsButton->setAccessibleName(QStringLiteral("打开设置页面"));
 
     m_minimizeButton = new TitleBarButton(QStringLiteral(":/icons/title-minimize.svg"),
                                           QStringLiteral("最小化"), false, m_titleBar);
@@ -394,35 +434,13 @@ QWidget *MainWindow::createTitleBar()
     m_recordingIndicator = new RecordingIndicator(this);
     layout->addStretch();
     layout->addWidget(m_recordingIndicator);
-    layout->addWidget(m_settingsButton);
     layout->addWidget(m_minimizeButton);
     layout->addWidget(m_closeButton);
 
-    connect(m_settingsButton, &QPushButton::clicked, m_nav, [this] {
-        m_nav->navigate(Page::Settings);
-    });
     connect(m_minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
     return m_titleBar;
-}
-
-bool MainWindow::inTitleDragArea(const QPoint &position) const
-{
-    if (!m_titleBar || !m_titleBar->isVisible())
-        return false;
-    QWidget *parent = m_titleBar->parentWidget();
-    if (!parent) return false;
-    QPoint mapped = parent->mapFromGlobal(mapToGlobal(position));
-    QRect titleRect = m_titleBar->geometry();
-    if (!titleRect.contains(mapped))
-        return false;
-    if (m_closeButton && m_closeButton->isVisible()) {
-        QPoint closeBtnTopLeft = parent->mapFromGlobal(
-            m_closeButton->mapToGlobal(QPoint(0, 0)));
-        return mapped.x() < closeBtnTopLeft.x();
-    }
-    return true;
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event)
@@ -437,6 +455,14 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
 void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
 {
+    if (event->button() == Qt::LeftButton && m_titleBar && m_titleBar->isVisible()) {
+        QWidget *parent = m_titleBar->parentWidget();
+        QPoint mappedPos = parent ? parent->mapFrom(this, event->pos()) : event->pos();
+        if (m_titleBar->geometry().contains(mappedPos)) {
+            isMaximized() ? showNormal() : showMaximized();
+            return;
+        }
+    }
     QWidget::mouseDoubleClickEvent(event);
 }
 

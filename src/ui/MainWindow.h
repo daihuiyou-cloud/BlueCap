@@ -6,6 +6,7 @@
 
 #include <QAbstractNativeEventFilter>
 #include <QIcon>
+#include <QVBoxLayout>
 #include <QWidget>
 
 class QPoint;
@@ -45,7 +46,7 @@ protected:
 
 private:
     QWidget *createTitleBar();
-    bool inTitleDragArea(const QPoint &position) const;
+    void updateWindowState();
 
     void setupUI();
     void setupPageConnections();
@@ -69,7 +70,6 @@ private:
     HotkeyManager *m_hotkey = nullptr;
 
     QWidget *m_titleBar = nullptr;
-    TitleBarButton *m_settingsButton = nullptr;
     TitleBarButton *m_minimizeButton = nullptr;
     TitleBarButton *m_closeButton = nullptr;
     RecordingIndicator *m_recordingIndicator = nullptr;
@@ -78,6 +78,8 @@ private:
 
     QPixmap m_shadowCache;
     QTimer *m_shadowDebounce = nullptr;
+    QVBoxLayout *m_shell = nullptr;
+    bool m_wasMaximized = false;
 
     static constexpr int kResizeBorder = 5;
 };
