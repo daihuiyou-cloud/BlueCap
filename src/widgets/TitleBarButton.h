@@ -9,6 +9,7 @@ public:
     explicit TitleBarButton(const QString &iconPath, const QString &tooltip,
                             bool isCloseButton = false, QWidget *parent = nullptr);
     void setDarkMode(bool dark);
+    void setIconPath(const QString &path);
 protected:
     void paintEvent(QPaintEvent *event) override;
     void enterEvent(QEvent *event) override;

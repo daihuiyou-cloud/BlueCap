@@ -150,6 +150,7 @@ struct ThemeAppearance {
     QColor menuItemSelectedText;
     QColor menuSeparator;
 
+    QColor scrollbarTrack;
     QColor scrollbarHandle;
     QColor scrollbarHandleHover;
     QColor scrollbarHandlePressed;
@@ -314,6 +315,7 @@ struct ThemeColors {
         a.menuItemSelectedBg = QColor(222, 237, 255, 219);
         a.menuItemSelectedText = QColor(9, 103, 242);
         a.menuSeparator = QColor(207, 216, 232, 153);
+        a.scrollbarTrack = QColor(207, 216, 232, 255);
         a.scrollbarHandle = QColor(207, 216, 232, 153);
         a.scrollbarHandleHover = QColor(180, 190, 210, 204);
         a.scrollbarHandlePressed = QColor(160, 170, 190, 230);
@@ -466,6 +468,7 @@ struct ThemeColors {
         a.menuItemSelectedBg = QColor(50, 62, 84, 220);
         a.menuItemSelectedText = QColor(77, 163, 255);
         a.menuSeparator = QColor(62, 74, 96, 180);
+        a.scrollbarTrack = QColor(58, 70, 92, 255);
         a.scrollbarHandle = QColor(58, 70, 92, 145);
         a.scrollbarHandleHover = QColor(72, 86, 112, 205);
         a.scrollbarHandlePressed = QColor(86, 104, 136, 235);

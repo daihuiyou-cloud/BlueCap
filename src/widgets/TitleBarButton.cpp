@@ -18,6 +18,12 @@ TitleBarButton::TitleBarButton(const QString &iconPath, const QString &tooltip,
     updateIcon();
 }
 
+void TitleBarButton::setIconPath(const QString &path)
+{
+    m_iconPath = path;
+    updateIcon();
+}
+
 void TitleBarButton::setDarkMode(bool dark)
 {
     m_darkMode = dark;

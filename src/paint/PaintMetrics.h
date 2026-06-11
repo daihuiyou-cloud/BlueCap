@@ -3,7 +3,7 @@
 namespace paint {
 
 struct Metrics {
-    static constexpr int windowRadius = 14;
+    static constexpr int windowRadius = 6;
     static constexpr int pageRadius = 12;
     static constexpr int cardRadius = 10;
     static constexpr int controlRadius = 8;
@@ -29,7 +29,7 @@ struct Metrics {
     // Window
     static constexpr int windowMinWidth = 740;
     static constexpr int windowMinHeight = 460;
-    static constexpr int shellMargin = 8;
+    static constexpr int shellMargin = 0;
 };
 
 }

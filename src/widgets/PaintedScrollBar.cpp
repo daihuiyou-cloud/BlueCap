@@ -62,7 +62,12 @@ void PaintedScrollBar::paintEvent(QPaintEvent *)
     int range = maximum() - minimum() + pageStep();
     if (range <= 0) return;
 
-    qreal handleH = qMax(30.0, qMin((qreal)h * 0.9, (qreal)h * pageStep() / range));
+    // Draw track
+    p.setPen(Qt::NoPen);
+    p.setBrush(a.scrollbarTrack);
+    p.drawRoundedRect(QRectF(0, 0, w, h), 4, 4);
+
+    qreal handleH = qMax(20.0, qMin((qreal)h * 0.5, (qreal)h * pageStep() / range));
     qreal avail = h - handleH;
     qreal handleY = (maximum() <= minimum() || avail <= 0)
         ? 0

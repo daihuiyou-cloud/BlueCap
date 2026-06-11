@@ -69,6 +69,7 @@ private:
 
     QWidget *m_titleBar = nullptr;
     TitleBarButton *m_minimizeButton = nullptr;
+    TitleBarButton *m_maximizeButton = nullptr;
     TitleBarButton *m_closeButton = nullptr;
     RecordingIndicator *m_recordingIndicator = nullptr;
 

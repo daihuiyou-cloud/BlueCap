@@ -173,6 +173,7 @@ void MainWindow::setupSettingsConnections()
     tm.registerUpdater(m_settingsPage,         [this](bool dark){ m_settingsPage->setDarkMode(dark); });
     tm.registerUpdater(m_recordingIndicator,   [this](bool dark){ m_recordingIndicator->setDarkMode(dark); });
     tm.registerUpdater(m_minimizeButton,       [this](bool dark){ m_minimizeButton->setDarkMode(dark); });
+    tm.registerUpdater(m_maximizeButton,       [this](bool dark){ m_maximizeButton->setDarkMode(dark); });
     tm.registerUpdater(m_closeButton,          [this](bool dark){ m_closeButton->setDarkMode(dark); });
     if (surface)
         tm.registerUpdater(surface,            [surface](bool dark){ surface->setDarkMode(dark); });
@@ -376,6 +377,15 @@ void MainWindow::updateWindowState()
     m_shell->setContentsMargins(margin, margin, margin, margin);
     if (auto *surface = findChild<SurfaceWidget *>())
         surface->setRoundedCorners(!maximized);
+    if (maximized) {
+        m_maximizeButton->setIconPath(QStringLiteral(":/icons/title-restore.svg"));
+        m_maximizeButton->setToolTip(QStringLiteral("还原"));
+        m_maximizeButton->setAccessibleName(QStringLiteral("还原窗口"));
+    } else {
+        m_maximizeButton->setIconPath(QStringLiteral(":/icons/title-maximize.svg"));
+        m_maximizeButton->setToolTip(QStringLiteral("最大化"));
+        m_maximizeButton->setAccessibleName(QStringLiteral("最大化窗口"));
+    }
     update();
 }
 
@@ -392,6 +402,10 @@ QWidget *MainWindow::createTitleBar()
                                           QStringLiteral("最小化"), false, m_titleBar);
     m_minimizeButton->setAccessibleName(QStringLiteral("最小化窗口"));
 
+    m_maximizeButton = new TitleBarButton(QStringLiteral(":/icons/title-maximize.svg"),
+                                          QStringLiteral("最大化"), false, m_titleBar);
+    m_maximizeButton->setAccessibleName(QStringLiteral("最大化窗口"));
+
     m_closeButton = new TitleBarButton(QStringLiteral(":/icons/title-close.svg"),
                                        QStringLiteral("关闭"), true, m_titleBar);
     m_closeButton->setAccessibleName(QStringLiteral("关闭窗口"));
@@ -400,9 +414,13 @@ QWidget *MainWindow::createTitleBar()
     layout->addStretch();
     layout->addWidget(m_recordingIndicator);
     layout->addWidget(m_minimizeButton);
+    layout->addWidget(m_maximizeButton);
     layout->addWidget(m_closeButton);
 
     connect(m_minimizeButton, &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(m_maximizeButton, &QPushButton::clicked, this, [this] {
+        isMaximized() ? showNormal() : showMaximized();
+    });
     connect(m_closeButton, &QPushButton::clicked, this, &MainWindow::close);
 
     return m_titleBar;

@@ -468,6 +468,9 @@ void BlueCapStyle::drawComplexControl(ComplexControl control,
         painter->drawLine(cx + 4, cy - 3, cx, cy + 3);
         return;
     }
+    case CC_ScrollBar:
+        // Handled via CE_ScrollBarSlider and CE_ScrollBarAddPage/SubPage in drawControl
+        break;
     default:
         break;
     }
