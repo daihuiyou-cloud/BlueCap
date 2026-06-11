@@ -5,6 +5,7 @@
 #include "paint/PaintMetrics.h"
 #include "style/BlueCapStyle.h"
 #include "theme/Theme.h"
+#include "theme/ThemeColors.h"
 #include "widgets/SurfaceWidget.h"
 #include "widgets/TitleBarButton.h"
 #include "widgets/RecordingIndicator.h"
@@ -26,7 +27,6 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPixmap>
 #include <QPushButton>
 #include <QSettings>
 #include <QStackedWidget>
@@ -46,7 +46,6 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle(QStringLiteral("BlueCap"));
     setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon.ico")));
     setWindowFlags(Qt::FramelessWindowHint | Qt::Window);
-    setAttribute(Qt::WA_TranslucentBackground);
     resize(960, 600);
     setMinimumSize(paint::Metrics::windowMinWidth, paint::Metrics::windowMinHeight);
 
@@ -97,12 +96,6 @@ MainWindow::MainWindow(QWidget *parent)
             QSystemTrayIcon::Warning, 5000);
     }
 
-    m_shadowDebounce = new QTimer(this);
-    m_shadowDebounce->setSingleShot(true);
-    m_shadowDebounce->setInterval(100);
-    connect(m_shadowDebounce, &QTimer::timeout, this, &MainWindow::renderShadowCache);
-
-    QTimer::singleShot(0, this, &MainWindow::renderShadowCache);
 }
 
 MainWindow::~MainWindow()
@@ -122,7 +115,7 @@ void MainWindow::setupUI()
 
     auto *surfaceLayout = new QHBoxLayout(surface);
     surfaceLayout->setContentsMargins(0, 0, 0, 0);
-    surfaceLayout->setSpacing(20);
+    surfaceLayout->setSpacing(14);
 
     m_sidebar = new Sidebar(surface);
     surfaceLayout->addWidget(m_sidebar);
@@ -183,12 +176,7 @@ void MainWindow::setupSettingsConnections()
     tm.registerUpdater(m_closeButton,          [this](bool dark){ m_closeButton->setDarkMode(dark); });
     if (surface)
         tm.registerUpdater(surface,            [surface](bool dark){ surface->setDarkMode(dark); });
-    tm.registerUpdater(this, [this](bool) {
-        if (!isMaximized())
-            renderShadowCache();
-        update();
-    });
-
+    tm.registerUpdater(this, [this](bool) { update(); });
     connect(settingsPage, &SettingsPage::themeChanged, this, [this](int preference) {
         BlueCapStyle::applyTheme(preference);
         ThemeManager::instance().setDarkMode(theme::resolve(preference) == ThemeDark);
@@ -366,37 +354,16 @@ void MainWindow::closeEvent(QCloseEvent *event)
 void MainWindow::paintEvent(QPaintEvent *event)
 {
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
-    if (!isMaximized())
-        painter.drawPixmap(0, 0, m_shadowCache);
-
+    const auto &a = ThemeColors::forMode(
+        ThemeManager::instance().isDark()).app;
+    painter.fillRect(rect(), a.surfaceBg);
     QWidget::paintEvent(event);
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event)
 {
     updateWindowState();
-    if (!isMaximized())
-        m_shadowDebounce->start();
     QWidget::resizeEvent(event);
-}
-
-void MainWindow::renderShadowCache()
-{
-    if (size().isEmpty()) return;
-    m_shadowCache = QPixmap(size());
-    m_shadowCache.fill(Qt::transparent);
-
-    QPainter p(&m_shadowCache);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(Qt::NoPen);
-
-    const QRectF shadowRect = rect().adjusted(12, 12, -12, -12);
-    for (int i = 5; i >= 1; --i) {
-        const qreal k = i * 2.0;
-        p.setBrush(QColor(38, 80, 150, 2 + i * 3));
-        p.drawRoundedRect(shadowRect.adjusted(-k, -k + 4, k, k + 8), 36 + k, 36 + k);
-    }
 }
 
 void MainWindow::updateWindowState()
@@ -409,8 +376,6 @@ void MainWindow::updateWindowState()
     m_shell->setContentsMargins(margin, margin, margin, margin);
     if (auto *surface = findChild<SurfaceWidget *>())
         surface->setRoundedCorners(!maximized);
-    if (!maximized)
-        renderShadowCache();
     update();
 }
 
@@ -420,8 +385,8 @@ QWidget *MainWindow::createTitleBar()
     m_titleBar->setFixedHeight(paint::Metrics::titleBarHeight);
 
     auto *layout = new QHBoxLayout(m_titleBar);
-    layout->setContentsMargins(0, 0, 20, 0);
-    layout->setSpacing(12);
+    layout->setContentsMargins(0, 0, 14, 0);
+    layout->setSpacing(8);
 
     m_minimizeButton = new TitleBarButton(QStringLiteral(":/icons/title-minimize.svg"),
                                           QStringLiteral("最小化"), false, m_titleBar);

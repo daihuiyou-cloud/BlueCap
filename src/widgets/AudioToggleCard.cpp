@@ -91,13 +91,13 @@ void AudioToggleCard::paintEvent(QPaintEvent *)
     QColor bg = m_pressed ? pal.cardCheckedBg
                : m_hovered ? pal.cardHoverBg
                            : pal.cardBg;
-    paint::drawCard(p, r, bg, pal.cardBorder, 12);
-    paint::drawVerticalSheen(p, r, 12, m_darkMode);
+    paint::drawCard(p, r, bg, pal.cardBorder, paint::Metrics::cardRadius);
+    paint::drawVerticalSheen(p, r, paint::Metrics::cardRadius, m_darkMode);
 
     const QColor accent = m_accent == Microphone ? pal.primary : pal.accentGreen;
     const QColor iconColor = m_audioEnabled ? accent : pal.faintText;
     const QColor waveColor = QColor(iconColor.red(), iconColor.green(), iconColor.blue(), 120);
-    QRectF iconRect(17, 19, 24, 24);
+    QRectF iconRect(15, 15, 24, 24);
 
     p.setPen(QPen(iconColor, 2));
     p.setBrush(Qt::NoBrush);
@@ -114,26 +114,26 @@ void AudioToggleCard::paintEvent(QPaintEvent *)
     }
 
     QFont titleFont = p.font();
-    titleFont.setPixelSize(13);
+    titleFont.setPixelSize(12);
     titleFont.setBold(true);
     p.setFont(titleFont);
-    paint::drawElidedText(p, QRect(49, 17, width() - 60, 20),
+    paint::drawElidedText(p, QRect(47, 13, width() - 58, 20),
                           Qt::AlignLeft | Qt::AlignVCenter, m_title, pal.text);
 
     QFont stateFont = p.font();
-    stateFont.setPixelSize(12);
+    stateFont.setPixelSize(11);
     stateFont.setBold(false);
     p.setFont(stateFont);
     const QString &stateText = m_audioEnabled ? m_enabledText : m_disabledText;
     const QColor stateColor = m_audioEnabled ? accent : pal.faintText;
-    paint::drawElidedText(p, QRect(49, 38, width() - 60, 18),
+    paint::drawElidedText(p, QRect(47, 32, width() - 58, 18),
                           Qt::AlignLeft | Qt::AlignVCenter, stateText, stateColor);
 
     p.setPen(QPen(waveColor, 1));
-    const int baseY = height() - 17;
-    for (int i = 0; i < 18; ++i) {
+    const int baseY = height() - 12;
+    for (int i = 0; i < 17; ++i) {
         int h = m_audioEnabled ? (3 + ((i * 7) % 11)) : 2;
-        int x = 37 + i * 4;
+        int x = 36 + i * 4;
         p.drawLine(x, baseY - h / 2, x, baseY + h / 2);
     }
 }

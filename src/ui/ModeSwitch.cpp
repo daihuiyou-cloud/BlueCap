@@ -12,14 +12,14 @@ ModeSwitch::ModeSwitch(QWidget *parent)
     : QWidget(parent)
 {
     setFixedHeight(paint::Metrics::modeCardHeight);
-    setMinimumWidth(660);
+    setMinimumWidth(620);
 
     m_group = new QButtonGroup(this);
     m_group->setExclusive(true);
 
     auto *layout = new QHBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(18);
+    layout->setSpacing(14);
 
     const QStringList paths = {
         QStringLiteral(":/icons/mode-fullscreen.svg"),

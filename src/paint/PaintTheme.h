@@ -34,32 +34,32 @@ inline Palette theme(bool dark)
     p.colors = ThemeColors::forMode(dark);
     const auto &a = p.colors.app;
     if (dark) {
-        p.windowOuter = QColor(10, 12, 17);
+        p.windowOuter = QColor(13, 16, 22);
         p.panelBg = a.surfaceBg;
         p.panelBorder = a.surfaceBorder;
-        p.cardBg = QColor(24, 28, 37, 230);
-        p.cardHoverBg = QColor(30, 36, 48, 242);
-        p.cardCheckedBg = QColor(24, 31, 47, 248);
-        p.cardBorder = QColor(45, 52, 68);
-        p.cardCheckedBorder = QColor(55, 116, 255);
-        p.primary = QColor(57, 133, 255);
-        p.primary2 = QColor(34, 86, 236);
-        p.accentGreen = QColor(43, 198, 164);
-        p.accentPurple = QColor(153, 98, 255);
+        p.cardBg = QColor(25, 30, 40, 224);
+        p.cardHoverBg = QColor(32, 38, 50, 238);
+        p.cardCheckedBg = QColor(28, 36, 51, 246);
+        p.cardBorder = QColor(61, 61, 61, 220);
+        p.cardCheckedBorder = QColor(74, 139, 255);
+        p.primary = QColor(76, 151, 255);
+        p.primary2 = QColor(40, 103, 235);
+        p.accentGreen = QColor(48, 198, 164);
+        p.accentPurple = QColor(157, 105, 245);
         p.danger = QColor(244, 66, 76);
-        p.text = QColor(226, 232, 242);
-        p.mutedText = QColor(154, 165, 184);
-        p.faintText = QColor(94, 107, 130);
-        p.hairline = QColor(53, 61, 78);
-        p.iconBg = QColor(35, 43, 62);
+        p.text = QColor(232, 237, 246);
+        p.mutedText = QColor(163, 174, 190);
+        p.faintText = QColor(100, 114, 136);
+        p.hairline = QColor(61, 61, 61);
+        p.iconBg = QColor(37, 46, 62);
     } else {
         p.windowOuter = QColor(234, 240, 250);
         p.panelBg = a.surfaceBg;
         p.panelBorder = a.surfaceBorder;
-        p.cardBg = QColor(255, 255, 255, 226);
+        p.cardBg = QColor(255, 255, 255, 218);
         p.cardHoverBg = QColor(247, 251, 255, 245);
         p.cardCheckedBg = QColor(237, 245, 255, 248);
-        p.cardBorder = QColor(198, 211, 232);
+        p.cardBorder = QColor(210, 210, 210);
         p.cardCheckedBorder = QColor(9, 103, 242);
         p.primary = QColor(45, 132, 255);
         p.primary2 = QColor(9, 91, 238);
@@ -69,7 +69,7 @@ inline Palette theme(bool dark)
         p.text = QColor(21, 31, 52);
         p.mutedText = QColor(92, 106, 128);
         p.faintText = QColor(134, 148, 170);
-        p.hairline = QColor(207, 218, 236);
+        p.hairline = QColor(214, 214, 214);
         p.iconBg = QColor(230, 238, 251);
     }
     return p;

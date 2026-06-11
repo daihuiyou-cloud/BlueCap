@@ -18,8 +18,8 @@ Sidebar::Sidebar(QWidget *parent)
     m_group->setExclusive(true);
 
     auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(22, 24, 18, 20);
-    layout->setSpacing(20);
+    layout->setContentsMargins(20, 22, 16, 18);
+    layout->setSpacing(16);
 
     auto *brand = new QWidget(this);
     auto *brandLayout = new QHBoxLayout(brand);
@@ -27,8 +27,8 @@ Sidebar::Sidebar(QWidget *parent)
     brandLayout->setSpacing(12);
 
     auto *logo = new QLabel(brand);
-    logo->setFixedSize(52, 52);
-    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(52, 52));
+    logo->setFixedSize(46, 46);
+    logo->setPixmap(QIcon(QStringLiteral(":/icons/app-logo.png")).pixmap(46, 46));
 
     auto *brandText = new QWidget(brand);
     auto *brandTextLayout = new QVBoxLayout(brandText);
@@ -37,13 +37,13 @@ Sidebar::Sidebar(QWidget *parent)
 
     auto *name = new QLabel(QStringLiteral("BlueCap"), brandText);
     QFont nameFont = name->font();
-    nameFont.setPixelSize(21);
+    nameFont.setPixelSize(20);
     nameFont.setBold(true);
     name->setFont(nameFont);
 
     auto *tag = new QLabel(QStringLiteral("简单 · 高效 · 专业"), brandText);
     QFont tagFont = tag->font();
-    tagFont.setPixelSize(11);
+    tagFont.setPixelSize(10);
     tag->setFont(tagFont);
 
     brandTextLayout->addWidget(name);
@@ -51,6 +51,7 @@ Sidebar::Sidebar(QWidget *parent)
     brandLayout->addWidget(logo);
     brandLayout->addWidget(brandText, 1);
     layout->addWidget(brand);
+    layout->addSpacing(12);
 
     const QStringList paths = {
         QStringLiteral(":/icons/nav-record.svg"),

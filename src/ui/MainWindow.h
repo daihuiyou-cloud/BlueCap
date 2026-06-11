@@ -11,7 +11,6 @@
 
 class QPoint;
 class QStackedWidget;
-class QTimer;
 class HotkeyManager;
 class IRecorderService;
 class ISettingsRepository;
@@ -54,7 +53,6 @@ private:
     void setupRecordConnections();
     void setupToggleRecord();
     void setupTrayConnections();
-    void renderShadowCache();
 
     Sidebar *m_sidebar = nullptr;
     QStackedWidget *m_stack = nullptr;
@@ -76,8 +74,6 @@ private:
 
     window_drag::State m_dragState;
 
-    QPixmap m_shadowCache;
-    QTimer *m_shadowDebounce = nullptr;
     QVBoxLayout *m_shell = nullptr;
     bool m_wasMaximized = false;
 

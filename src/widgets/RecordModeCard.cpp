@@ -19,7 +19,7 @@ RecordModeCard::RecordModeCard(RecordMode mode, const QString &title,
     setCheckable(true);
     setCursor(Qt::PointingHandCursor);
     setFocusPolicy(Qt::StrongFocus);
-    setMinimumSize(190, paint::Metrics::modeCardHeight);
+    setMinimumSize(176, paint::Metrics::modeCardHeight);
     m_palette = paint::theme(false);
     recolorIcon();
 }
@@ -44,7 +44,7 @@ void RecordModeCard::recolorIcon()
 
 QSize RecordModeCard::sizeHint() const
 {
-    return QSize(216, paint::Metrics::modeCardHeight);
+    return QSize(206, paint::Metrics::modeCardHeight);
 }
 
 void RecordModeCard::enterEvent(QEvent *event)
@@ -78,7 +78,7 @@ void RecordModeCard::paintEvent(QPaintEvent *)
         border = pal.hairline;
     }
 
-    paint::drawCard(p, r, bg, border, paint::Metrics::cardRadius, checked ? 1.4 : 1.0);
+    paint::drawCard(p, r, bg, border, paint::Metrics::cardRadius);
     paint::drawVerticalSheen(p, r, paint::Metrics::cardRadius, m_darkMode);
 
     const QColor accent = m_mode == RecordMode::Region
@@ -89,35 +89,35 @@ void RecordModeCard::paintEvent(QPaintEvent *)
         if (disabled) {
             p.save();
             p.setOpacity(0.45);
-            p.drawPixmap((width() - 36) / 2, 26, m_iconCache);
+            p.drawPixmap((width() - 36) / 2, 20, m_iconCache);
             p.restore();
         } else {
-            p.drawPixmap((width() - 36) / 2, 26, m_iconCache);
+            p.drawPixmap((width() - 36) / 2, 20, m_iconCache);
         }
     }
 
     QFont titleFont = p.font();
-    titleFont.setPixelSize(17);
+    titleFont.setPixelSize(16);
     titleFont.setBold(true);
     p.setFont(titleFont);
-    paint::drawElidedText(p, QRect(18, 72, width() - 36, 24),
+    paint::drawElidedText(p, QRect(18, 62, width() - 36, 24),
                           Qt::AlignCenter, m_title,
                           disabled ? pal.faintText : pal.text);
 
     QFont subFont = p.font();
-    subFont.setPixelSize(12);
+    subFont.setPixelSize(11);
     subFont.setBold(false);
     p.setFont(subFont);
-    paint::drawElidedText(p, QRect(18, 96, width() - 36, 20),
+    paint::drawElidedText(p, QRect(18, 84, width() - 36, 20),
                           Qt::AlignCenter, m_subtitle,
                           disabled ? pal.faintText : pal.mutedText);
 
     if (checked) {
         p.setPen(Qt::NoPen);
         p.setBrush(pal.primary);
-        const qreal bx = width() - 31;
-        const qreal by = 13;
-        const qreal bd = 22;
+        const qreal bx = width() - 28;
+        const qreal by = 10;
+        const qreal bd = 20;
         p.drawEllipse(QRectF(bx, by, bd, bd));
         p.setPen(QPen(Qt::white, 2));
         qreal cx = bx + bd / 2.0;

@@ -68,12 +68,12 @@ RecordPage::RecordPage(IRecorderService *recorder, IVideoLibrary *library, QWidg
     connect(m_stopProgressTimer, &QTimer::timeout, this, &RecordPage::updateStopProgress);
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(34, 24, 34, 24);
+    root->setContentsMargins(26, 18, 26, 22);
     root->setSpacing(0);
 
     m_modeSwitch = new ModeSwitch(this);
     root->addWidget(m_modeSwitch);
-    root->addSpacing(18);
+    root->addSpacing(14);
 
     connect(m_modeSwitch, &ModeSwitch::modeChanged, this, [this](RecordMode mode) {
         if (!m_recorder->isRecording()) {
@@ -87,11 +87,11 @@ RecordPage::RecordPage(IRecorderService *recorder, IVideoLibrary *library, QWidg
     m_screenCombo->setFixedHeight(32);
     m_screenCombo->setMinimumWidth(280);
     root->addWidget(m_screenCombo, 0, Qt::AlignHCenter);
-    root->addSpacing(10);
+    root->addSpacing(8);
 
     m_controlPanel = new QWidget(this);
-    m_controlPanel->setMinimumHeight(220);
-    m_controlPanel->setMaximumHeight(270);
+    m_controlPanel->setMinimumHeight(240);
+    m_controlPanel->setMaximumHeight(360);
     m_controlPanel->setMinimumWidth(540);
 
     setMinimumWidth(620);
@@ -197,15 +197,15 @@ void RecordPage::updateSectionHeights()
     if (!m_controlPanel)
         return;
 
-    const int margins = 24 + 24;
+    const int margins = 18 + 22;
     const int modeHeight = m_modeSwitch ? m_modeSwitch->height() : paint::Metrics::modeCardHeight;
-    const int screenHeight = m_screenCombo && m_screenCombo->isVisible() ? m_screenCombo->height() + 10 : 0;
-    const int fixedGaps = 18;
+    const int screenHeight = m_screenCombo && m_screenCombo->isVisible() ? m_screenCombo->height() + 8 : 0;
+    const int fixedGaps = 14;
     int available = height() - margins - modeHeight - screenHeight - fixedGaps;
     if (available <= 0)
-        available = 430;
+        available = 320;
 
-    int controlHeight = qBound(220, available, 400);
+    int controlHeight = qBound(240, available, 360);
     m_controlPanel->setFixedHeight(controlHeight);
 }
 
@@ -214,15 +214,16 @@ void RecordPage::layoutControlPanel()
     if (!m_controlPanel || !m_recordButton)
         return;
 
-    const QRect r = m_controlPanel->rect().adjusted(26, 14, -26, -14);
+    const QRect r = m_controlPanel->rect().adjusted(26, 18, -26, -18);
     const int centerX = r.center().x();
     const int top = r.top();
     const int buttonSize = paint::Metrics::recordButtonSize;
-    const int minCardGap = 8;
+    const int minCardGap = 14;
+    const int buttonY = top + qMax(30, r.height() / 2 - buttonSize / 2 - 34);
 
-    m_recordButton->setGeometry(centerX - buttonSize / 2, top + 26, buttonSize, buttonSize);
+    m_recordButton->setGeometry(centerX - buttonSize / 2, buttonY, buttonSize, buttonSize);
 
-    const int cardY = top + 94;
+    const int cardY = buttonY + qMax(44, buttonSize / 2 + 4);
     int sideInset = qMax(42, r.width() / 10);
     if (m_micCard && m_systemAudioCard) {
         const int maxInset = qMax(0, r.width() / 2 - buttonSize / 2 - minCardGap - m_micCard->width());
@@ -233,14 +234,14 @@ void RecordPage::layoutControlPanel()
     if (m_systemAudioCard)
         m_systemAudioCard->move(r.right() - sideInset - m_systemAudioCard->width(), cardY);
 
-    const int titleY = top + 146;
+    const int titleY = qMin(r.bottom() - 92, buttonY + buttonSize + 18);
     const int titleW = qBound(160, r.width() - 200, 300);
     m_titleLabel->setGeometry(centerX - titleW / 2, titleY, titleW, 34);
     m_countdownLabel->setGeometry(m_titleLabel->geometry());
     const int hotkeyW = qMin(340, r.width() - 40);
-    m_hotkeyLabel->setGeometry(centerX - hotkeyW / 2, titleY + 38, hotkeyW, 28);
+    m_hotkeyLabel->setGeometry(centerX - hotkeyW / 2, titleY + 34, hotkeyW, 26);
 
-    const int statusY = qMin(r.bottom() - 24, titleY + 70);
+    const int statusY = qMin(r.bottom() - 22, titleY + 66);
     m_statusLabel->setGeometry(r.left() + 34, statusY, r.width() - 68, 22);
     m_stopStatusLabel->setGeometry(r.left() + 34, statusY - 26, r.width() - 68, 22);
     m_stopProgress->setGeometry(centerX - 160, statusY, 320, 6);
@@ -255,7 +256,7 @@ void RecordPage::updateLabelColors()
 {
     const auto &a = ThemeColors::forMode(m_darkMode).app;
     QFont titleFont = m_titleLabel->font();
-    titleFont.setPixelSize(21);
+    titleFont.setPixelSize(20);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
     QPalette tp = m_titleLabel->palette();
@@ -263,7 +264,7 @@ void RecordPage::updateLabelColors()
     m_titleLabel->setPalette(tp);
 
     QFont hotkeyFont = m_hotkeyLabel->font();
-    hotkeyFont.setPixelSize(16);
+    hotkeyFont.setPixelSize(15);
     hotkeyFont.setBold(true);
     m_hotkeyLabel->setFont(hotkeyFont);
     QPalette hp = m_hotkeyLabel->palette();
@@ -271,7 +272,7 @@ void RecordPage::updateLabelColors()
     m_hotkeyLabel->setPalette(hp);
 
     QFont statusFont = m_statusLabel->font();
-    statusFont.setPixelSize(13);
+    statusFont.setPixelSize(12);
     m_statusLabel->setFont(statusFont);
     QPalette sp = m_statusLabel->palette();
     sp.setColor(QPalette::WindowText, a.recordStatusText);

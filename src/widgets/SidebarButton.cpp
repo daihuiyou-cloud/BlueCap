@@ -86,7 +86,7 @@ void SidebarButton::paintEvent(QPaintEvent *)
     if (bgColor.alpha() > 0) {
         painter.setPen(Qt::NoPen);
         painter.setBrush(bgColor);
-        painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 16, 16);
+        painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 10, 10);
     }
 
     // Active indicator strip (left 3px bar for checked state)
@@ -98,15 +98,15 @@ void SidebarButton::paintEvent(QPaintEvent *)
     }
 
     QFont font = painter.font();
-    font.setPixelSize(18);
+    font.setPixelSize(16);
     font.setBold(true);
     painter.setFont(font);
     painter.setPen(textColor);
 
     int iconSize = 24;
-    int textLeft = 20 + iconSize + 12;
-    QRect iconRect(20 + 3, (height() - iconSize) / 2, iconSize, iconSize);
-    QRect textRect(textLeft + 3, 0, width() - textLeft - 19, height());
+    int textLeft = 18 + iconSize + 11;
+    QRect iconRect(18 + 3, (height() - iconSize) / 2, iconSize, iconSize);
+    QRect textRect(textLeft + 3, 0, width() - textLeft - 17, height());
 
     if (!icon().isNull()) {
         QIcon::Mode mode = disabled ? QIcon::Disabled : QIcon::Normal;

@@ -88,18 +88,18 @@ void RecordButton::renderCache()
     const qreal d = qMin(bounds.width(), bounds.height());
     const qreal r = d / 2.0;
 
-    QRadialGradient shadow(center + QPointF(0, d * 0.12), r * 1.2);
-    int shadowAlpha = m_darkMode ? 34 : 58;
+    QRadialGradient shadow(center + QPointF(0, d * 0.10), r * 1.14);
+    int shadowAlpha = m_darkMode ? 24 : 44;
     shadow.setColorAt(0.2, QColor(36, 100, 220, shadowAlpha));
     shadow.setColorAt(1.0, QColor(36, 100, 220, 0));
     p.setPen(Qt::NoPen);
     p.setBrush(shadow);
     p.drawEllipse(center, r * 1.08, r * 1.08);
 
-    p.setBrush(m_darkMode ? QColor(43, 51, 66) : QColor(246, 250, 255));
+    p.setBrush(m_darkMode ? QColor(38, 47, 62) : QColor(248, 251, 255));
     p.drawEllipse(bounds);
 
-    QPen rim(m_darkMode ? QColor(65, 76, 96) : QColor(225, 234, 248), 1.2);
+    QPen rim(m_darkMode ? QColor(60, 72, 92) : QColor(226, 235, 248), 1.0);
     p.setPen(rim);
     p.setBrush(Qt::NoBrush);
     qreal hw = 1.2 / 2.0;
@@ -145,8 +145,8 @@ void RecordButton::paintEvent(QPaintEvent *)
             blue.setColorAt(0.0, QColor(255, 110, 110));
             blue.setColorAt(1.0, QColor(220, 40, 56));
         } else {
-            blue.setColorAt(0.0, QColor(255, 89, 89));
-            blue.setColorAt(1.0, QColor(210, 29, 45));
+            blue.setColorAt(0.0, QColor(248, 78, 82));
+            blue.setColorAt(1.0, QColor(214, 35, 48));
         }
     } else {
         if (m_pressed) {
@@ -156,8 +156,8 @@ void RecordButton::paintEvent(QPaintEvent *)
             blue.setColorAt(0.0, QColor(92, 178, 255));
             blue.setColorAt(1.0, QColor(26, 104, 245));
         } else {
-            blue.setColorAt(0.0, QColor(77, 166, 255));
-            blue.setColorAt(1.0, QColor(10, 91, 238));
+            blue.setColorAt(0.0, QColor(82, 162, 255));
+            blue.setColorAt(1.0, QColor(30, 105, 236));
         }
     }
 
